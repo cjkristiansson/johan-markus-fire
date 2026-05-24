@@ -3,114 +3,85 @@ import pandas as pd
 
 st.set_page_config(page_title="FIRE Dashboard", layout="wide")
 
-# --- MODERNE UI & FONTS ---
+# --- CSS FOR MODERNE LOOK ---
 st.markdown("""
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap');
-    
-    html, body, [class*="css"] {
-        font-family: 'Inter', sans-serif !important;
-    }
-    
-    .stApp {
-        background-color: #fcfcfc;
-    }
-    
-    .success-box {
-        background: #f0fdf4;
-        border: 1px solid #bbf7d0;
-        padding: 16px 20px;
-        border-radius: 12px;
-        color: #166534;
-        font-weight: 500;
-        margin-bottom: 20px;
-    }
-    
+    .stApp { background-color: #fcfcfc; }
+    .success-box { background: #f0fdf4; border: 1px solid #bbf7d0; padding: 12px; border-radius: 8px; color: #166534; font-size: 0.9em; margin-bottom: 10px; }
     @media (prefers-color-scheme: dark) {
         .stApp { background-color: #0c0c0c; }
-        .success-box {
-            background: #064e3b;
-            border: 1px solid #065f46;
-            color: #d1fae5;
-        }
+        .success-box { background: #064e3b; border: 1px solid #065f46; color: #d1fae5; }
     }
 </style>
 """, unsafe_allow_html=True)
 
 st.title("FIRE Brofinansiering: Johan & Markus")
 
-# --- 1. SIDEBAR ---
+# --- SIDEBAR ---
 st.sidebar.header("Antagelser")
 global_return_rate_gross = st.sidebar.slider("Bruttoafkast (%)", 3.0, 10.0, 7.0, 0.5) / 100
 global_return_rate_net_drawdown = st.sidebar.slider("Nettoafkast (Passiv) (%)", 2.0, 8.0, 4.5, 0.1) / 100
 global_inflation_rate = st.sidebar.slider("Årlig inflation (%)", 0.0, 5.0, 2.0, 0.5) / 100
 global_barista_wage_net = st.sidebar.number_input("Baristaløn (Netto kr./t)", 80, 250, 135, 5)
 
-# --- BASIS DATA ---
-inkomst_j, inkomst_m = 38468, 32983
-pension_j, pension_m = 845000, 570000
+# --- DATA ---
 cash_j_base, cash_m_base = 2567500, 1153888
 basis_ask_j, basis_frie_j = 174000, 71000
 basis_ask_m, basis_frie_m = 170000, 0
 pensionsalder_j, pensionsalder_m = 67, 67
-
 budget_j = {"Studielaan": 0, "Mad": 6000, "Ferie": 1500, "Renovering": 1000, "A_kasse_Fagforening": 672, "Loensikring": 1674, "Puregym": 279, "Transport": 730, "Telefon": 100, "Spotify_Cloud": 100, "Charity": 100, "Frisoer": 450, "Toej": 1200, "Oevrig": 3000}
 budget_m = {"Studielaan": 1600, "Mad": 0, "Ferie": 1500, "Renovering": 1000, "A_kasse_Fagforening": 520, "Loensikring": 720, "Puregym": 0, "Transport": 500, "Telefon": 300, "Streaming": 565, "Charity": 100, "Frisoer": 450, "Toej": 1200, "Oevrig": 3000}
 
-def format_budget(b):
-    return "\n".join([f"- {k.replace('_', ' ')}: {f'{v:,}'.replace(',', '.')} kr." for k, v in b.items() if v > 0])
-
 # --- ACCORDIONS ---
 with st.expander("⚙️ Modellens Regler & Logik"):
-    st.markdown("""
-    * **Trin 0 (Boligkøb):** Startdepot = Formue efter udbetaling. Aktier/BSU er låst til FIRE.
-    * **Beskatning:** ASK (17%). Frie midler (27%/42% progressivt). Progressionsgrænse (61.300 kr.) indekseres med inflation.
-    * **Inflation:** Udgifter, opsparing og progressionsgrænser stiger årligt.
-    * **Pension:** Adskilt fra FIRE-fase. Indbetalinger stopper ved fuld FIRE.
-    * **Barista-timer:** Beregnes på restbehovet efter passiv indkomst.
-    """)
+    st.markdown("* Trin 0: Startdepot = Formue efter bolig. Aktier låst til FIRE.\n* Skat: ASK (17%), Frie midler (27/42% m. inflationsreguleret grænse).\n* Pension: Separat fra FIRE-fase.")
 
 with st.expander("📊 Grunddata & Budget"):
     c1, c2 = st.columns(2)
-    c1.markdown(f"### Johan\n**Løn:** {inkomst_j:,} kr.\n**Pension:** {pension_j:,} kr.\n**Budget:**\n{format_budget(budget_j)}".replace(',', '.'))
-    c2.markdown(f"### Markus\n**Løn:** {inkomst_m:,} kr.\n**Pension:** {pension_m:,} kr.\n**Budget:**\n{format_budget(budget_m)}".replace(',', '.'))
+    c1.markdown(f"### Johan\n**Løn:** 38.468 kr. **Pension:** 845.000 kr.\n**Budget:**\n" + "\n".join([f"- {k}: {v} kr." for k,v in budget_j.items() if v > 0]))
+    c2.markdown(f"### Markus\n**Løn:** 32.983 kr. **Pension:** 570.000 kr.\n**Budget:**\n" + "\n".join([f"- {k}: {v} kr." for k,v in budget_m.items() if v > 0]))
 
-# --- SIMULERING ---
+# --- LOGIK ---
 def calculate_drawdown(depot, cur_age, target_age, rate):
     if cur_age >= target_age: return 0
     months = (target_age - cur_age) * 12
     m_rate = rate / 12
     return depot * (m_rate * (1 + m_rate)**months) / ((1 + m_rate)**months - 1)
 
+def get_emoji_status(h):
+    if h == 0: return "🟢 0.0t"
+    elif h <= 15: return f"🟡 {h:.1f}t"
+    elif h <= 25: return f"🟠 {h:.1f}t"
+    else: return f"🔴 {h:.1f}t"
+
 def simulate(name, boligpris, udbet_j, udbet_m, realkredit, ejerudgift, bolig_solgt):
-    # Logik-setup
-    age_j, age_m = 41, 32
-    
-    # Kontanter (Ekskl. låste aktier)
     c_j = cash_j_base if bolig_solgt else 0
     c_m = cash_m_base if bolig_solgt else 0
-    
-    mangler_m = max(0, udbet_m - c_m)
-    faktisk_m = udbet_m - mangler_m
-    faktisk_j = (udbet_j + mangler_m) - max(0, (udbet_j + mangler_m) - c_j)
+    faktisk_m = udbet_m - max(0, udbet_m - c_m)
+    faktisk_j = (udbet_j + max(0, udbet_m - c_m)) - max(0, (udbet_j + max(0, udbet_m - c_m)) - c_j)
     
     depot_j = basis_ask_j + basis_frie_j + (c_j - faktisk_j)
     depot_m = basis_ask_m + basis_frie_m + (c_m - faktisk_m)
-    
     bolig_faelles = (realkredit + ejerudgift) / 2
-    fire_exp_j = sum(v for k, v in budget_j.items() if k not in ["A_kasse_Fagforening", "Loensikring"]) + bolig_faelles
-    fire_exp_m = sum(v for k, v in budget_m.items() if k not in ["A_kasse_Fagforening", "Loensikring", "Studielaan"]) + bolig_faelles
-
-    # Layout for scenarie
-    c1, c2 = st.columns(2)
-    c1.markdown(f"### Johan\nUdbetaling: {int(faktisk_j):,} kr.\nRealkredit: {int(realkredit/2):,} kr./md.\nStartdepot: {int(depot_j):,} kr.\nFIRE udgift: {int(fire_exp_j):,} kr./md.")
-    c2.markdown(f"### Markus\nUdbetaling: {int(faktisk_m):,} kr.\nRealkredit: {int(realkredit/2):,} kr./md.\nStartdepot: {int(depot_m):,} kr.\nFIRE udgift: {int(fire_exp_m):,} kr./md.")
     
-    st.divider()
+    st.markdown(f"**Udbetaling (J/M):** {int(faktisk_j):,} / {int(faktisk_m):,} kr. | **Realkredit (J/M):** {int(realkredit/2):,} kr./md.")
     
-    # Loop... (resten af logikken for at generere DataFrame)
-    # Her indsættes din eksisterende logik-loop...
-    st.info("Simulering kører...")
+    data = []
+    # Simulering loop
+    cur_exp_j = sum(v for k, v in budget_j.items() if k not in ["A_kasse_Fagforening", "Loensikring"]) + bolig_faelles
+    cur_exp_m = sum(v for k, v in budget_m.items() if k not in ["A_kasse_Fagforening", "Loensikring", "Studielaan"]) + bolig_faelles
+    
+    for y in range(0, 26):
+        age_j, age_m = 41 + y, 32 + y
+        passiv_j = calculate_drawdown(depot_j, age_j, 67, global_return_rate_net_drawdown)
+        passiv_m = calculate_drawdown(depot_m, age_m, 67, global_return_rate_net_drawdown)
+        h_j = max(0, cur_exp_j - passiv_j) / (global_barista_wage_net * 4.33)
+        h_m = max(0, cur_exp_m - passiv_m) / (global_barista_wage_net * 4.33)
+        
+        data.append({"År": y, "J.alder": age_j, "J.depot (M)": f"{depot_j/1e6:.2f}", "J.Arbtid": get_emoji_status(h_j), "M.alder": age_m, "M.depot (M)": f"{depot_m/1e6:.2f}", "M.Arbtid": get_emoji_status(h_m)})
+        # Tilføj logik for depotvækst her...
+        
+    st.dataframe(pd.DataFrame(data), use_container_width=True, hide_index=True)
 
 # --- TABS ---
 t1, t2, t3, t4 = st.tabs(["Plan A", "Plan B", "Plan C", "Plan D"])
