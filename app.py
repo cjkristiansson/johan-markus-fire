@@ -6,21 +6,20 @@ st.set_page_config(page_title="FIRE Dashboard", layout="wide")
 # --- GLOBAL CSS ---
 st.markdown("""
 <style>
+    /* Subtile brofinansieringskasser */
     .success-box {
-        background-color: #e6f4ea;
-        border-left: 5px solid #1e8e3e;
-        padding: 16px 20px;
-        border-radius: 8px;
-        color: #0d652d;
+        background-color: transparent;
+        border-left: 4px solid #81c995;
+        padding: 8px 16px;
+        color: #3c4043;
         font-family: sans-serif;
-        margin-bottom: 15px;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        font-size: 0.95em;
+        margin-bottom: 10px;
     }
     @media (prefers-color-scheme: dark) {
         .success-box {
-            background-color: #13271a;
-            border-left: 5px solid #81c995;
-            color: #a8dab5;
+            border-left: 4px solid #5bb974;
+            color: #bdc1c6;
         }
     }
 </style>
@@ -29,7 +28,7 @@ st.markdown("""
 st.title("FIRE Brofinansiering: Johan & Markus")
 
 # --- 1. SIDEBAR TIL INTERAKTIVE VARIABLER ---
-st.sidebar.header("🌍 Globale Antagelser")
+st.sidebar.header("Globale Antagelser")
 st.sidebar.markdown("Juster variablerne for at stress-teste alle scenarier samtidigt.")
 
 global_return_rate_gross = st.sidebar.slider("Bruttoafkast under opsparing (%)", min_value=3.0, max_value=10.0, value=7.0, step=0.5) / 100
@@ -43,7 +42,11 @@ st.sidebar.markdown("💡 *Aktiedepoter (ASK + Frie midler) og Markus' BSU er fa
 # --- BASIS DATA (Brugt i global visning) ---
 inkomst_j, inkomst_m = 38468, 32983
 pension_j, pension_m = 845000, 570000
-cash_j_base, cash_m_base = 2408888, 983888
+
+# Opdateret formue (Johan: Friværdi + Særeje | Markus: Friværdi + Gældsnedbringelse)
+cash_j_base = 2567500
+cash_m_base = 1153888
+
 basis_ask_j, basis_frie_j = 174000, 71000
 basis_ask_m, basis_frie_m = 170000, 0
 pensionsalder_j, pensionsalder_m = 67, 67
@@ -155,26 +158,30 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
     if mangler_j > 0:
         st.error(f"⚠️ ADVARSEL: Udbetalingen er {f'{int(mangler_j):,}'.replace(',', '.')} kr. højere end jeres likviditet til boligkøb. Aktierne er fredet, så I skal øge lånet.")
 
-    st.write("") # Whitespace
+    st.write("") 
 
     col1, col2 = st.columns(2)
     with col1:
         st.subheader(f"JOHAN")
-        st.write(f"**Udbetaling (betalt af formue):** {f'{int(faktisk_udbetaling_j):,}'.replace(',', '.')} kr.")
-        st.write(f"**Realkreditydelse (egen andel):** {f'{int(realkreditydelse_netto / 2):,}'.replace(',', '.')} kr./md.")
-        st.write(f"**Startdepot (Efter boligkøb):** {f'{int(depot_free_j + depot_ask_j):,}'.replace(',', '.')} kr.")
-        st.write(f"**Mdl. opsparing:** {f'{int(start_inv_md_j):,}'.replace(',', '.')} kr.")
-        st.write(f"**FIRE udgift (Start):** {f'{int(start_fire_expenses_j):,}'.replace(',', '.')} kr./md.")
+        st.markdown(f"""
+        **Udbetaling (betalt af formue):** {f'{int(faktisk_udbetaling_j):,}'.replace(',', '.')} kr.  
+        **Realkreditydelse (egen andel):** {f'{int(realkreditydelse_netto / 2):,}'.replace(',', '.')} kr./md.  
+        **Startdepot (Efter boligkøb):** {f'{int(depot_free_j + depot_ask_j):,}'.replace(',', '.')} kr.  
+        **Mdl. opsparing:** {f'{int(start_inv_md_j):,}'.replace(',', '.')} kr.  
+        **FIRE udgift (Start):** {f'{int(start_fire_expenses_j):,}'.replace(',', '.')} kr./md.
+        """)
     
     with col2:
         st.subheader(f"MARKUS")
-        st.write(f"**Udbetaling (betalt af formue):** {f'{int(faktisk_udbetaling_m):,}'.replace(',', '.')} kr.")
-        st.write(f"**Realkreditydelse (egen andel):** {f'{int(realkreditydelse_netto / 2):,}'.replace(',', '.')} kr./md.")
-        st.write(f"**Startdepot (Efter boligkøb):** {f'{int(depot_free_m + depot_ask_m):,}'.replace(',', '.')} kr.")
-        st.write(f"**Mdl. opsparing:** {f'{int(start_inv_md_m):,}'.replace(',', '.')} kr.")
-        st.write(f"**FIRE udgift (Start):** {f'{int(start_fire_expenses_m):,}'.replace(',', '.')} kr./md.")
+        st.markdown(f"""
+        **Udbetaling (betalt af formue):** {f'{int(faktisk_udbetaling_m):,}'.replace(',', '.')} kr.  
+        **Realkreditydelse (egen andel):** {f'{int(realkreditydelse_netto / 2):,}'.replace(',', '.')} kr./md.  
+        **Startdepot (Efter boligkøb):** {f'{int(depot_free_m + depot_ask_m):,}'.replace(',', '.')} kr.  
+        **Mdl. opsparing:** {f'{int(start_inv_md_m):,}'.replace(',', '.')} kr.  
+        **FIRE udgift (Start):** {f'{int(start_fire_expenses_m):,}'.replace(',', '.')} kr./md.
+        """)
 
-    st.write("") # Whitespace
+    st.write("") 
     
     table_data = []
     j_full_fire_reached, m_full_fire_reached = False, False
@@ -252,12 +259,10 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
         if hours_j <= 0 and hours_m <= 0:
             break
 
-    # Fjern index på Dataframen for et renere look
     st.dataframe(pd.DataFrame(table_data), use_container_width=True, hide_index=True)
     
-    st.write("") # Whitespace
+    st.write("") 
 
-    # Custom styling til FIRE beskeder i stedet for default st.success
     if j_full_fire_reached:
         st.markdown(f"""
         <div class='success-box'>
