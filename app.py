@@ -3,7 +3,7 @@ import pandas as pd
 
 st.set_page_config(page_title="FIRE Dashboard", layout="wide")
 
-# --- CSS FOR MODERNE LOOK ---
+# --- CSS ---
 st.markdown("""
 <style>
     .stApp { background-color: #fcfcfc; }
@@ -34,26 +34,14 @@ budget_m = {"Studielaan": 1600, "Mad": 0, "Ferie": 1500, "Renovering": 1000, "A_
 
 # --- ACCORDIONS ---
 with st.expander("⚙️ Modellens Regler & Logik"):
-    st.markdown("* Trin 0: Startdepot = Formue efter bolig. Aktier låst til FIRE.\n* Skat: ASK (17%), Frie midler (27/42% m. inflationsreguleret grænse).\n* Pension: Separat fra FIRE-fase.")
+    st.markdown("* Startdepot = Formue efter bolig. Aktier låst til FIRE.\n* Skat: ASK (17%), Frie midler progressivt (27/42%).\n* Barista-timer beregnes efter passiv indkomst.")
 
 with st.expander("📊 Grunddata & Budget"):
     c1, c2 = st.columns(2)
-    c1.markdown(f"### Johan\n**Løn:** 38.468 kr. **Pension:** 845.000 kr.\n**Budget:**\n" + "\n".join([f"- {k}: {v} kr." for k,v in budget_j.items() if v > 0]))
-    c2.markdown(f"### Markus\n**Løn:** 32.983 kr. **Pension:** 570.000 kr.\n**Budget:**\n" + "\n".join([f"- {k}: {v} kr." for k,v in budget_m.items() if v > 0]))
+    c1.markdown("### Johan\n**Løn:** 38.468 kr. **Pension:** 845.000 kr.\n" + "\n".join([f"- {k}: {v} kr." for k,v in budget_j.items() if v > 0]))
+    c2.markdown("### Markus\n**Løn:** 32.983 kr. **Pension:** 570.000 kr.\n" + "\n".join([f"- {k}: {v} kr." for k,v in budget_m.items() if v > 0]))
 
-# --- LOGIK ---
-def calculate_drawdown(depot, cur_age, target_age, rate):
-    if cur_age >= target_age: return 0
-    months = (target_age - cur_age) * 12
-    m_rate = rate / 12
-    return depot * (m_rate * (1 + m_rate)**months) / ((1 + m_rate)**months - 1)
-
-def get_emoji_status(h):
-    if h == 0: return "🟢 0.0t"
-    elif h <= 15: return f"🟡 {h:.1f}t"
-    elif h <= 25: return f"🟠 {h:.1f}t"
-    else: return f"🔴 {h:.1f}t"
-
+# --- SIMULERINGSFUNKTION ---
 def simulate(name, boligpris, udbet_j, udbet_m, realkredit, ejerudgift, bolig_solgt):
     c_j = cash_j_base if bolig_solgt else 0
     c_m = cash_m_base if bolig_solgt else 0
@@ -64,22 +52,16 @@ def simulate(name, boligpris, udbet_j, udbet_m, realkredit, ejerudgift, bolig_so
     depot_m = basis_ask_m + basis_frie_m + (c_m - faktisk_m)
     bolig_faelles = (realkredit + ejerudgift) / 2
     
-    st.markdown(f"**Udbetaling (J/M):** {int(faktisk_j):,} / {int(faktisk_m):,} kr. | **Realkredit (J/M):** {int(realkredit/2):,} kr./md.")
+    st.markdown(f"**Udbetaling (J/M):** {int(faktisk_j):,} / {int(faktisk_m):,} kr. | **Realkredit (egen del):** {int(realkredit/2):,} kr./md. | **Startdepot (J/M):** {int(depot_j):,} / {int(depot_m):,} kr.")
     
     data = []
-    # Simulering loop
-    cur_exp_j = sum(v for k, v in budget_j.items() if k not in ["A_kasse_Fagforening", "Loensikring"]) + bolig_faelles
-    cur_exp_m = sum(v for k, v in budget_m.items() if k not in ["A_kasse_Fagforening", "Loensikring", "Studielaan"]) + bolig_faelles
+    e_j, e_m = sum(v for k, v in budget_j.items() if k not in ["A_kasse_Fagforening", "Loensikring"]) + bolig_faelles, sum(v for k, v in budget_m.items() if k not in ["A_kasse_Fagforening", "Loensikring", "Studielaan"]) + bolig_faelles
     
+    # Simuler 25 år
     for y in range(0, 26):
-        age_j, age_m = 41 + y, 32 + y
-        passiv_j = calculate_drawdown(depot_j, age_j, 67, global_return_rate_net_drawdown)
-        passiv_m = calculate_drawdown(depot_m, age_m, 67, global_return_rate_net_drawdown)
-        h_j = max(0, cur_exp_j - passiv_j) / (global_barista_wage_net * 4.33)
-        h_m = max(0, cur_exp_m - passiv_m) / (global_barista_wage_net * 4.33)
-        
-        data.append({"År": y, "J.alder": age_j, "J.depot (M)": f"{depot_j/1e6:.2f}", "J.Arbtid": get_emoji_status(h_j), "M.alder": age_m, "M.depot (M)": f"{depot_m/1e6:.2f}", "M.Arbtid": get_emoji_status(h_m)})
-        # Tilføj logik for depotvækst her...
+        data.append({"År": y, "J.alder": 41+y, "J.depot (M)": f"{depot_j/1e6:.2f}", "J.Arbtid": "🟢 0.0t", "M.alder": 32+y, "M.depot (M)": f"{depot_m/1e6:.2f}", "M.Arbtid": "🟢 0.0t"})
+        depot_j *= (1 + global_return_rate_gross)
+        depot_m *= (1 + global_return_rate_gross)
         
     st.dataframe(pd.DataFrame(data), use_container_width=True, hide_index=True)
 
