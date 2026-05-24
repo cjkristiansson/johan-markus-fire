@@ -71,7 +71,7 @@ with st.expander("⚙️ Modellens Regler & Logik"):
     
     """)
 
-with st.expander("📊 Se Grunddata - Formue, Budget & Pension)"):
+with st.expander("📊 Se Grunddata - Formue, Budget & Pension"):
     col_j, col_m = st.columns(2)
     with col_j:
         st.markdown(f"""
