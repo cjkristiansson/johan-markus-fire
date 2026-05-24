@@ -3,6 +3,29 @@ import pandas as pd
 
 st.set_page_config(page_title="FIRE Dashboard", layout="wide")
 
+# --- GLOBAL CSS ---
+st.markdown("""
+<style>
+    .success-box {
+        background-color: #e6f4ea;
+        border-left: 5px solid #1e8e3e;
+        padding: 16px 20px;
+        border-radius: 8px;
+        color: #0d652d;
+        font-family: sans-serif;
+        margin-bottom: 15px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+    @media (prefers-color-scheme: dark) {
+        .success-box {
+            background-color: #13271a;
+            border-left: 5px solid #81c995;
+            color: #a8dab5;
+        }
+    }
+</style>
+""", unsafe_allow_html=True)
+
 st.title("FIRE Brofinansiering: Johan & Markus")
 
 # --- 1. SIDEBAR TIL INTERAKTIVE VARIABLER ---
@@ -71,7 +94,6 @@ with st.expander("📊 Se Grunddata (Formue før bolig, Budget & Pension)"):
         {format_budget(budget_m)}
         """)
 
-
 def calculate_drawdown_monthly_income(depot_total, current_age, target_age, net_return_rate):
     if current_age >= target_age:
         return 0
@@ -91,7 +113,6 @@ def get_emoji_status(barista_hours):
     else: return f"🔴 {barista_hours:.1f}t"
 
 def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_m, realkreditydelse_netto, ejerudgifter_og_fællesudgifter_total, bolig_solgt):
-    # Makro fra Global Sidebar
     return_rate_gross = global_return_rate_gross
     return_rate_net_drawdown = global_return_rate_net_drawdown
     inflation_rate = global_inflation_rate
@@ -134,6 +155,8 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
     if mangler_j > 0:
         st.error(f"⚠️ ADVARSEL: Udbetalingen er {f'{int(mangler_j):,}'.replace(',', '.')} kr. højere end jeres likviditet til boligkøb. Aktierne er fredet, så I skal øge lånet.")
 
+    st.write("") # Whitespace
+
     col1, col2 = st.columns(2)
     with col1:
         st.subheader(f"JOHAN")
@@ -151,14 +174,13 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
         st.write(f"**Mdl. opsparing:** {f'{int(start_inv_md_m):,}'.replace(',', '.')} kr.")
         st.write(f"**FIRE udgift (Start):** {f'{int(start_fire_expenses_m):,}'.replace(',', '.')} kr./md.")
 
-    st.divider()
-
+    st.write("") # Whitespace
+    
     table_data = []
     j_full_fire_reached, m_full_fire_reached = False, False
     j_fire_age, m_fire_age = 0, 0
     pension_at_target_j, pension_at_target_m = 0, 0
     
-    # Init dynamiske variabler med inflation
     cur_fire_expenses_j = start_fire_expenses_j
     cur_fire_expenses_m = start_fire_expenses_m
     cur_yearly_savings_j = start_inv_md_j * 12
@@ -167,12 +189,11 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
     cur_progression_limit_j = 61300
     cur_progression_limit_m = 61300
 
-    for year in range(0, 26): # Max 25 years
+    for year in range(0, 26):
         current_age_j = age_j + year
         current_age_m = age_m + year
 
         if year > 0:
-            # Inflation slår igennem på alle løbende poster
             cur_fire_expenses_j *= (1 + inflation_rate)
             cur_fire_expenses_m *= (1 + inflation_rate)
             cur_yearly_savings_j *= (1 + inflation_rate)
@@ -231,12 +252,27 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
         if hours_j <= 0 and hours_m <= 0:
             break
 
-    st.dataframe(pd.DataFrame(table_data), use_container_width=True)
+    # Fjern index på Dataframen for et renere look
+    st.dataframe(pd.DataFrame(table_data), use_container_width=True, hide_index=True)
+    
+    st.write("") # Whitespace
 
+    # Custom styling til FIRE beskeder i stedet for default st.success
     if j_full_fire_reached:
-        st.success(f"**Johans brofinansiering er sikret ved alder {j_fire_age}.** Pension forventes ca. {pension_at_target_j / 1_000_000:.2f}M kr.")
+        st.markdown(f"""
+        <div class='success-box'>
+            ✅ <b>Johans brofinansiering er sikret ved alder {j_fire_age}.</b><br>
+            Pension forventes ca. {pension_at_target_j / 1_000_000:.2f}M kr.
+        </div>
+        """, unsafe_allow_html=True)
+        
     if m_full_fire_reached:
-        st.success(f"**Markus brofinansiering er sikret ved alder {m_fire_age}.** Pension forventes ca. {pension_at_target_m / 1_000_000:.2f}M kr.")
+        st.markdown(f"""
+        <div class='success-box'>
+            ✅ <b>Markus brofinansiering er sikret ved alder {m_fire_age}.</b><br>
+            Pension forventes ca. {pension_at_target_m / 1_000_000:.2f}M kr.
+        </div>
+        """, unsafe_allow_html=True)
 
 # --- KØRSELS-SEKTION MED TABS ---
 tab1, tab2, tab3, tab4 = st.tabs(["Plan A (4.0M)", "Plan B (4.5M)", "Plan C (5.0M)", "Plan D (Valby)"])
