@@ -1,39 +1,49 @@
-/* Import Spectral (header) and Belleza (body) */
+/* Import Spectral (overskrift) og Belleza (brødtekst) */
 @import url('https://fonts.googleapis.com/css2?family=Belleza&family=Spectral:ital,wght@0,400;0,600;0,700;1,400&display=swap');
 
-/* Force Belleza on ALL text elements to override Streamlit's defaults */
+/* Tving Belleza ned over alle tekstelementer */
 html, body, .stApp, p, span, div, label, input, button, li, a, th, td {
     font-family: 'Belleza', sans-serif !important;
+    font-size: 16px; /* Standardiseret grundstørrelse */
 }
 
-/* Base background and text colors */
+/* BUGFIX: Beskyt Streamlits indbyggede ikoner fra at få deres font overskrevet */
+.material-symbols-rounded, [class*="icon"], svg text {
+    font-family: 'Material Symbols Rounded', 'Material Icons', sans-serif !important;
+}
+
+/* Base baggrund og tekstfarve */
 html, body, [class*="css"], .stApp {
     background-color: #fcfaf7 !important; 
     color: #2d2d2d !important;
 }
 
-/* Sidebar styling */
+/* --- OVERSKRIFTER (Fast hierarki) --- */
+h1, h1 * {
+    font-family: 'Spectral', serif !important;
+    color: #1a1a1a !important;
+    font-weight: 600 !important;
+    font-size: 32px !important;
+    letter-spacing: -0.02em;
+}
+
+h2 { font-size: 24px !important; font-weight: 600 !important; color: #1a1a1a !important; }
+h3 { font-size: 20px !important; font-weight: 600 !important; color: #1a1a1a !important; }
+h4 { font-size: 16px !important; font-weight: 600 !important; color: #1a1a1a !important; }
+
+/* Sidebar styling (Kompakt 14px tekst) */
 [data-testid="stSidebar"] {
     background-color: #f3eee7 !important;
     border-right: 1px solid #e5e0d8 !important;
 }
 
-/* H1 strictly uses Spectral */
-h1, h1 * {
-    font-family: 'Spectral', serif !important;
-    color: #1a1a1a !important;
-    font-weight: 600 !important;
-    letter-spacing: -0.02em;
+[data-testid="stSidebar"] p, 
+[data-testid="stSidebar"] label, 
+[data-testid="stSidebar"] div {
+    font-size: 14px !important;
 }
 
-/* Smaller headers fallback to Belleza but bolded */
-h2, h3, h4 {
-    color: #1a1a1a !important;
-    font-weight: 600 !important;
-    letter-spacing: -0.02em;
-}
-
-/* Sidebar buttons */
+/* Knapper i sidebaren */
 [data-testid="stSidebar"] button {
     background-color: #ffffff !important;
     border: 1px solid #dcd7cc !important;
@@ -42,20 +52,26 @@ h2, h3, h4 {
     transition: all 0.2s ease;
 }
 
+[data-testid="stSidebar"] button p {
+    font-size: 14px !important;
+    font-weight: 600 !important;
+    margin: 0 !important;
+}
+
 [data-testid="stSidebar"] button:hover {
     border-color: #b5ae9f !important;
     color: #1a1a1a !important;
     background-color: #faf8f5 !important;
 }
 
-/* Success boxes */
+/* Brofinansieringskasser */
 .success-box {
     background-color: #f8fbf8;
     border: 1px solid #d1e0d5;
     border-radius: 8px;
     padding: 16px 20px;
     color: #2b593f;
-    font-size: 1.1em; /* Scaled up slightly for Belleza's smaller baseline */
+    font-size: 16px !important; 
     margin-top: 10px;
     margin-bottom: 12px;
     box-shadow: 0 1px 2px rgba(0,0,0,0.02);
@@ -83,13 +99,18 @@ div[data-baseweb="tab-list"] button[aria-selected="true"] {
 }
 
 div[data-baseweb="tab-list"] button p {
-    font-size: 18px !important; /* Increased for readability with Belleza */
+    font-size: 16px !important; 
     color: #8c857b !important; 
 }
 
 div[data-baseweb="tab-list"] button[aria-selected="true"] p {
     color: #1a1a1a !important;
     font-weight: 600 !important;
+}
+
+/* Ekstra padding i dataframe tabellerne for at de matcher den nye font */
+[data-testid="stDataFrame"] {
+    font-size: 15px !important;
 }
 
 /* --- DARK MODE --- */
