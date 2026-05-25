@@ -108,6 +108,8 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
     faktisk_udbetaling_m = udbetaling_m - mangler_m
     udbetaling_j_total = udbetaling_j + mangler_m
     faktisk_udbetaling_j = udbetaling_j_total - max(0, udbetaling_j_total - cash_j)
+    
+    total_udbetaling = faktisk_udbetaling_j + faktisk_udbetaling_m
 
     depot_free_j = st.session_state["basis_frie_j"] + (cash_j - faktisk_udbetaling_j)
     depot_free_m = st.session_state["basis_frie_m"] + (cash_m - faktisk_udbetaling_m)
@@ -123,6 +125,12 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
         st.error(f"⚠️ ADVARSEL: Udbetalingen overstiger jeres likviditet.")
 
     st.write("") 
+    
+    # VIS FINANSIERINGSANDEL
+    if bolig_solgt and boligpris > 0:
+        egen_pct = (total_udbetaling / boligpris) * 100
+        laan_pct = 100 - egen_pct
+        st.info(f"🏠 **Boligfinansiering:** I køber **{egen_pct:.0f}%** af boligen kontant ({int(total_udbetaling):,} kr.) og låner de resterende **{laan_pct:.0f}%**.".replace(',', '.'))
 
     col1, col2 = st.columns(2)
     with col1:
@@ -157,7 +165,7 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
         if year > 0:
             start_fire_j *= (1 + global_inflation_rate); start_fire_m *= (1 + global_inflation_rate)
             
-            # 1. Tilskriv afkast på den eksisterende balance
+            # 1. Tilskriv afkast på den eksisterende balance (Rettet logik)
             depot_ask_j *= (1 + global_return_rate_gross * 0.83); depot_free_j *= (1 + global_return_rate_gross * 0.73)
             depot_ask_m *= (1 + global_return_rate_gross * 0.83); depot_free_m *= (1 + global_return_rate_gross * 0.73)
             
@@ -207,6 +215,14 @@ def simulate_solo_fire_plan(scenario_name, boligpris, udbetaling_j, realkredityd
     start_inv_md_j = st.session_state["inkomst_j"] - (sum(solo_budget_j.values()) + bolig_total)
     start_fire_j = sum(v for k, v in solo_budget_j.items() if k not in ["A_kasse_Fagforening", "Loensikring"]) + bolig_total
 
+    st.write("")
+    
+    # VIS FINANSIERINGSANDEL
+    if boligpris > 0:
+        egen_pct = (faktisk_udbetaling_j / boligpris) * 100
+        laan_pct = 100 - egen_pct
+        st.info(f"🏠 **Boligfinansiering:** Du køber **{egen_pct:.0f}%** af boligen kontant ({int(faktisk_udbetaling_j):,} kr.) og låner de resterende **{laan_pct:.0f}%**.".replace(',', '.'))
+
     st.subheader(f"JOHAN (SOLO: {scenario_name})")
     st.markdown(f"""
     **Boligpris:** {f'{int(boligpris):,}'.replace(',', '.')} kr.  
@@ -228,7 +244,7 @@ def simulate_solo_fire_plan(scenario_name, boligpris, udbetaling_j, realkredityd
         if year > 0:
             start_fire_j *= (1 + global_inflation_rate)
             
-            # 1. Tilskriv afkast på den eksisterende balance
+            # 1. Tilskriv afkast på den eksisterende balance (Rettet logik)
             depot_ask_j *= (1 + global_return_rate_gross * 0.83); depot_free_j *= (1 + global_return_rate_gross * 0.73)
             
             # 2. Læg derefter årets opsparing til depoterne
