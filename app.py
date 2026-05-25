@@ -79,10 +79,6 @@ st.sidebar.divider()
 pensionsalder_j = st.sidebar.number_input("Johans pensionsalder", min_value=55, max_value=75, value=67, step=1)
 pensionsalder_m = st.sidebar.number_input("Markus' pensionsalder", min_value=55, max_value=75, value=65, step=1)
 
-# DEN HEMMELIGE BAGDØR - Ligner en normal teknisk funktion
-st.sidebar.divider()
-st.sidebar.text_input("Gendan Scenarie-ID", help="Indtast ID for at indlæse specifik konfiguration.", key="secret_id")
-
 
 # --- DYNAMISKE SIMULERINGSFUNKTIONER ---
 def calculate_drawdown_monthly_income(depot_total, current_age, target_age, net_return_rate):
@@ -195,13 +191,9 @@ def simulate_solo_fire_plan(scenario_name, boligpris, udbetaling_j, realkredityd
     depot_free_j = st.session_state["basis_frie_j"] + (cash_j - faktisk_udbetaling_j)
     depot_ask_j = st.session_state["basis_ask_j"]
 
-    # SOLO BUDGET TILPASNING (Mad nedjusteres til 3000 kr. for en person)
-    solo_budget_j = st.session_state["budget_j"].copy()
-    solo_budget_j["Mad"] = 3000
-
     bolig_total = realkreditydelse_netto + ejerudgifter_total
-    start_inv_md_j = st.session_state["inkomst_j"] - (sum(solo_budget_j.values()) + bolig_total)
-    start_fire_j = sum(v for k, v in solo_budget_j.items() if k not in ["A_kasse_Fagforening", "Loensikring"]) + bolig_total
+    start_inv_md_j = st.session_state["inkomst_j"] - (sum(st.session_state["budget_j"].values()) + bolig_total)
+    start_fire_j = sum(v for k, v in st.session_state["budget_j"].items() if k not in ["A_kasse_Fagforening", "Loensikring"]) + bolig_total
 
     st.subheader(f"JOHAN (SOLO: {scenario_name})")
     st.markdown(f"""
@@ -231,6 +223,7 @@ def simulate_solo_fire_plan(scenario_name, boligpris, udbetaling_j, realkredityd
 
         table_data.append({"År": year, "Alder": c_age_j, "Depot (M)": f"{(depot_ask_j + depot_free_j)/1e6:.2f}", "Passiv Indkomst (kr)": f"{int(p_j):,}".replace(',', '.'), "Arbejdstid (Barista)": get_emoji_status(h_j)})
         
+        # FJERNELSE AF BREAK: Koden afbryder ikke længere loopet, så hele tabellen udfyldes uanset hvad.
         if h_j <= 0 and not j_reached:
             j_reached = True
             j_fire_age = c_age_j
@@ -256,66 +249,4 @@ if view_selection == "⚙️ Basisdata & Opsætning":
         st.session_state["pension_j"] = st.number_input("Pensionsopsparing (kr.)", min_value=0, value=st.session_state["pension_j"], step=10000, key="input_pen_j")
         st.session_state["cash_j_base"] = st.number_input("Kontanter / Friværdi (kr.)", value=st.session_state["cash_j_base"], step=10000, key="csh_j")
         st.session_state["basis_ask_j"] = st.number_input("Aktiesparekonto (kr.)", value=st.session_state["basis_ask_j"], key="ask_j")
-        st.session_state["basis_frie_j"] = st.number_input("Frie midler / Aktier (kr.)", value=st.session_state["basis_frie_j"], key="fr_j")
-        df_j = st.data_editor(pd.DataFrame(list(st.session_state["budget_j"].items()), columns=["Kategori", "Beløb"]), hide_index=True, use_container_width=True, key="ed_j")
-        st.session_state["budget_j"] = dict(df_j.values)
-    with col_setup_m:
-        st.markdown("### 👤 MARKUS DATA")
-        st.session_state["inkomst_m"] = st.number_input("Månedsløn (Netto kr.)", value=st.session_state["inkomst_m"], step=500, key="inp_m")
-        st.session_state["pension_m"] = st.number_input("Pensionsopsparing (kr.)", min_value=0, value=st.session_state["pension_m"], step=10000, key="input_pen_m")
-        st.session_state["cash_m_base"] = st.number_input("Kontanter / Friværdi (kr.)", value=st.session_state["cash_m_base"], step=10000, key="csh_m")
-        st.session_state["basis_ask_m"] = st.number_input("Aktiesparekonto (kr.)", value=st.session_state["basis_ask_m"], key="ask_m")
-        st.session_state["basis_frie_m"] = st.number_input("Frie midler / Aktier (kr.)", value=st.session_state["basis_frie_m"], key="fr_m")
-        df_m = st.data_editor(pd.DataFrame(list(st.session_state["budget_m"].items()), columns=["Kategori", "Beløb"]), hide_index=True, use_container_width=True, key="ed_m")
-        st.session_state["budget_m"] = dict(df_m.values)
-
-# --- VISNING 2: SCENARIER ---
-else:
-    is_solo_mode = False
-    
-    # Den sikre UI bagdør: Skriv "solo" i tekstfeltet nederst i venstre side.
-    if st.session_state.get("secret_id", "").strip().lower() == "solo":
-        is_solo_mode = True
-
-    # URL Fallback
-    try:
-        if "mode" in st.query_params and st.query_params["mode"] == "solo":
-            is_solo_mode = True
-    except:
-        pass
-
-    tab_names = ["3.5M", "4.0M", "4.5M", "5.0M", "5.5M", "Valby"]
-    if is_solo_mode: 
-        tab_names.extend(["🔒 Solo 3.0M", "🔒 Solo 3.5M", "🔒 Solo 4.0M"])
-    
-    tabs = st.tabs(tab_names)
-
-    with tabs[0]:
-        yd_35 = st.number_input("Realkreditydelse efter skat (3.5M)", value=8516, step=100, key="yd35")
-        simulate_joint_fire_plan("3.5M Bolig", 3500000, 966000, 434000, yd_35, 4564, bolig_solgt=True)
-    with tabs[1]:
-        yd_40 = st.number_input("Realkreditydelse efter skat (4.0M)", value=4075, step=100, key="yd40")
-        simulate_joint_fire_plan("4.0M Bolig", 4000000, 1846222, 1153888, yd_40, 4564, bolig_solgt=True)
-    with tabs[2]:
-        yd_45 = st.number_input("Realkreditydelse efter skat (4.5M)", value=4576, step=100, key="yd45")
-        simulate_joint_fire_plan("4.5M Bolig", 4500000, 2250000, 1125000, yd_45, 4564, bolig_solgt=True)
-    with tabs[3]:
-        yd_50 = st.number_input("Realkreditydelse efter skat (5.0M)", value=6519, step=100, key="yd50")
-        simulate_joint_fire_plan("5.0M Bolig", 5000000, 2408888, 983888, yd_50, 4564, bolig_solgt=True)
-    with tabs[4]:
-        yd_55 = st.number_input("Realkreditydelse efter skat (5.5M)", value=13659, step=100, key="yd55")
-        simulate_joint_fire_plan("5.5M Bolig", 5500000, 1515000, 685000, yd_55, 4564, bolig_solgt=True)
-    with tabs[5]:
-        yd_vb = st.number_input("Realkreditydelse efter skat (Valby)", value=15230, step=100, key="ydvb")
-        simulate_joint_fire_plan("Valby", 6700000, 0, 0, yd_vb, 4564, bolig_solgt=False)
-
-    if is_solo_mode:
-        with tabs[6]:
-            yd_s30 = st.number_input("Månedlig nettoydelse (Solo 3.0M)", value=7308, step=100, key="yds30")
-            simulate_solo_fire_plan("3.0M Solo", 3000000, 1200000, yd_s30, 3500)
-        with tabs[7]:
-            yd_s35 = st.number_input("Månedlig nettoydelse (Solo 3.5M)", value=8516, step=100, key="yds35")
-            simulate_solo_fire_plan("3.5M Solo", 3500000, 1400000, yd_s35, 4000)
-        with tabs[8]:
-            yd_s40 = st.number_input("Månedlig nettoydelse (Solo 4.0M)", value=9724, step=100, key="yds40")
-            simulate_solo_fire_plan("4.0M Solo", 4000000, 1600000, yd_s40, 4500)
+        st.session_state["basis_frie_j"] = st.number_input("Frie midler / Aktier (kr.)", value=st
