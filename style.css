@@ -1,35 +1,39 @@
-/* Importerer Spectral (til overskrift) og Belleza (til resten) fra Google Fonts */
+/* Import Spectral (header) and Belleza (body) */
 @import url('https://fonts.googleapis.com/css2?family=Belleza&family=Spectral:ital,wght@0,400;0,600;0,700;1,400&display=swap');
 
-/* Global indstillinger - Resten af siden bruger Belleza */
-html, body, [class*="css"], .stApp {
+/* Force Belleza on ALL text elements to override Streamlit's defaults */
+html, body, .stApp, p, span, div, label, input, button, li, a, th, td {
     font-family: 'Belleza', sans-serif !important;
+}
+
+/* Base background and text colors */
+html, body, [class*="css"], .stApp {
     background-color: #fcfaf7 !important; 
     color: #2d2d2d !important;
 }
 
-/* Sidebarren */
+/* Sidebar styling */
 [data-testid="stSidebar"] {
     background-color: #f3eee7 !important;
     border-right: 1px solid #e5e0d8 !important;
 }
 
-/* Hovedoverskriften (h1) sættes specifikt til Spectral */
-h1 {
+/* H1 strictly uses Spectral */
+h1, h1 * {
     font-family: 'Spectral', serif !important;
     color: #1a1a1a !important;
     font-weight: 600 !important;
     letter-spacing: -0.02em;
 }
 
-/* Mindre overskrifter */
+/* Smaller headers fallback to Belleza but bolded */
 h2, h3, h4 {
     color: #1a1a1a !important;
     font-weight: 600 !important;
     letter-spacing: -0.02em;
 }
 
-/* Knapper i sidebaren */
+/* Sidebar buttons */
 [data-testid="stSidebar"] button {
     background-color: #ffffff !important;
     border: 1px solid #dcd7cc !important;
@@ -44,20 +48,20 @@ h2, h3, h4 {
     background-color: #faf8f5 !important;
 }
 
-/* Brofinansieringskasser */
+/* Success boxes */
 .success-box {
     background-color: #f8fbf8;
     border: 1px solid #d1e0d5;
     border-radius: 8px;
     padding: 16px 20px;
     color: #2b593f;
-    font-size: 1.05em; /* Lidt større font-size da Belleza kan føles lidt mindre */
+    font-size: 1.1em; /* Scaled up slightly for Belleza's smaller baseline */
     margin-top: 10px;
     margin-bottom: 12px;
     box-shadow: 0 1px 2px rgba(0,0,0,0.02);
 }
 
-/* --- TAB DESIGN (Minimalistisk linje) --- */
+/* --- TAB DESIGN --- */
 div[data-baseweb="tab-list"] {
     gap: 24px; 
     padding-bottom: 0px;
@@ -79,8 +83,8 @@ div[data-baseweb="tab-list"] button[aria-selected="true"] {
 }
 
 div[data-baseweb="tab-list"] button p {
-    font-size: 17px !important;
-    color: #8c857b; 
+    font-size: 18px !important; /* Increased for readability with Belleza */
+    color: #8c857b !important; 
 }
 
 div[data-baseweb="tab-list"] button[aria-selected="true"] p {
@@ -88,7 +92,7 @@ div[data-baseweb="tab-list"] button[aria-selected="true"] p {
     font-weight: 600 !important;
 }
 
-/* --- MØRK TILSTAND (Dark Mode) --- */
+/* --- DARK MODE --- */
 @media (prefers-color-scheme: dark) {
     html, body, [class*="css"], .stApp {
         background-color: #1c1b1a !important;
@@ -108,7 +112,7 @@ div[data-baseweb="tab-list"] button[aria-selected="true"] p {
         border-color: #625f5c !important;
         color: #ffffff !important;
     }
-    h1, h2, h3, h4 {
+    h1, h1 *, h2, h3, h4 {
         color: #f3f4f6 !important;
     }
     .success-box {
@@ -124,7 +128,7 @@ div[data-baseweb="tab-list"] button[aria-selected="true"] p {
         border-bottom: 2px solid #f3f4f6 !important;
     }
     div[data-baseweb="tab-list"] button p {
-        color: #8b8986;
+        color: #8b8986 !important;
     }
     div[data-baseweb="tab-list"] button[aria-selected="true"] p {
         color: #f3f4f6 !important;
