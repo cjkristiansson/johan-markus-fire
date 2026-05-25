@@ -90,56 +90,63 @@ h4 { font-size: 18px !important; font-weight: 600 !important; color: #2c2925 !im
     box-shadow: inset 0 1px 2px rgba(0,0,0,0.04) !important;
 }
 
-/* --- PILLS / HOVEDNAVIGATION --- */
+/* --- PILLS / HOVEDNAVIGATION (Identisk med sidebarknapper) --- */
 [data-testid="stPills"] {
     background-color: transparent !important;
     border: none !important;
 }
 
-/* Tvinger horisontal afstand ind mellem hver pill */
 [data-testid="stPills"] > div {
     display: flex !important;
-    gap: 16px !important;
 }
 
-[data-testid="stPills"] button,
-[data-testid="stPills"] [data-testid="stPillItem"] {
+/* Base styling for Pills */
+[data-testid="stPill"],
+[data-testid="stPills"] button {
     background-color: #fcfaf7 !important; 
     border: 1px solid #dcd7cc !important; 
-    color: #4a4742 !important;
     border-radius: 6px !important;
     padding: 6px 16px !important;
+    margin-right: 16px !important; /* Tvinger afstanden frem */
     transition: all 0.2s ease !important;
     box-shadow: 0 1px 2px rgba(0,0,0,0.02) !important;
-    font-size: 16px !important;
 }
 
-[data-testid="stPills"] button p,
-[data-testid="stPills"] [data-testid="stPillItem"] p {
+[data-testid="stPill"] p,
+[data-testid="stPills"] button p {
     font-weight: 600 !important;
-    color: inherit !important;
+    color: #4a4742 !important; /* Tvinger mørkegrå for at undgå den røde standardfarve */
     margin: 0 !important;
     font-size: 16px !important;
 }
 
 /* Hover state for Pills */
-[data-testid="stPills"] button:hover,
-[data-testid="stPills"] [data-testid="stPillItem"]:hover {
+[data-testid="stPill"]:hover,
+[data-testid="stPills"] button:hover {
     border-color: #b5ae9f !important;
-    color: #2c2925 !important;
     background-color: #eae3d8 !important;
 }
+[data-testid="stPill"]:hover p,
+[data-testid="stPills"] button:hover p {
+    color: #2c2925 !important;
+}
 
-/* Aktiv (Selected) state for Pills */
+/* Aktiv (Selected) state for Pills - Dræber den røde farve fuldstændig */
+[data-testid="stPill"][data-checked="true"],
+[data-testid="stPill"][aria-pressed="true"],
 [data-testid="stPills"] button[data-checked="true"],
 [data-testid="stPills"] button[aria-pressed="true"],
-[data-testid="stPills"] button[aria-selected="true"],
-[data-testid="stPills"] [data-testid="stPillItem"][data-selected="true"],
-[data-testid="stPills"] [data-testid="stPillItem"][aria-pressed="true"] {
+[data-testid="stPills"] button[aria-selected="true"] {
     border-color: #b5ae9f !important;
-    color: #2c2925 !important;
     background-color: #eae3d8 !important; 
     box-shadow: inset 0 1px 2px rgba(0,0,0,0.04) !important;
+}
+[data-testid="stPill"][data-checked="true"] p,
+[data-testid="stPill"][aria-pressed="true"] p,
+[data-testid="stPills"] button[data-checked="true"] p,
+[data-testid="stPills"] button[aria-pressed="true"] p,
+[data-testid="stPills"] button[aria-selected="true"] p {
+    color: #2c2925 !important; 
 }
 
 /* --- BROFINANSIERINGSKASSER --- */
@@ -256,27 +263,39 @@ div[data-baseweb="tab-list"] button[aria-selected="true"] p {
     }
     
     /* Dark Mode for Pills */
-    [data-testid="stPills"] button,
-    [data-testid="stPills"] [data-testid="stPillItem"] {
+    [data-testid="stPill"],
+    [data-testid="stPills"] button {
         background-color: #2a2826 !important;
         border: 1px solid #4a4744 !important;
+    }
+    [data-testid="stPill"] p,
+    [data-testid="stPills"] button p {
         color: #d1d5db !important;
     }
-    [data-testid="stPills"] button:hover,
-    [data-testid="stPills"] [data-testid="stPillItem"]:hover {
+    [data-testid="stPill"]:hover,
+    [data-testid="stPills"] button:hover {
         background-color: #32302d !important;
         border-color: #625f5c !important;
+    }
+    [data-testid="stPill"]:hover p,
+    [data-testid="stPills"] button:hover p {
         color: #ffffff !important;
     }
+    [data-testid="stPill"][data-checked="true"],
+    [data-testid="stPill"][aria-pressed="true"],
     [data-testid="stPills"] button[data-checked="true"],
     [data-testid="stPills"] button[aria-pressed="true"],
-    [data-testid="stPills"] button[aria-selected="true"],
-    [data-testid="stPills"] [data-testid="stPillItem"][data-selected="true"],
-    [data-testid="stPills"] [data-testid="stPillItem"][aria-pressed="true"] {
+    [data-testid="stPills"] button[aria-selected="true"] {
         background-color: #32302d !important;
         border-color: #625f5c !important;
-        color: #ffffff !important;
         box-shadow: inset 0 1px 2px rgba(0,0,0,0.1) !important;
+    }
+    [data-testid="stPill"][data-checked="true"] p,
+    [data-testid="stPill"][aria-pressed="true"] p,
+    [data-testid="stPills"] button[data-checked="true"] p,
+    [data-testid="stPills"] button[aria-pressed="true"] p,
+    [data-testid="stPills"] button[aria-selected="true"] p {
+        color: #ffffff !important;
     }
 
     h1, h1 *, h2, h3, h4 {
