@@ -118,11 +118,6 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
     start_fire_j = sum(v for k, v in st.session_state["budget_j"].items() if k not in ["A_kasse_Fagforening", "Loensikring"]) + bolig_faelles
     start_fire_m = sum(v for k, v in st.session_state["budget_m"].items() if k not in ["A_kasse_Fagforening", "Loensikring", "Studielaan"]) + bolig_faelles
 
-    if max(0, udbetaling_j_total - cash_j) > 0:
-        st.error(f"⚠️ ADVARSEL: Udbetalingen overstiger jeres likviditet.")
-
-    st.write("") 
-
     col1, col2 = st.columns(2)
     with col1:
         st.subheader("JOHAN")
@@ -131,25 +126,27 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
         st.subheader("MARKUS")
         st.markdown(f"**Udbetaling:** {int(faktisk_udbetaling_m):,} kr. | **Startdepot:** {int(depot_free_m + depot_ask_m):,} kr.")
 
-    st.write("")
-
     table_data = []
     j_reached, m_reached = False, False
     
     for year in range(0, 26):
         c_age_j, c_age_m = age_j + year, age_m + year
         
+        # Beregn opsparing til årets slutning (inflationsjusteret)
+        opsparing_j_aar = start_inv_md_j * 12 * ((1 + global_inflation_rate)**year)
+        opsparing_m_aar = start_inv_md_m * 12 * ((1 + global_inflation_rate)**year)
+
         if year > 0:
             start_fire_j *= (1 + global_inflation_rate)
             start_fire_m *= (1 + global_inflation_rate)
             
-            # Afkast på primo-beholdning (FØR opsparing tilføjes)
+            # Afkast på primo-beholdning
             depot_ask_j *= (1 + global_return_rate_gross * 0.83); depot_free_j *= (1 + global_return_rate_gross * 0.73)
             depot_ask_m *= (1 + global_return_rate_gross * 0.83); depot_free_m *= (1 + global_return_rate_gross * 0.73)
             
             # Tilføj opsparing til sidst
-            if not j_reached: depot_free_j += (start_inv_md_j * 12 * ((1 + global_inflation_rate)**year))
-            if not m_reached: depot_free_m += (start_inv_md_m * 12 * ((1 + global_inflation_rate)**year))
+            if not j_reached: depot_free_j += opsparing_j_aar
+            if not m_reached: depot_free_m += opsparing_m_aar
 
         p_j = calculate_drawdown_monthly_income(depot_ask_j + depot_free_j, c_age_j, pensionsalder_j, global_return_rate_net_drawdown)
         h_j = max(0, start_fire_j - p_j) / (global_barista_wage_net * ((1+global_inflation_rate)**year) * weeks_per_month)
@@ -175,17 +172,16 @@ def simulate_solo_fire_plan(scenario_name, boligpris, udbetaling_j, realkredityd
     start_inv_md_j = st.session_state["inkomst_j"] - (sum(solo_budget_j.values()) + bolig_total)
     start_fire_j = sum(v for k, v in solo_budget_j.items() if k not in ["A_kasse_Fagforening", "Loensikring"]) + bolig_total
 
-    st.subheader(f"JOHAN (SOLO: {scenario_name})")
-    st.markdown(f"**Boligpris:** {int(boligpris):,} kr. | **Udbetaling:** {int(faktisk_udbetaling_j):,} kr.")
-    
     table_data = []
     j_reached = False
     for year in range(0, 26):
         c_age_j = age_j + year
+        opsparing_j_aar = start_inv_md_j * 12 * ((1 + global_inflation_rate)**year)
+        
         if year > 0:
             start_fire_j *= (1 + global_inflation_rate)
             depot_ask_j *= (1 + global_return_rate_gross * 0.83); depot_free_j *= (1 + global_return_rate_gross * 0.73)
-            if not j_reached: depot_free_j += (start_inv_md_j * 12 * ((1 + global_inflation_rate)**year))
+            if not j_reached: depot_free_j += opsparing_j_aar
 
         p_j = calculate_drawdown_monthly_income(depot_ask_j + depot_free_j, c_age_j, pensionsalder_j, global_return_rate_net_drawdown)
         h_j = max(0, start_fire_j - p_j) / (global_barista_wage_net * ((1+global_inflation_rate)**year) * weeks_per_month)
@@ -217,7 +213,3 @@ else:
     with tabs[3]: simulate_joint_fire_plan("5.0M", 5000000, 2408888, 983888, 6519, 4564, True)
     with tabs[4]: simulate_joint_fire_plan("5.5M", 5500000, 1515000, 685000, 13659, 4564, True)
     with tabs[5]: simulate_joint_fire_plan("Valby", 6700000, 0, 0, 15230, 4564, False)
-    if is_solo_mode:
-        with tabs[6]: simulate_solo_fire_plan("3.0M Solo", 3000000, 1200000, 7308, 3500)
-        with tabs[7]: simulate_solo_fire_plan("3.5M Solo", 3500000, 1400000, 8516, 4000)
-        with tabs[8]: simulate_solo_fire_plan("4.0M Solo", 4000000, 1600000, 9724, 4500)
