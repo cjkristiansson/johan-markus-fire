@@ -13,7 +13,7 @@ def load_css(file_name):
 
 load_css("style.css")
 
-st.title("FIRE Brofinansiering")
+st.title("FIRE Brofinansiering: Johan & Markus")
 
 # --- 1. SIDEBAR TIL INTERAKTIVE VARIABLER ---
 st.sidebar.header("Globale Antagelser")
@@ -76,7 +76,7 @@ with st.expander("⚙️ Modellens Regler & Logik"):
     * **Pension adskilt:** Pensionsdepoter bruges *ikke* før pensionsalderen nås. Indbetalinger stopper det år fuld FIRE nås, hvorefter depotet kun vokser med afkast minus PAL-skat (15,3%).
     * **Barista-timer:** Timer beregnes på *restbehovet*. Passiv indkomst fra depotet fratrækkes FIRE-udgifterne først.
     * **Dynamiske boligudgifter:** Bliver der optaget realkreditlån, indgår ydelsen fuldt ud i de månedlige FIRE-udgifter for det givne scenarie.
-    * **Risiko - Inflation på udgifter:** FIRE-udgifterne fremskrives med 2% årligt. Nominelle 2026-kroner undervurderer systematisk fremtidige udgifter — 10.000 kr./måned i dag svarer til ca. 14.900 kr./måned om 20 år ved 2% inflation.
+    * **Risiko - Inflation på udgifter:** FIRE-udgifterne fremskrives med 2% årligt. Nominelle kroner undervurderer systematisk fremtidige udgifter — 10.000 kr./måned i dag svarer til ca. 14.900 kr./måned om 20 år ved 2% inflation.
     * **Risiko - Folkepensionsmodregning:** Folkepension og pensionstillæg medregnes fra pensionsalderen, men pensionstillægget reduceres ved formue og øvrig indkomst. Ved større depoter kan det effektive tillæg være markant lavere end grundbeløbet — modellen anvender et konservativt skøn.
     """)
 
@@ -206,7 +206,6 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
     cur_yearly_savings_m = start_inv_md_m * 12
     cur_barista_wage = barista_wage_net_start
     
-    # OPDATERET TIL 2026-NIVEAU
     cur_progression_limit_j = 79400
     cur_progression_limit_m = 79400
 
@@ -273,7 +272,9 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
         if hours_j <= 0 and hours_m <= 0:
             break
 
-    st.dataframe(pd.DataFrame(table_data), use_container_width=True, hide_index=True)
+    # Konverterer til en statisk HTML-tabel og sætter 'År' som den fede kolonne til venstre
+    df = pd.DataFrame(table_data)
+    st.table(df.set_index("År"))
     
     st.write("") 
 
