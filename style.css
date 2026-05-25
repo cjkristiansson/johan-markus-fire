@@ -3,7 +3,7 @@
 
 /* --- STRIP OVERFLØDIG LUFT I TOPPEN AF STREAMLIT --- */
 .block-container {
-    padding-top: 1.5rem !important;
+    padding-top: 1rem !important; /* Minimerer den overskydende hvide plads i toppen */
     padding-bottom: 0rem !important;
 }
 
@@ -44,7 +44,8 @@ h1, h1 * {
     letter-spacing: -0.02em;
     margin-top: 0px !important;
     padding-top: 0px !important;
-    margin-bottom: 0.3em !important;
+    margin-bottom: 0.1em !important;
+    line-height: 1.2 !important;
 }
 
 h2 { font-size: 26px !important; font-weight: 600 !important; color: #2c2925 !important; }
@@ -179,6 +180,9 @@ div[data-baseweb="tab-list"] button[aria-selected="true"] p {
     html, body, [class*="css"], .stApp {
         background-color: #1c1b1a !important;
         color: #e5e7eb !important;
+    }
+    .block-container {
+        padding-top: 1rem !important;
     }
     [data-testid="stSidebar"] {
         background-color: #262422 !important;
