@@ -1,21 +1,82 @@
-/* Subtile brofinansieringskasser */
-.success-box {
-    background-color: transparent;
-    border-left: 4px solid #81c995;
-    padding: 8px 16px;
-    color: #3c4043;
-    font-family: sans-serif;
-    font-size: 0.95em;
-    margin-bottom: 10px;
-}
-@media (prefers-color-scheme: dark) {
-    .success-box {
-        border-left: 4px solid #5bb974;
-        color: #bdc1c6;
-    }
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+
+/* Global indstillinger - Claude's beige/varme farvepalet */
+html, body, [class*="css"], .stApp {
+    font-family: 'Inter', sans-serif !important;
+    background-color: #fcfaf7 !important; /* Blød beige/råhvid baggrund */
+    color: #2d2d2d !important;
 }
 
-/* Gør font-size på tabs 16px */
+/* Rene, moderne overskrifter */
+h1, h2, h3, h4 {
+    color: #1a1a1a !important;
+    font-weight: 600 !important;
+    letter-spacing: -0.02em;
+}
+
+/* Subtile brofinansieringskasser - Claude stil */
+.success-box {
+    background-color: #f8fbf8;
+    border: 1px solid #d1e0d5;
+    border-radius: 8px;
+    padding: 16px 20px;
+    color: #2b593f;
+    font-size: 0.95em;
+    margin-top: 10px;
+    margin-bottom: 12px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+}
+
+/* Styling af faner (Tabs) med 16px font og moderne kort-look */
+div[data-baseweb="tab-list"] {
+    gap: 8px;
+    padding-bottom: 10px;
+}
+div[data-baseweb="tab-list"] button {
+    background-color: transparent !important;
+    border-radius: 6px !important;
+    padding: 8px 16px !important;
+}
+/* Den aktive fane */
+div[data-baseweb="tab-list"] button[aria-selected="true"] {
+    background-color: #ffffff !important;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06) !important;
+    border: 1px solid #e5e5e5 !important;
+}
+/* Teksten i fanerne */
 div[data-baseweb="tab-list"] button p {
     font-size: 16px !important;
+    font-weight: 500 !important;
+    color: #5c5c5c;
+}
+/* Teksten i den aktive fane */
+div[data-baseweb="tab-list"] button[aria-selected="true"] p {
+    color: #1a1a1a !important;
+    font-weight: 600 !important;
+}
+
+/* Mørk tilstand (Dark Mode) - Hvis I bruger det på telefonen */
+@media (prefers-color-scheme: dark) {
+    html, body, [class*="css"], .stApp {
+        background-color: #1c1b1a !important; /* Dyb varm grå/sort */
+        color: #e5e7eb !important;
+    }
+    h1, h2, h3, h4 {
+        color: #f3f4f6 !important;
+    }
+    .success-box {
+        background-color: #1a2721;
+        border: 1px solid #274533;
+        color: #a7d3b9;
+    }
+    div[data-baseweb="tab-list"] button[aria-selected="true"] {
+        background-color: #2d2c2b !important;
+        border: 1px solid #403e3c !important;
+    }
+    div[data-baseweb="tab-list"] button p {
+        color: #9ca3af;
+    }
+    div[data-baseweb="tab-list"] button[aria-selected="true"] p {
+        color: #f3f4f6 !important;
+    }
 }
