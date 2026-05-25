@@ -1,15 +1,22 @@
 /* Import Spectral (overskrift) og Belleza (brødtekst) */
 @import url('https://fonts.googleapis.com/css2?family=Belleza&family=Spectral:ital,wght@0,400;0,600;0,700;1,400&display=swap');
 
-/* --- SIKKER FONT-TILDELING (Nu super-aggressiv for fuld konsistens) --- */
-/* Rammer html-tags OG alle Streamlits skjulte .st-klasser */
-html, body, .stApp, [class*="st-"], p, div, span, label, input, button, li, a, th, td, h2, h3, h4, h5, h6 {
+/* --- SIKKER FONT-TILDELING --- */
+/* Tvinger Belleza ned over alt standard tekst */
+html, body, .stApp, p, div, span, label, input, button, li, a, th, td, h2, h3, h4, h5, h6 {
     font-family: 'Belleza', sans-serif !important;
 }
 
-/* Tving ikon-fonten tilbage på plads så pilene ikke går i stykker */
-.st-emotion-cache-16idej, [class*="icon"], .material-symbols-rounded, svg, svg text {
-    font-family: 'Material Icons', 'Material Symbols Rounded', sans-serif !important;
+/* BUGFIX: Beskyt alle ikoner mod at få overskrevet deres font */
+.material-icons, 
+.material-symbols-rounded, 
+.material-symbols-outlined, 
+[class*="icon"], 
+[class*="Icon"], 
+[data-testid*="Icon"], 
+svg, 
+svg * {
+    font-family: 'Material Symbols Rounded', 'Material Icons', sans-serif !important;
 }
 
 /* Base baggrund og tekstfarve */
@@ -18,12 +25,12 @@ html, body, [class*="css"], .stApp {
     color: #2d2d2d !important;
 }
 
-/* Generel tekststørrelse skruet op (Belleza syner mindre end standardfonts) */
-p, label, li, a, span, .markdown-text-container {
+/* Generel tekststørrelse skruet op */
+p, label, li, a, .markdown-text-container {
     font-size: 18px !important;
 }
 
-/* --- OVERSKRIFTER (Fast og større hierarki) --- */
+/* --- OVERSKRIFTER --- */
 h1, h1 * {
     font-family: 'Spectral', serif !important;
     color: #1a1a1a !important;
@@ -43,7 +50,7 @@ h4 { font-size: 18px !important; font-weight: 600 !important; color: #1a1a1a !im
     border-right: 1px solid #e5e0d8 !important;
 }
 
-/* Sidebar tekster skruet op fra 14px til 16px */
+/* Sidebar tekster */
 [data-testid="stSidebar"] p, 
 [data-testid="stSidebar"] label, 
 [data-testid="stSidebar"] div,
@@ -51,13 +58,15 @@ h4 { font-size: 18px !important; font-weight: 600 !important; color: #1a1a1a !im
     font-size: 16px !important;
 }
 
-/* Knapper i sidebaren */
+/* --- KNAPPER (Beige og Taktile) --- */
 [data-testid="stSidebar"] button {
-    background-color: #ffffff !important;
-    border: 1px solid #dcd7cc !important;
-    color: #4a4a4a !important;
+    background-color: #fcfaf7 !important; /* Lys beige baggrund */
+    border: 1px solid #dcd7cc !important; /* Varm kant */
+    color: #333333 !important;
     border-radius: 6px !important;
-    transition: all 0.2s ease;
+    padding: 6px 12px !important;
+    transition: all 0.2s ease !important;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.02) !important;
 }
 
 [data-testid="stSidebar"] button p {
@@ -66,10 +75,14 @@ h4 { font-size: 18px !important; font-weight: 600 !important; color: #1a1a1a !im
     margin: 0 !important;
 }
 
-[data-testid="stSidebar"] button:hover {
+/* Hover og Aktiv tilstand for knapper */
+[data-testid="stSidebar"] button:hover,
+[data-testid="stSidebar"] button:active,
+[data-testid="stSidebar"] button:focus {
     border-color: #b5ae9f !important;
     color: #1a1a1a !important;
-    background-color: #faf8f5 !important;
+    background-color: #eae3d8 !important; /* Mørkere beige indikation */
+    box-shadow: inset 0 1px 2px rgba(0,0,0,0.04) !important;
 }
 
 /* --- BROFINANSIERINGSKASSER --- */
@@ -79,7 +92,7 @@ h4 { font-size: 18px !important; font-weight: 600 !important; color: #1a1a1a !im
     border-radius: 8px;
     padding: 16px 20px;
     color: #2b593f;
-    font-size: 18px !important; /* Op fra 16px */
+    font-size: 18px !important; 
     margin-top: 10px;
     margin-bottom: 12px;
     box-shadow: 0 1px 2px rgba(0,0,0,0.02);
@@ -107,7 +120,7 @@ div[data-baseweb="tab-list"] button[aria-selected="true"] {
 }
 
 div[data-baseweb="tab-list"] button p {
-    font-size: 18px !important; /* Op fra 16px */
+    font-size: 18px !important; 
     color: #8c857b !important; 
 }
 
@@ -116,13 +129,39 @@ div[data-baseweb="tab-list"] button[aria-selected="true"] p {
     font-weight: 600 !important;
 }
 
-/* --- DATATABEL JUSTERING --- */
-/* Gør teksten og tallene i tabellen større og lettere at læse */
-[data-testid="stDataFrame"] *, 
-[data-testid="stDataFrame"] th, 
-[data-testid="stDataFrame"] td,
-[data-testid="stDataFrame"] div {
-    font-size: 16px !important; /* Op fra 15px */
+/* --- TABELLER (DataFrames) --- */
+[data-testid="stDataFrame"] {
+    font-size: 16px !important;
+}
+
+/* Fjerner Streamlits standard hvide baggrund på selve tabellen */
+[data-testid="stDataFrame"] table {
+    background-color: transparent !important;
+    border: 1px solid #e5e0d8 !important;
+    border-radius: 8px !important;
+    overflow: hidden !important;
+}
+
+/* Overskrifter i tabellen */
+[data-testid="stDataFrame"] th {
+    background-color: #f3eee7 !important; /* Samme varme farve som sidebaren */
+    color: #2d2d2d !important;
+    font-weight: 600 !important;
+    border-bottom: 2px solid #dcd7cc !important;
+    border-right: 1px solid #e5e0d8 !important;
+}
+
+/* Data-celler i tabellen */
+[data-testid="stDataFrame"] td {
+    background-color: #fcfaf7 !important;
+    color: #2d2d2d !important;
+    border-bottom: 1px solid #e5e0d8 !important;
+    border-right: 1px solid #e5e0d8 !important;
+}
+
+/* Subtil række-hover effekt */
+[data-testid="stDataFrame"] tbody tr:hover td {
+    background-color: #f5f1ea !important;
 }
 
 /* --- DARK MODE --- */
@@ -153,7 +192,6 @@ div[data-baseweb="tab-list"] button[aria-selected="true"] p {
         border: 1px solid #274533;
         color: #a7d3b9;
     }
-    
     div[data-baseweb="tab-list"] {
         border-bottom: 1px solid #3a3835;
     }
@@ -165,5 +203,19 @@ div[data-baseweb="tab-list"] button[aria-selected="true"] p {
     }
     div[data-baseweb="tab-list"] button[aria-selected="true"] p {
         color: #f3f4f6 !important;
+    }
+    /* Dark mode for tabeller */
+    [data-testid="stDataFrame"] th {
+        background-color: #262422 !important;
+        color: #e5e7eb !important;
+        border-color: #4a4744 !important;
+    }
+    [data-testid="stDataFrame"] td {
+        background-color: #1c1b1a !important;
+        color: #e5e7eb !important;
+        border-color: #3a3835 !important;
+    }
+    [data-testid="stDataFrame"] tbody tr:hover td {
+        background-color: #2a2826 !important;
     }
 }
