@@ -1,8 +1,7 @@
-/* Import Spectral (overskrift) og Belleza (brødtekst) */
 @import url('https://fonts.googleapis.com/css2?family=Belleza&family=Spectral:ital,wght@0,400;0,600;0,700;1,400&display=swap');
 
 /* ==========================================
-   1. GLOBALE LAYOUT REGLER (Gælder i alle modes)
+   1. GLOBALE LAYOUT REGLER (Gælder uanset tema)
    ========================================== */
 .block-container {
     padding-top: 3.5rem !important; 
@@ -28,60 +27,57 @@ h1, h1 * {
     letter-spacing: -0.02em;
     margin-bottom: 0.1em !important;
     line-height: 1.2 !important;
+    color: var(--text-color) !important;
 }
-h2 { font-size: 26px !important; font-weight: 600 !important; }
-h3 { font-size: 22px !important; font-weight: 600 !important; }
-h4 { font-size: 18px !important; font-weight: 600 !important; }
-
-/* Tvinger horisontal afstand (spacing) mellem Pills */
-[data-testid="stPills"] {
-    background-color: transparent !important;
-    border: none !important;
-}
-[data-testid="stPills"] > div {
-    display: flex !important;
-    gap: 16px !important; 
-}
-
+h2 { font-size: 26px !important; font-weight: 600 !important; color: var(--text-color) !important; }
+h3 { font-size: 22px !important; font-weight: 600 !important; color: var(--text-color) !important; }
+h4 { font-size: 18px !important; font-weight: 600 !important; color: var(--text-color) !important; }
 
 /* ==========================================
-   2. LIGHT MODE (DEFAULT: Det beige design)
+   2. DYNAMISK STYLING (Følger Streamlits toggle)
    ========================================== */
-html, body, [class*="css"], .stApp, .main {
-    background-color: #fcfaf7 !important; 
-    color: #4a4742 !important; 
-}
-p, label, li, a, span, .markdown-text-container { color: #4a4742 !important; }
-h1, h1 *, h2, h3, h4 { color: #2c2925 !important; }
 
 /* Sidebar */
 [data-testid="stSidebar"] {
-    background-color: #f3eee7 !important;
-    border-right: 1px solid #e5e0d8 !important;
+    border-right: 1px solid rgba(128, 128, 128, 0.2) !important;
 }
 
-/* Sidebar Knapper */
+/* Sidebar Knapper (Standard/Konservativ) */
 [data-testid="stSidebar"] button {
-    background-color: #fcfaf7 !important; 
-    border: 1px solid #dcd7cc !important; 
-    color: #4a4742 !important;
+    background-color: var(--background-color) !important; 
+    border: 1px solid rgba(128, 128, 128, 0.2) !important; 
+    color: var(--text-color) !important;
     border-radius: 6px !important;
     padding: 6px 12px !important;
     box-shadow: 0 1px 2px rgba(0,0,0,0.02) !important;
     transition: all 0.2s ease !important;
 }
 [data-testid="stSidebar"] button p {
-    font-size: 16px !important; font-weight: 600 !important; margin: 0 !important; color: #4a4742 !important;
+    font-size: 16px !important; font-weight: 600 !important; margin: 0 !important; color: var(--text-color) !important;
 }
 [data-testid="stSidebar"] button:hover {
-    border-color: #b5ae9f !important; background-color: #eae3d8 !important; color: #2c2925 !important;
+    background-color: var(--secondary-background-color) !important; 
 }
 
-/* Pills (Stylet som sidebar-knapperne) */
+/* ==========================================
+   3. PILLS NAVIGATION (Styling & Spacing)
+   ========================================== */
+[data-testid="stPills"] {
+    background-color: transparent !important;
+    border: none !important;
+}
+
+/* Tvinger horisontal afstand (gap) ind mellem dine pills */
+[data-testid="stPills"] > div {
+    display: flex !important;
+    gap: 16px !important; 
+}
+
+/* Inaktiv Pill Styling */
 [data-testid="stPill"],
 [data-testid="stPills"] button {
-    background-color: #fcfaf7 !important; 
-    border: 1px solid #dcd7cc !important; 
+    background-color: var(--background-color) !important; 
+    border: 1px solid rgba(128, 128, 128, 0.2) !important; 
     border-radius: 6px !important;
     padding: 6px 16px !important;
     box-shadow: 0 1px 2px rgba(0,0,0,0.02) !important;
@@ -89,105 +85,44 @@ h1, h1 *, h2, h3, h4 { color: #2c2925 !important; }
 }
 [data-testid="stPill"] p,
 [data-testid="stPills"] button p {
-    font-size: 16px !important; font-weight: 600 !important; margin: 0 !important; color: #4a4742 !important;
+    font-size: 16px !important; font-weight: 600 !important; margin: 0 !important; color: var(--text-color) !important;
 }
 
-/* Pills Hover */
+/* Hover på Pills */
 [data-testid="stPill"]:hover,
 [data-testid="stPills"] button:hover {
-    border-color: #b5ae9f !important; background-color: #eae3d8 !important;
-}
-[data-testid="stPill"]:hover p,
-[data-testid="stPills"] button:hover p {
-    color: #2c2925 !important;
+    background-color: var(--secondary-background-color) !important;
 }
 
-/* Pills Aktiv (Dræber den røde farve) */
+/* Aktiv (Selected) Pill - Dræber den røde primærfarve fuldstændigt */
 [data-testid="stPill"][data-checked="true"],
 [data-testid="stPill"][aria-pressed="true"],
 [data-testid="stPill"][aria-selected="true"],
 [data-testid="stPills"] button[data-checked="true"] {
-    background-color: #eae3d8 !important;
-    border-color: #b5ae9f !important;
+    background-color: var(--secondary-background-color) !important;
+    border-color: rgba(128, 128, 128, 0.4) !important;
     box-shadow: inset 0 1px 2px rgba(0,0,0,0.04) !important;
 }
 [data-testid="stPill"][data-checked="true"] p,
 [data-testid="stPill"][aria-pressed="true"] p,
 [data-testid="stPill"][aria-selected="true"] p,
 [data-testid="stPills"] button[data-checked="true"] p {
-    color: #2c2925 !important; 
+    color: var(--text-color) !important; 
 }
-
-/* Tabeller */
-[data-testid="stTable"] { border: 1px solid #dcd7cc !important; border-radius: 8px !important; overflow: hidden !important; }
-[data-testid="stTable"] table { width: 100% !important; margin: 0 !important; }
-[data-testid="stTable"] th { background-color: #eae3d8 !important; color: #2c2925 !important; font-size: 16px !important; font-weight: 600 !important; border-bottom: 2px solid #dcd7cc !important; padding: 12px !important; }
-[data-testid="stTable"] td { background-color: #fcfaf7 !important; color: #4a4742 !important; font-size: 16px !important; border-bottom: 1px solid #e5e0d8 !important; padding: 10px 12px !important; }
-[data-testid="stTable"] tbody tr:nth-child(even) th, [data-testid="stTable"] tbody tr:nth-child(even) td { background-color: #f5f1ea !important; }
-[data-testid="stTable"] tbody tr:hover th, [data-testid="stTable"] tbody tr:hover td { background-color: #ebdccc !important; }
-
-/* Brofinansieringskasse */
-.success-box { background-color: #f8fbf8; border: 1px solid #d1e0d5; border-radius: 8px; padding: 16px 20px; color: #2b593f; font-size: 18px !important; margin-top: 10px; margin-bottom: 12px; }
-
 
 /* ==========================================
-   3. DARK MODE (Isoleret farve-overskrivning)
+   4. TABELLER (Gennemsigtig Zebra-stribning)
    ========================================== */
-@media (prefers-color-scheme: dark) {
-    html, body, [class*="css"], .stApp, .main { background-color: #1c1b1a !important; color: #e5e7eb !important; }
-    p, label, li, a, span, .markdown-text-container { color: #e5e7eb !important; }
-    h1, h1 *, h2, h3, h4, h5, h6 { color: #f3f4f6 !important; }
+[data-testid="stTable"] { border: 1px solid rgba(128, 128, 128, 0.2) !important; border-radius: 8px !important; overflow: hidden !important; }
+[data-testid="stTable"] table { width: 100% !important; margin: 0 !important; }
+[data-testid="stTable"] th { background-color: var(--secondary-background-color) !important; color: var(--text-color) !important; font-size: 16px !important; font-weight: 600 !important; border-bottom: 2px solid rgba(128, 128, 128, 0.2) !important; padding: 12px !important; }
+[data-testid="stTable"] td { background-color: transparent !important; color: var(--text-color) !important; font-size: 16px !important; border-bottom: 1px solid rgba(128, 128, 128, 0.1) !important; padding: 10px 12px !important; }
 
-    /* Sidebar Dark Mode */
-    [data-testid="stSidebar"] { background-color: #262422 !important; border-right: 1px solid #3a3835 !important; }
-    
-    /* Sidebar Knapper Dark Mode */
-    [data-testid="stSidebar"] button { background-color: #2a2826 !important; border-color: #4a4744 !important; }
-    [data-testid="stSidebar"] button p { color: #d1d5db !important; }
-    [data-testid="stSidebar"] button:hover { background-color: #32302d !important; border-color: #625f5c !important; }
-    [data-testid="stSidebar"] button:hover p { color: #ffffff !important; }
+/* Neutral opacitet skaber tabelfarver i både lys og mørk */
+[data-testid="stTable"] tbody tr:nth-child(even) th, [data-testid="stTable"] tbody tr:nth-child(even) td { background-color: rgba(128, 128, 128, 0.05) !important; }
+[data-testid="stTable"] tbody tr:hover th, [data-testid="stTable"] tbody tr:hover td { background-color: rgba(128, 128, 128, 0.1) !important; }
 
-    /* Pills Dark Mode */
-    [data-testid="stPill"],
-    [data-testid="stPills"] button {
-        background-color: #2a2826 !important; border-color: #4a4744 !important;
-    }
-    [data-testid="stPill"] p,
-    [data-testid="stPills"] button p {
-        color: #d1d5db !important;
-    }
-    
-    /* Pills Hover Dark Mode */
-    [data-testid="stPill"]:hover,
-    [data-testid="stPills"] button:hover {
-        background-color: #32302d !important; border-color: #625f5c !important;
-    }
-    [data-testid="stPill"]:hover p,
-    [data-testid="stPills"] button:hover p {
-        color: #ffffff !important;
-    }
-
-    /* Pills Aktiv Dark Mode */
-    [data-testid="stPill"][data-checked="true"],
-    [data-testid="stPill"][aria-pressed="true"],
-    [data-testid="stPill"][aria-selected="true"],
-    [data-testid="stPills"] button[data-checked="true"] {
-        background-color: #32302d !important; border-color: #625f5c !important; box-shadow: inset 0 1px 2px rgba(0,0,0,0.1) !important;
-    }
-    [data-testid="stPill"][data-checked="true"] p,
-    [data-testid="stPill"][aria-pressed="true"] p,
-    [data-testid="stPill"][aria-selected="true"] p,
-    [data-testid="stPills"] button[data-checked="true"] p {
-        color: #ffffff !important;
-    }
-
-    /* Tabeller Dark Mode */
-    [data-testid="stTable"] { border-color: #4a4744 !important; }
-    [data-testid="stTable"] th { background-color: #32302d !important; color: #f3f4f6 !important; border-bottom: 2px solid #4a4744 !important; }
-    [data-testid="stTable"] td { background-color: #1c1b1a !important; color: #e5e7eb !important; border-bottom: 1px solid #3a3835 !important; }
-    [data-testid="stTable"] tbody tr:nth-child(even) th, [data-testid="stTable"] tbody tr:nth-child(even) td { background-color: #242220 !important; }
-    [data-testid="stTable"] tbody tr:hover th, [data-testid="stTable"] tbody tr:hover td { background-color: #2a2826 !important; }
-
-    /* Brofinansieringskasse Dark Mode */
-    .success-box { background-color: #1a2721 !important; border-color: #274533 !important; color: #a7d3b9 !important; }
-}
+/* ==========================================
+   5. BOKSE
+   ========================================== */
+.success-box { background-color: rgba(43, 89, 63, 0.1); border: 1px solid rgba(43, 89, 63, 0.3); border-radius: 8px; padding: 16px 20px; color: var(--text-color) !important; font-size: 18px !important; margin-top: 10px; margin-bottom: 12px; }
