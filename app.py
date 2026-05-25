@@ -23,10 +23,7 @@ st.markdown("""
         }
     }
     
-    /* Gør font-size på tabs 16px uden at ødelægge andet */
-    div[data-baseweb="tab-list"] button {
-        font-size: 16px !important;
-    }
+    /* Gør font-size på tabs 16px */
     div[data-baseweb="tab-list"] button p {
         font-size: 16px !important;
     }
@@ -41,7 +38,6 @@ st.sidebar.markdown("Juster variablerne for at stress-teste alle scenarier samti
 
 # --- PRESET KNAPPER ---
 col_preset1, col_preset2 = st.sidebar.columns(2)
-# Rækkefølge byttet om: Standard (Venstre) og Konservativ (Højre)
 use_base = col_preset1.button("Standard", use_container_width=True, help="Afkast 7% / Drawdown 4,5% / Inflation 2%")
 use_conservative = col_preset2.button("Konservativ", use_container_width=True, help="Afkast 5,5% / Drawdown 3,5% / Inflation 2,5%")
 
@@ -64,6 +60,11 @@ global_inflation_rate = st.sidebar.slider("Årlig inflation (%)", min_value=0.0,
 global_barista_wage_net = st.sidebar.number_input("Baristaløn (Netto kr./t)", min_value=80, max_value=250, value=135, step=5)
 
 st.sidebar.divider()
+st.sidebar.markdown("### Pensionsalder")
+pensionsalder_j = st.sidebar.number_input("Johans pensionsalder", min_value=55, max_value=75, value=67, step=1)
+pensionsalder_m = st.sidebar.number_input("Markus' pensionsalder", min_value=55, max_value=75, value=65, step=1)
+
+st.sidebar.divider()
 st.sidebar.markdown("💡 *Aktiedepoter (ASK + Frie midler) og Markus' BSU er fastlåst og holdt ude af boligfinansieringen i disse beregninger.*")
 
 # --- BASIS DATA (Brugt i global visning) ---
@@ -76,7 +77,6 @@ cash_m_base = 1153888
 
 basis_ask_j, basis_frie_j = 174000, 71000
 basis_ask_m, basis_frie_m = 170000, 0
-pensionsalder_j, pensionsalder_m = 67, 67
 
 budget_j = {"Studielaan": 0, "Mad": 6000, "Ferie": 1500, "Renovering": 1000, "A_kasse_Fagforening": 672, "Loensikring": 1674, "Puregym": 279, "Transport": 730, "Telefon": 100, "Spotify_Cloud": 100, "Charity": 100, "Frisoer": 450, "Toej": 1200, "Oevrig": 3000}
 budget_m = {"Studielaan": 1600, "Mad": 0, "Ferie": 1500, "Renovering": 1000, "A_kasse_Fagforening": 520, "Loensikring": 720, "Puregym": 0, "Transport": 500, "Telefon": 300, "Streaming": 565, "Charity": 100, "Frisoer": 450, "Toej": 1200, "Oevrig": 3000}
@@ -90,11 +90,11 @@ with st.expander("⚙️ Modellens Regler & Logik"):
     * **Trin 0 (Boligkøb først):** Startdepotet i år 1 er formuen *efter* udbetaling til bolig. Aktiedepoter er låst til FIRE.
     * **Lagerbeskatning:** ASK beskattes fladt med 17%. Frie midler beskattes progressivt (27% op til grænsen, 42% derover). Progressionsgrænsen (61.300 kr.) indekseres årligt med inflationen.
     * **Inflationseffekt:** Udgifter, opsparingsrate og progressionsgrænser stiger alle med den valgte inflationsrate år for år i modellen.
-    * **Pension adskilt:** Pensionsdepoter bruges *ikke* før 67 år. Indbetalinger stopper det år fuld FIRE nås, hvorefter depotet kun vokser med afkast minus PAL-skat (15,3%).
+    * **Pension adskilt:** Pensionsdepoter bruges *ikke* før pensionsalderen nås. Indbetalinger stopper det år fuld FIRE nås, hvorefter depotet kun vokser med afkast minus PAL-skat (15,3%).
     * **Barista-timer:** Timer beregnes på *restbehovet*. Passiv indkomst fra depotet fratrækkes FIRE-udgifterne først.
     * **Dynamiske boligudgifter:** Bliver der optaget realkreditlån, indgår ydelsen fuldt ud i de månedlige FIRE-udgifter for det givne scenarie.
     * **Risiko - Inflation på udgifter:** FIRE-udgifterne fremskrives med 2% årligt. Nominelle 2024-kroner undervurderer systematisk fremtidige udgifter — 10.000 kr./måned i dag svarer til ca. 14.900 kr./måned om 20 år ved 2% inflation.
-    * **Risiko - Folkepensionsmodregning:** Folkepension og pensionstillæg medregnes fra år 67, men pensionstillægget reduceres ved formue og øvrig indkomst. Ved større depoter kan det effektive tillæg være markant lavere end grundbeløbet — modellen anvender et konservativt skøn.
+    * **Risiko - Folkepensionsmodregning:** Folkepension og pensionstillæg medregnes fra pensionsalderen, men pensionstillægget reduceres ved formue og øvrig indkomst. Ved større depoter kan det effektive tillæg være markant lavere end grundbeløbet — modellen anvender et konservativt skøn.
     """)
 
 with st.expander("📊 Formue og Budget"):
