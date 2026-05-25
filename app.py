@@ -122,7 +122,7 @@ def calculate_drawdown_monthly_income(depot_total, current_age, target_age, net_
         return depot_total * (monthly_rate * (1 + monthly_rate)**months_left) / ((1 + monthly_rate)**months_left - 1)
 
 def get_emoji_status(barista_hours):
-    if barista_hours == 0: return "🟢 0.0t"
+    if barista_hours == 0: return "🏁 0.0t"
     elif 0 < barista_hours <= 15: return f"🟡 {barista_hours:.1f}t"
     elif 15 < barista_hours <= 25: return f"🟠 {barista_hours:.1f}t"
     else: return f"🔴 {barista_hours:.1f}t"
