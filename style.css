@@ -1,7 +1,8 @@
+/* Import Spectral (overskrift) og Belleza (brødtekst) */
 @import url('https://fonts.googleapis.com/css2?family=Belleza&family=Spectral:ital,wght@0,400;0,600;0,700;1,400&display=swap');
 
 /* ==========================================
-   1. GLOBALE INDSTILLINGER (Gælder altid)
+   1. GLOBALE LAYOUT REGLER (Gælder i alle modes)
    ========================================== */
 .block-container {
     padding-top: 3.5rem !important; 
@@ -32,9 +33,19 @@ h2 { font-size: 26px !important; font-weight: 600 !important; }
 h3 { font-size: 22px !important; font-weight: 600 !important; }
 h4 { font-size: 18px !important; font-weight: 600 !important; }
 
+/* Tvinger horisontal afstand (spacing) mellem Pills */
+[data-testid="stPills"] {
+    background-color: transparent !important;
+    border: none !important;
+}
+[data-testid="stPills"] > div {
+    display: flex !important;
+    gap: 16px !important; 
+}
+
 
 /* ==========================================
-   2. LIGHT MODE (DET FLOTTE BEIGE DESIGN)
+   2. LIGHT MODE (DEFAULT: Det beige design)
    ========================================== */
 html, body, [class*="css"], .stApp, .main {
     background-color: #fcfaf7 !important; 
@@ -63,50 +74,51 @@ h1, h1 *, h2, h3, h4 { color: #2c2925 !important; }
     font-size: 16px !important; font-weight: 600 !important; margin: 0 !important; color: #4a4742 !important;
 }
 [data-testid="stSidebar"] button:hover {
-    border-color: #b5ae9f !important; background-color: #eae3d8 !important;
+    border-color: #b5ae9f !important; background-color: #eae3d8 !important; color: #2c2925 !important;
 }
 
-/* IOS-STYLE PILLS (Hovednavigation) */
-[data-testid="stPills"] { background-color: transparent !important; border: none !important; }
-
-/* Bagsporet (Den grå/beige bane) */
-[data-testid="stPills"] > div {
-    background-color: #e5e0d8 !important; 
-    border-radius: 8px !important;
-    padding: 4px !important;
-    display: inline-flex !important;
-    gap: 4px !important;
-}
-
-/* Inaktive Pills */
-[data-testid="stPill"] {
-    background-color: transparent !important;
-    border: none !important;
+/* Pills (Stylet som sidebar-knapperne) */
+[data-testid="stPill"],
+[data-testid="stPills"] button {
+    background-color: #fcfaf7 !important; 
+    border: 1px solid #dcd7cc !important; 
     border-radius: 6px !important;
-    padding: 6px 20px !important;
-    box-shadow: none !important;
-    margin: 0 !important;
+    padding: 6px 16px !important;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.02) !important;
     transition: all 0.2s ease !important;
 }
-[data-testid="stPill"] p {
-    font-size: 16px !important; font-weight: 600 !important; margin: 0 !important; color: #8c857b !important;
+[data-testid="stPill"] p,
+[data-testid="stPills"] button p {
+    font-size: 16px !important; font-weight: 600 !important; margin: 0 !important; color: #4a4742 !important;
 }
 
-/* AKTIV PILL (Den hævede "knap" - Dræber Streamlits røde farve) */
-[data-testid="stPill"][aria-pressed="true"],
-[data-testid="stPill"][data-checked="true"],
-[data-testid="stPill"][aria-selected="true"] {
-    background-color: #fcfaf7 !important;
-    border: none !important;
-    box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.08), 0px 2px 1px rgba(0, 0, 0, 0.02) !important;
+/* Pills Hover */
+[data-testid="stPill"]:hover,
+[data-testid="stPills"] button:hover {
+    border-color: #b5ae9f !important; background-color: #eae3d8 !important;
 }
-[data-testid="stPill"][aria-pressed="true"] p,
-[data-testid="stPill"][data-checked="true"] p,
-[data-testid="stPill"][aria-selected="true"] p {
+[data-testid="stPill"]:hover p,
+[data-testid="stPills"] button:hover p {
     color: #2c2925 !important;
 }
 
-/* Tabeller (Light Mode) */
+/* Pills Aktiv (Dræber den røde farve) */
+[data-testid="stPill"][data-checked="true"],
+[data-testid="stPill"][aria-pressed="true"],
+[data-testid="stPill"][aria-selected="true"],
+[data-testid="stPills"] button[data-checked="true"] {
+    background-color: #eae3d8 !important;
+    border-color: #b5ae9f !important;
+    box-shadow: inset 0 1px 2px rgba(0,0,0,0.04) !important;
+}
+[data-testid="stPill"][data-checked="true"] p,
+[data-testid="stPill"][aria-pressed="true"] p,
+[data-testid="stPill"][aria-selected="true"] p,
+[data-testid="stPills"] button[data-checked="true"] p {
+    color: #2c2925 !important; 
+}
+
+/* Tabeller */
 [data-testid="stTable"] { border: 1px solid #dcd7cc !important; border-radius: 8px !important; overflow: hidden !important; }
 [data-testid="stTable"] table { width: 100% !important; margin: 0 !important; }
 [data-testid="stTable"] th { background-color: #eae3d8 !important; color: #2c2925 !important; font-size: 16px !important; font-weight: 600 !important; border-bottom: 2px solid #dcd7cc !important; padding: 12px !important; }
@@ -114,51 +126,68 @@ h1, h1 *, h2, h3, h4 { color: #2c2925 !important; }
 [data-testid="stTable"] tbody tr:nth-child(even) th, [data-testid="stTable"] tbody tr:nth-child(even) td { background-color: #f5f1ea !important; }
 [data-testid="stTable"] tbody tr:hover th, [data-testid="stTable"] tbody tr:hover td { background-color: #ebdccc !important; }
 
-/* Brofinansieringskasse (Light Mode) */
+/* Brofinansieringskasse */
 .success-box { background-color: #f8fbf8; border: 1px solid #d1e0d5; border-radius: 8px; padding: 16px 20px; color: #2b593f; font-size: 18px !important; margin-top: 10px; margin-bottom: 12px; }
 
 
 /* ==========================================
-   3. DARK MODE (SIKKER OG LÆSBAR)
+   3. DARK MODE (Isoleret farve-overskrivning)
    ========================================== */
 @media (prefers-color-scheme: dark) {
-    /* Globale Dark farver */
-    html, body, [class*="css"], .stApp, .main { background-color: #121212 !important; color: #e0e0e0 !important; }
-    p, label, li, a, span, .markdown-text-container { color: #e0e0e0 !important; }
-    h1, h1 *, h2, h3, h4, h5, h6 { color: #ffffff !important; }
+    html, body, [class*="css"], .stApp, .main { background-color: #1c1b1a !important; color: #e5e7eb !important; }
+    p, label, li, a, span, .markdown-text-container { color: #e5e7eb !important; }
+    h1, h1 *, h2, h3, h4, h5, h6 { color: #f3f4f6 !important; }
 
     /* Sidebar Dark Mode */
-    [data-testid="stSidebar"] { background-color: #1e1e1e !important; border-right: 1px solid #333333 !important; }
+    [data-testid="stSidebar"] { background-color: #262422 !important; border-right: 1px solid #3a3835 !important; }
     
     /* Sidebar Knapper Dark Mode */
-    [data-testid="stSidebar"] button { background-color: #2c2c2c !important; border-color: #444 !important; }
-    [data-testid="stSidebar"] button p { color: #e0e0e0 !important; }
-    [data-testid="stSidebar"] button:hover { background-color: #3d3d3d !important; border-color: #666 !important; }
+    [data-testid="stSidebar"] button { background-color: #2a2826 !important; border-color: #4a4744 !important; }
+    [data-testid="stSidebar"] button p { color: #d1d5db !important; }
+    [data-testid="stSidebar"] button:hover { background-color: #32302d !important; border-color: #625f5c !important; }
+    [data-testid="stSidebar"] button:hover p { color: #ffffff !important; }
 
-    /* IOS-STYLE PILLS (Dark Mode) */
-    [data-testid="stPills"] > div { background-color: #2a2a2a !important; } /* Mørkegråt spor */
-    [data-testid="stPill"] p { color: #888888 !important; }
-    
-    /* Aktiv Pill Dark Mode */
-    [data-testid="stPill"][aria-pressed="true"],
-    [data-testid="stPill"][data-checked="true"],
-    [data-testid="stPill"][aria-selected="true"] {
-        background-color: #4a4a4a !important; /* Lysere grå "knap" */
-        box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.4) !important;
+    /* Pills Dark Mode */
+    [data-testid="stPill"],
+    [data-testid="stPills"] button {
+        background-color: #2a2826 !important; border-color: #4a4744 !important;
     }
-    [data-testid="stPill"][aria-pressed="true"] p,
+    [data-testid="stPill"] p,
+    [data-testid="stPills"] button p {
+        color: #d1d5db !important;
+    }
+    
+    /* Pills Hover Dark Mode */
+    [data-testid="stPill"]:hover,
+    [data-testid="stPills"] button:hover {
+        background-color: #32302d !important; border-color: #625f5c !important;
+    }
+    [data-testid="stPill"]:hover p,
+    [data-testid="stPills"] button:hover p {
+        color: #ffffff !important;
+    }
+
+    /* Pills Aktiv Dark Mode */
+    [data-testid="stPill"][data-checked="true"],
+    [data-testid="stPill"][aria-pressed="true"],
+    [data-testid="stPill"][aria-selected="true"],
+    [data-testid="stPills"] button[data-checked="true"] {
+        background-color: #32302d !important; border-color: #625f5c !important; box-shadow: inset 0 1px 2px rgba(0,0,0,0.1) !important;
+    }
     [data-testid="stPill"][data-checked="true"] p,
-    [data-testid="stPill"][aria-selected="true"] p {
+    [data-testid="stPill"][aria-pressed="true"] p,
+    [data-testid="stPill"][aria-selected="true"] p,
+    [data-testid="stPills"] button[data-checked="true"] p {
         color: #ffffff !important;
     }
 
     /* Tabeller Dark Mode */
-    [data-testid="stTable"] { border-color: #333333 !important; }
-    [data-testid="stTable"] th { background-color: #1e1e1e !important; color: #ffffff !important; border-bottom: 2px solid #444444 !important; }
-    [data-testid="stTable"] td { background-color: #121212 !important; color: #e0e0e0 !important; border-bottom: 1px solid #2a2a2a !important; }
-    [data-testid="stTable"] tbody tr:nth-child(even) th, [data-testid="stTable"] tbody tr:nth-child(even) td { background-color: #1a1a1a !important; }
-    [data-testid="stTable"] tbody tr:hover th, [data-testid="stTable"] tbody tr:hover td { background-color: #2a2a2a !important; }
+    [data-testid="stTable"] { border-color: #4a4744 !important; }
+    [data-testid="stTable"] th { background-color: #32302d !important; color: #f3f4f6 !important; border-bottom: 2px solid #4a4744 !important; }
+    [data-testid="stTable"] td { background-color: #1c1b1a !important; color: #e5e7eb !important; border-bottom: 1px solid #3a3835 !important; }
+    [data-testid="stTable"] tbody tr:nth-child(even) th, [data-testid="stTable"] tbody tr:nth-child(even) td { background-color: #242220 !important; }
+    [data-testid="stTable"] tbody tr:hover th, [data-testid="stTable"] tbody tr:hover td { background-color: #2a2826 !important; }
 
     /* Brofinansieringskasse Dark Mode */
-    .success-box { background-color: #1a2b20 !important; border-color: #2d4a35 !important; color: #a3d3b1 !important; }
+    .success-box { background-color: #1a2721 !important; border-color: #274533 !important; color: #a7d3b9 !important; }
 }
