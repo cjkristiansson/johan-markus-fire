@@ -165,11 +165,31 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
         if year > 0:
             start_fire_j *= (1 + global_inflation_rate); start_fire_m *= (1 + global_inflation_rate)
             
-            # 1. Tilskriv afkast på den eksisterende balance
-            depot_ask_j *= (1 + global_return_rate_gross * 0.83); depot_free_j *= (1 + global_return_rate_gross * 0.73)
-            depot_ask_m *= (1 + global_return_rate_gross * 0.83); depot_free_m *= (1 + global_return_rate_gross * 0.73)
+            # --- 1. Tilskriv afkast og progressiv skat på den eksisterende balance ---
+            # ASK (Flad 17% skat)
+            depot_ask_j *= (1 + global_return_rate_gross * 0.83)
+            depot_ask_m *= (1 + global_return_rate_gross * 0.83)
             
-            # 2. Læg derefter årets opsparing til depoterne
+            # Definer årets progressionsgrænse (inflationsjusteret fra 2026-niveau)
+            current_progression_limit = 79400 * ((1 + global_inflation_rate)**year)
+            
+            # JOHAN: Progressiv skat på frie midler
+            return_j_frie = depot_free_j * global_return_rate_gross
+            if return_j_frie <= current_progression_limit:
+                tax_j_frie = return_j_frie * 0.27
+            else:
+                tax_j_frie = (current_progression_limit * 0.27) + ((return_j_frie - current_progression_limit) * 0.42)
+            depot_free_j += (return_j_frie - tax_j_frie)
+            
+            # MARKUS: Progressiv skat på frie midler
+            return_m_frie = depot_free_m * global_return_rate_gross
+            if return_m_frie <= current_progression_limit:
+                tax_m_frie = return_m_frie * 0.27
+            else:
+                tax_m_frie = (current_progression_limit * 0.27) + ((return_m_frie - current_progression_limit) * 0.42)
+            depot_free_m += (return_m_frie - tax_m_frie)
+            
+            # --- 2. Læg derefter årets opsparing til depoterne ---
             if not j_reached: depot_free_j += start_inv_md_j * 12 * ((1 + global_inflation_rate)**year)
             if not m_reached: depot_free_m += start_inv_md_m * 12 * ((1 + global_inflation_rate)**year)
 
@@ -244,10 +264,22 @@ def simulate_solo_fire_plan(scenario_name, boligpris, udbetaling_j, realkredityd
         if year > 0:
             start_fire_j *= (1 + global_inflation_rate)
             
-            # 1. Tilskriv afkast på den eksisterende balance
-            depot_ask_j *= (1 + global_return_rate_gross * 0.83); depot_free_j *= (1 + global_return_rate_gross * 0.73)
+            # --- 1. Tilskriv afkast og progressiv skat på den eksisterende balance ---
+            # ASK (Flad 17% skat)
+            depot_ask_j *= (1 + global_return_rate_gross * 0.83)
             
-            # 2. Læg derefter årets opsparing til depoterne
+            # Definer årets progressionsgrænse (inflationsjusteret fra 2026-niveau)
+            current_progression_limit = 79400 * ((1 + global_inflation_rate)**year)
+            
+            # JOHAN: Progressiv skat på frie midler
+            return_j_frie = depot_free_j * global_return_rate_gross
+            if return_j_frie <= current_progression_limit:
+                tax_j_frie = return_j_frie * 0.27
+            else:
+                tax_j_frie = (current_progression_limit * 0.27) + ((return_j_frie - current_progression_limit) * 0.42)
+            depot_free_j += (return_j_frie - tax_j_frie)
+            
+            # --- 2. Læg derefter årets opsparing til depoterne ---
             if not j_reached: depot_free_j += start_inv_md_j * 12 * ((1 + global_inflation_rate)**year)
 
         p_j = calculate_drawdown_monthly_income(depot_ask_j + depot_free_j, c_age_j, pensionsalder_j, global_return_rate_net_drawdown)
