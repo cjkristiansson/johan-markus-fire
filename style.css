@@ -86,7 +86,7 @@ h4 { font-size: 18px !important; font-weight: 600 !important; color: #2c2925 !im
 /* --- PILLS (HOVEDNAVIGATION) --- */
 /* Target the container of the pills */
 [data-testid="stSegmentedControl"] {
-    background-color: transparent !important;
+    background-color: #4a4742 !important;
     padding: 0 !important;
 }
 
