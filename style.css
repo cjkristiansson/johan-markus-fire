@@ -1,21 +1,22 @@
 /* Import Spectral (overskrift) og Belleza (brødtekst) */
 @import url('https://fonts.googleapis.com/css2?family=Belleza&family=Spectral:ital,wght@0,400;0,600;0,700;1,400&display=swap');
 
-/* Tving Belleza ned over alle tekstelementer */
-html, body, .stApp, p, span, div, label, input, button, li, a, th, td {
-    font-family: 'Belleza', sans-serif !important;
-    font-size: 16px; /* Standardiseret grundstørrelse */
-}
-
-/* BUGFIX: Beskyt Streamlits indbyggede ikoner fra at få deres font overskrevet */
-.material-symbols-rounded, [class*="icon"], svg text {
-    font-family: 'Material Symbols Rounded', 'Material Icons', sans-serif !important;
-}
-
-/* Base baggrund og tekstfarve */
-html, body, [class*="css"], .stApp {
+/* --- SIKKER FONT-TILDELING --- */
+/* Vi tildeler Belleza til grundelementerne, men udelader 'span' og 'div' for at beskytte Streamlits ikoner */
+html, body, .stApp {
+    font-family: 'Belleza', sans-serif;
     background-color: #fcfaf7 !important; 
     color: #2d2d2d !important;
+}
+
+p, label, input, button, li, a, th, td, [data-testid="stMarkdownContainer"] {
+    font-family: 'Belleza', sans-serif !important;
+    font-size: 16px;
+}
+
+/* Tving ikon-fonten tilbage på plads for en sikkerheds skyld */
+.st-emotion-cache-16idej, [class*="icon"], .material-symbols-rounded {
+    font-family: 'Material Icons', 'Material Symbols Rounded', sans-serif !important;
 }
 
 /* --- OVERSKRIFTER (Fast hierarki) --- */
@@ -31,7 +32,7 @@ h2 { font-size: 24px !important; font-weight: 600 !important; color: #1a1a1a !im
 h3 { font-size: 20px !important; font-weight: 600 !important; color: #1a1a1a !important; }
 h4 { font-size: 16px !important; font-weight: 600 !important; color: #1a1a1a !important; }
 
-/* Sidebar styling (Kompakt 14px tekst) */
+/* --- SIDEBAR STYLING --- */
 [data-testid="stSidebar"] {
     background-color: #f3eee7 !important;
     border-right: 1px solid #e5e0d8 !important;
@@ -64,7 +65,7 @@ h4 { font-size: 16px !important; font-weight: 600 !important; color: #1a1a1a !im
     background-color: #faf8f5 !important;
 }
 
-/* Brofinansieringskasser */
+/* --- BROFINANSIERINGSKASSER --- */
 .success-box {
     background-color: #f8fbf8;
     border: 1px solid #d1e0d5;
@@ -77,7 +78,7 @@ h4 { font-size: 16px !important; font-weight: 600 !important; color: #1a1a1a !im
     box-shadow: 0 1px 2px rgba(0,0,0,0.02);
 }
 
-/* --- TAB DESIGN --- */
+/* --- TAB DESIGN (Minimalistisk linje) --- */
 div[data-baseweb="tab-list"] {
     gap: 24px; 
     padding-bottom: 0px;
@@ -108,7 +109,7 @@ div[data-baseweb="tab-list"] button[aria-selected="true"] p {
     font-weight: 600 !important;
 }
 
-/* Ekstra padding i dataframe tabellerne for at de matcher den nye font */
+/* Dataframe font justering */
 [data-testid="stDataFrame"] {
     font-size: 15px !important;
 }
