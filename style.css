@@ -1,36 +1,41 @@
 /* Import Spectral (overskrift) og Belleza (brødtekst) */
 @import url('https://fonts.googleapis.com/css2?family=Belleza&family=Spectral:ital,wght@0,400;0,600;0,700;1,400&display=swap');
 
-/* --- SIKKER FONT-TILDELING --- */
-/* Vi tildeler Belleza til grundelementerne, men udelader 'span' og 'div' for at beskytte Streamlits ikoner */
-html, body, .stApp {
-    font-family: 'Belleza', sans-serif;
+/* --- SIKKER FONT-TILDELING (Nu super-aggressiv for fuld konsistens) --- */
+/* Rammer html-tags OG alle Streamlits skjulte .st-klasser */
+html, body, .stApp, [class*="st-"], p, div, span, label, input, button, li, a, th, td, h2, h3, h4, h5, h6 {
+    font-family: 'Belleza', sans-serif !important;
+}
+
+/* Tving ikon-fonten tilbage på plads så pilene ikke går i stykker */
+.st-emotion-cache-16idej, [class*="icon"], .material-symbols-rounded, svg, svg text {
+    font-family: 'Material Icons', 'Material Symbols Rounded', sans-serif !important;
+}
+
+/* Base baggrund og tekstfarve */
+html, body, [class*="css"], .stApp {
     background-color: #fcfaf7 !important; 
     color: #2d2d2d !important;
 }
 
-p, label, input, button, li, a, th, td, [data-testid="stMarkdownContainer"] {
-    font-family: 'Belleza', sans-serif !important;
-    font-size: 16px;
+/* Generel tekststørrelse skruet op (Belleza syner mindre end standardfonts) */
+p, label, li, a, span, .markdown-text-container {
+    font-size: 18px !important;
 }
 
-/* Tving ikon-fonten tilbage på plads for en sikkerheds skyld */
-.st-emotion-cache-16idej, [class*="icon"], .material-symbols-rounded {
-    font-family: 'Material Icons', 'Material Symbols Rounded', sans-serif !important;
-}
-
-/* --- OVERSKRIFTER (Fast hierarki) --- */
+/* --- OVERSKRIFTER (Fast og større hierarki) --- */
 h1, h1 * {
     font-family: 'Spectral', serif !important;
     color: #1a1a1a !important;
     font-weight: 600 !important;
-    font-size: 32px !important;
+    font-size: 38px !important;
     letter-spacing: -0.02em;
+    margin-bottom: 0.5em !important;
 }
 
-h2 { font-size: 24px !important; font-weight: 600 !important; color: #1a1a1a !important; }
-h3 { font-size: 20px !important; font-weight: 600 !important; color: #1a1a1a !important; }
-h4 { font-size: 16px !important; font-weight: 600 !important; color: #1a1a1a !important; }
+h2 { font-size: 26px !important; font-weight: 600 !important; color: #1a1a1a !important; }
+h3 { font-size: 22px !important; font-weight: 600 !important; color: #1a1a1a !important; }
+h4 { font-size: 18px !important; font-weight: 600 !important; color: #1a1a1a !important; }
 
 /* --- SIDEBAR STYLING --- */
 [data-testid="stSidebar"] {
@@ -38,10 +43,12 @@ h4 { font-size: 16px !important; font-weight: 600 !important; color: #1a1a1a !im
     border-right: 1px solid #e5e0d8 !important;
 }
 
+/* Sidebar tekster skruet op fra 14px til 16px */
 [data-testid="stSidebar"] p, 
 [data-testid="stSidebar"] label, 
-[data-testid="stSidebar"] div {
-    font-size: 14px !important;
+[data-testid="stSidebar"] div,
+[data-testid="stSidebar"] input {
+    font-size: 16px !important;
 }
 
 /* Knapper i sidebaren */
@@ -54,7 +61,7 @@ h4 { font-size: 16px !important; font-weight: 600 !important; color: #1a1a1a !im
 }
 
 [data-testid="stSidebar"] button p {
-    font-size: 14px !important;
+    font-size: 16px !important;
     font-weight: 600 !important;
     margin: 0 !important;
 }
@@ -72,7 +79,7 @@ h4 { font-size: 16px !important; font-weight: 600 !important; color: #1a1a1a !im
     border-radius: 8px;
     padding: 16px 20px;
     color: #2b593f;
-    font-size: 16px !important; 
+    font-size: 18px !important; /* Op fra 16px */
     margin-top: 10px;
     margin-bottom: 12px;
     box-shadow: 0 1px 2px rgba(0,0,0,0.02);
@@ -100,7 +107,7 @@ div[data-baseweb="tab-list"] button[aria-selected="true"] {
 }
 
 div[data-baseweb="tab-list"] button p {
-    font-size: 16px !important; 
+    font-size: 18px !important; /* Op fra 16px */
     color: #8c857b !important; 
 }
 
@@ -109,9 +116,13 @@ div[data-baseweb="tab-list"] button[aria-selected="true"] p {
     font-weight: 600 !important;
 }
 
-/* Dataframe font justering */
-[data-testid="stDataFrame"] {
-    font-size: 15px !important;
+/* --- DATATABEL JUSTERING --- */
+/* Gør teksten og tallene i tabellen større og lettere at læse */
+[data-testid="stDataFrame"] *, 
+[data-testid="stDataFrame"] th, 
+[data-testid="stDataFrame"] td,
+[data-testid="stDataFrame"] div {
+    font-size: 16px !important; /* Op fra 15px */
 }
 
 /* --- DARK MODE --- */
