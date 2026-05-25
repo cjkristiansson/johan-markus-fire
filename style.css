@@ -1,73 +1,76 @@
 @import url('https://fonts.googleapis.com/css2?family=Belleza&family=Spectral:ital,wght@0,400;0,600;0,700;1,400&display=swap');
 
-/* --- GLOBALE LAYOUT REGLER --- */
-.block-container { padding-top: 3.5rem !important; padding-bottom: 1rem !important; }
-
-html, body, .stApp, p, div, span, label, input, button, li, a, th, td, h2, h3, h4, h5, h6 {
-    font-family: 'Belleza', sans-serif !important;
+/* ==========================================================
+   1. LIGHT MODE (Dit beige design)
+   ========================================================== */
+[data-theme="light"] {
+    --bg: #fcfaf7;
+    --text: #4a4742;
+    --sidebar: #f3eee7;
+    --accent: #eae3d8;
+    --border: #dcd7cc;
 }
 
-/* ==========================================
-   1. LIGHT MODE (DET BEIGE DESIGN)
-   ========================================== */
-html[data-theme="light"], html[data-theme="light"] body, html[data-theme="light"] .stApp {
-    background-color: #fcfaf7 !important; 
-    color: #4a4742 !important;
+[data-theme="light"] .stApp, [data-theme="light"] body {
+    background-color: var(--bg) !important;
+    color: var(--text) !important;
 }
 
-html[data-theme="light"] h1, html[data-theme="light"] h1 *, html[data-theme="light"] h2, html[data-theme="light"] h3, html[data-theme="light"] h4 { 
-    color: #2c2925 !important; 
+/* ==========================================================
+   2. DARK MODE (Læsbar mørkegrå)
+   ========================================================== */
+[data-theme="dark"] {
+    --bg: #121212;
+    --text: #e0e0e0;
+    --sidebar: #1e1e1e;
+    --accent: #333333;
+    --border: #444444;
 }
 
-html[data-theme="light"] [data-testid="stSidebar"] {
-    background-color: #f3eee7 !important;
-    border-right: 1px solid #e5e0d8 !important;
+[data-theme="dark"] .stApp, [data-theme="dark"] body {
+    background-color: var(--bg) !important;
+    color: var(--text) !important;
 }
 
-html[data-theme="light"] [data-testid="stTable"] th {
-    background-color: #eae3d8 !important; 
-    color: #2c2925 !important;
-}
+/* ==========================================================
+   3. FÆLLES STYLING (Bruger variablerne fra ovenstående)
+   ========================================================== */
 
-html[data-theme="light"] .success-box {
-    background-color: #f8fbf8;
-    border: 1px solid #d1e0d5;
-    color: #2b593f;
-}
+/* Hovedtitel og tekst */
+h1, h2, h3, h4, p, label, li, a { font-family: 'Belleza', sans-serif !important; color: var(--text) !important; }
+h1 { font-family: 'Spectral', serif !important; }
 
-/* ==========================================
-   2. DARK MODE (LÆSBARHED)
-   ========================================== */
-html[data-theme="dark"], html[data-theme="dark"] body, html[data-theme="dark"] .stApp {
-    background-color: #121212 !important;
-    color: #e0e0e0 !important;
-}
+/* Sidebar */
+[data-testid="stSidebar"] { background-color: var(--sidebar) !important; }
 
-html[data-theme="dark"] h1, html[data-theme="dark"] h1 *, html[data-theme="dark"] h2, html[data-theme="dark"] h3, html[data-theme="dark"] h4 {
-    color: #ffffff !important;
-}
-
-/* ==========================================
-   3. FÆLLES KOMPONENTER (PILLS & TABELLER)
-   ========================================== */
-h1 { font-family: 'Spectral', serif !important; font-weight: 600 !important; font-size: 38px !important; margin-bottom: 0.1em !important; }
-
-/* Pills (Sikrer spacing og fjerner rød farve) */
+/* PILLS (iOS-stil) */
+[data-testid="stPills"] { background-color: transparent !important; }
 [data-testid="stPills"] > div { display: flex !important; gap: 16px !important; }
+
 [data-testid="stPill"], [data-testid="stPills"] button {
-    border: 1px solid rgba(128,128,128,0.3) !important;
+    background-color: var(--bg) !important;
+    border: 1px solid var(--border) !important;
     border-radius: 6px !important;
     padding: 6px 16px !important;
+    transition: all 0.2s ease !important;
 }
-/* Aktiv Pill: Tvinges neutral */
+
+/* Aktiv Pill (Tvinger farve) */
 [data-testid="stPill"][data-checked="true"], 
 [data-testid="stPills"] button[aria-selected="true"] {
-    background-color: rgba(128,128,128,0.2) !important;
-    border-color: rgba(128,128,128,0.5) !important;
+    background-color: var(--accent) !important;
+    border-color: var(--border) !important;
 }
 
 /* Tabeller */
-[data-testid="stTable"] { border: 1px solid rgba(128,128,128,0.2) !important; border-radius: 8px !important; }
-[data-testid="stTable"] th { padding: 12px !important; }
-[data-testid="stTable"] td { padding: 10px 12px !important; }
-[data-testid="stTable"] tbody tr:nth-child(even) { background-color: rgba(128,128,128,0.05) !important; }
+[data-testid="stTable"] { border: 1px solid var(--border) !important; }
+[data-testid="stTable"] th { background-color: var(--accent) !important; color: var(--text) !important; }
+[data-testid="stTable"] td { color: var(--text) !important; }
+[data-testid="stTable"] tbody tr:nth-child(even) { background-color: rgba(128,128,128,0.1) !important; }
+
+/* Success-boks */
+.success-box { 
+    background-color: var(--accent) !important; 
+    border: 1px solid var(--border) !important; 
+    padding: 16px; border-radius: 8px; 
+}
