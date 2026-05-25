@@ -7,11 +7,32 @@ html, body, [class*="css"], .stApp {
     color: #2d2d2d !important;
 }
 
+/* Sidebarren tilpasses med en mørkere beige tone og en subtil kant */
+[data-testid="stSidebar"] {
+    background-color: #f3eee7 !important;
+    border-right: 1px solid #e5e0d8 !important;
+}
+
 /* Rene, moderne overskrifter */
 h1, h2, h3, h4 {
     color: #1a1a1a !important;
     font-weight: 600 !important;
     letter-spacing: -0.02em;
+}
+
+/* Knapperne i sidebaren - Claude-inspireret udtryk og hover-effekt */
+[data-testid="stSidebar"] button {
+    background-color: #ffffff !important;
+    border: 1px solid #dcd7cc !important;
+    color: #4a4a4a !important;
+    border-radius: 6px !important;
+    transition: all 0.2s ease;
+}
+
+[data-testid="stSidebar"] button:hover {
+    border-color: #b5ae9f !important;
+    color: #1a1a1a !important;
+    background-color: #faf8f5 !important;
 }
 
 /* Subtile brofinansieringskasser - Claude stil */
@@ -55,11 +76,25 @@ div[data-baseweb="tab-list"] button[aria-selected="true"] p {
     font-weight: 600 !important;
 }
 
-/* Mørk tilstand (Dark Mode) - Hvis I bruger det på telefonen */
+/* Mørk tilstand (Dark Mode) */
 @media (prefers-color-scheme: dark) {
     html, body, [class*="css"], .stApp {
-        background-color: #1c1b1a !important; /* Dyb varm grå/sort */
+        background-color: #1c1b1a !important;
         color: #e5e7eb !important;
+    }
+    [data-testid="stSidebar"] {
+        background-color: #262422 !important;
+        border-right: 1px solid #3a3835 !important;
+    }
+    [data-testid="stSidebar"] button {
+        background-color: #2a2826 !important;
+        border: 1px solid #4a4744 !important;
+        color: #d1d5db !important;
+    }
+    [data-testid="stSidebar"] button:hover {
+        background-color: #32302d !important;
+        border-color: #625f5c !important;
+        color: #ffffff !important;
     }
     h1, h2, h3, h4 {
         color: #f3f4f6 !important;
