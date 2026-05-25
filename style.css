@@ -1,0 +1,21 @@
+/* Subtile brofinansieringskasser */
+.success-box {
+    background-color: transparent;
+    border-left: 4px solid #81c995;
+    padding: 8px 16px;
+    color: #3c4043;
+    font-family: sans-serif;
+    font-size: 0.95em;
+    margin-bottom: 10px;
+}
+@media (prefers-color-scheme: dark) {
+    .success-box {
+        border-left: 4px solid #5bb974;
+        color: #bdc1c6;
+    }
+}
+
+/* Gør font-size på tabs 16px */
+div[data-baseweb="tab-list"] button p {
+    font-size: 16px !important;
+}
