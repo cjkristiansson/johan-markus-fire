@@ -1,6 +1,12 @@
 /* Import Spectral (overskrift) og Belleza (brødtekst) */
 @import url('https://fonts.googleapis.com/css2?family=Belleza&family=Spectral:ital,wght@0,400;0,600;0,700;1,400&display=swap');
 
+/* --- STRIP OVERFLØDIG LUFT I TOPPEN AF STREAMLIT --- */
+.block-container {
+    padding-top: 1.5rem !important;
+    padding-bottom: 0rem !important;
+}
+
 /* --- SIKKER FONT-TILDELING --- */
 html, body, .stApp, p, div, span, label, input, button, li, a, th, td, h2, h3, h4, h5, h6 {
     font-family: 'Belleza', sans-serif !important;
@@ -18,7 +24,7 @@ svg * {
     font-family: 'Material Symbols Rounded', 'Material Icons', sans-serif !important;
 }
 
-/* Base baggrund og tekstfarve (Varm, blød mørkegrå) */
+/* Base baggrund og tekstfarve */
 html, body, [class*="css"], .stApp {
     background-color: #fcfaf7 !important; 
     color: #4a4742 !important; 
@@ -29,14 +35,16 @@ p, label, li, a, .markdown-text-container {
     font-size: 18px !important;
 }
 
-/* --- OVERSKRIFTER --- */
+/* --- OVERSKRIFTER (Kompakte marginer) --- */
 h1, h1 * {
     font-family: 'Spectral', serif !important;
-    color: #2c2925 !important; /* Dyb, varm koksgrå */
+    color: #2c2925 !important; 
     font-weight: 600 !important;
     font-size: 38px !important;
     letter-spacing: -0.02em;
-    margin-bottom: 0.5em !important;
+    margin-top: 0px !important;
+    padding-top: 0px !important;
+    margin-bottom: 0.3em !important;
 }
 
 h2 { font-size: 26px !important; font-weight: 600 !important; color: #2c2925 !important; }
@@ -127,7 +135,7 @@ div[data-baseweb="tab-list"] button[aria-selected="true"] p {
     font-weight: 600 !important;
 }
 
-/* --- NY STYLING TIL ST.TABLE --- */
+/* --- ST.TABLE STYLING --- */
 [data-testid="stTable"] {
     border: 1px solid #dcd7cc !important;
     border-radius: 8px !important;
@@ -139,7 +147,6 @@ div[data-baseweb="tab-list"] button[aria-selected="true"] p {
     margin: 0 !important;
 }
 
-/* Tabellens overskrifter (matcher knappernes hover-farve) */
 [data-testid="stTable"] th {
     background-color: #eae3d8 !important; 
     color: #2c2925 !important;
@@ -149,7 +156,6 @@ div[data-baseweb="tab-list"] button[aria-selected="true"] p {
     padding: 12px !important;
 }
 
-/* Tabellens data-celler */
 [data-testid="stTable"] td {
     background-color: #fcfaf7 !important;
     color: #4a4742 !important;
@@ -158,13 +164,11 @@ div[data-baseweb="tab-list"] button[aria-selected="true"] p {
     padding: 10px 12px !important;
 }
 
-/* Zebra-striber: Gør hver anden række lidt mørkere (både index og data) */
 [data-testid="stTable"] tbody tr:nth-child(even) th,
 [data-testid="stTable"] tbody tr:nth-child(even) td {
     background-color: #f5f1ea !important; 
 }
 
-/* Hover-effekt på rækkerne */
 [data-testid="stTable"] tbody tr:hover th,
 [data-testid="stTable"] tbody tr:hover td {
     background-color: #ebdccc !important;
@@ -217,7 +221,6 @@ div[data-baseweb="tab-list"] button[aria-selected="true"] p {
         color: #f3f4f6 !important;
     }
     
-    /* Dark mode for st.table */
     [data-testid="stTable"] {
         border-color: #4a4744 !important;
     }
