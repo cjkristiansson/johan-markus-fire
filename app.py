@@ -280,7 +280,7 @@ else:
     tabs = st.tabs(tab_names)
 
     with tabs[0]:
-        yd_35 = st.number_input("Realkreditydelse efter skat (3.5M)", value=7000, step=100, key="yd35")
+        yd_35 = st.number_input("Realkreditydelse efter skat (3.5M)", value=8516, step=100, key="yd35")
         simulate_joint_fire_plan("3.5M Bolig", 3500000, 966000, 434000, yd_35, 4564, bolig_solgt=True)
     with tabs[1]:
         yd_40 = st.number_input("Realkreditydelse efter skat (4.0M)", value=4075, step=100, key="yd40")
