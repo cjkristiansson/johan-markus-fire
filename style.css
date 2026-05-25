@@ -1,8 +1,9 @@
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+/* Importerer Spectral (til overskrift) og Belleza (til resten) fra Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Belleza&family=Spectral:ital,wght@0,400;0,600;0,700;1,400&display=swap');
 
-/* Global indstillinger - Varm Claude-palet med moderne font */
+/* Global indstillinger - Resten af siden bruger Belleza */
 html, body, [class*="css"], .stApp {
-    font-family: 'Plus Jakarta Sans', sans-serif !important;
+    font-family: 'Belleza', sans-serif !important;
     background-color: #fcfaf7 !important; 
     color: #2d2d2d !important;
 }
@@ -13,8 +14,16 @@ html, body, [class*="css"], .stApp {
     border-right: 1px solid #e5e0d8 !important;
 }
 
-/* Overskrifter */
-h1, h2, h3, h4 {
+/* Hovedoverskriften (h1) sættes specifikt til Spectral */
+h1 {
+    font-family: 'Spectral', serif !important;
+    color: #1a1a1a !important;
+    font-weight: 600 !important;
+    letter-spacing: -0.02em;
+}
+
+/* Mindre overskrifter */
+h2, h3, h4 {
     color: #1a1a1a !important;
     font-weight: 600 !important;
     letter-spacing: -0.02em;
@@ -42,20 +51,19 @@ h1, h2, h3, h4 {
     border-radius: 8px;
     padding: 16px 20px;
     color: #2b593f;
-    font-size: 0.95em;
+    font-size: 1.05em; /* Lidt større font-size da Belleza kan føles lidt mindre */
     margin-top: 10px;
     margin-bottom: 12px;
     box-shadow: 0 1px 2px rgba(0,0,0,0.02);
 }
 
-/* --- NYT TAB DESIGN (Minimalistisk linje i stedet for knapper) --- */
+/* --- TAB DESIGN (Minimalistisk linje) --- */
 div[data-baseweb="tab-list"] {
-    gap: 24px; /* Giver mere luft mellem teksterne */
+    gap: 24px; 
     padding-bottom: 0px;
-    border-bottom: 1px solid #e5e0d8; /* Subtil gennemgående linje */
+    border-bottom: 1px solid #e5e0d8; 
 }
 
-/* Fjerner knap-looket fuldstændig */
 div[data-baseweb="tab-list"] button {
     background-color: transparent !important;
     border: none !important;
@@ -64,21 +72,17 @@ div[data-baseweb="tab-list"] button {
     box-shadow: none !important;
 }
 
-/* Den aktive fane får en streg i bunden */
 div[data-baseweb="tab-list"] button[aria-selected="true"] {
     background-color: transparent !important;
     border-bottom: 2px solid #1a1a1a !important; 
     box-shadow: none !important;
 }
 
-/* Tab tekst (Inaktiv) */
 div[data-baseweb="tab-list"] button p {
-    font-size: 16px !important;
-    font-weight: 500 !important;
-    color: #8c857b; /* Afdæmpet farve */
+    font-size: 17px !important;
+    color: #8c857b; 
 }
 
-/* Tab tekst (Aktiv) */
 div[data-baseweb="tab-list"] button[aria-selected="true"] p {
     color: #1a1a1a !important;
     font-weight: 600 !important;
@@ -113,7 +117,6 @@ div[data-baseweb="tab-list"] button[aria-selected="true"] p {
         color: #a7d3b9;
     }
     
-    /* Dark mode for minimalistiske tabs */
     div[data-baseweb="tab-list"] {
         border-bottom: 1px solid #3a3835;
     }
