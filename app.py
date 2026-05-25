@@ -165,7 +165,7 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
         if year > 0:
             start_fire_j *= (1 + global_inflation_rate); start_fire_m *= (1 + global_inflation_rate)
             
-            # 1. Tilskriv afkast på den eksisterende balance (Rettet logik)
+            # 1. Tilskriv afkast på den eksisterende balance
             depot_ask_j *= (1 + global_return_rate_gross * 0.83); depot_free_j *= (1 + global_return_rate_gross * 0.73)
             depot_ask_m *= (1 + global_return_rate_gross * 0.83); depot_free_m *= (1 + global_return_rate_gross * 0.73)
             
@@ -244,7 +244,7 @@ def simulate_solo_fire_plan(scenario_name, boligpris, udbetaling_j, realkredityd
         if year > 0:
             start_fire_j *= (1 + global_inflation_rate)
             
-            # 1. Tilskriv afkast på den eksisterende balance (Rettet logik)
+            # 1. Tilskriv afkast på den eksisterende balance
             depot_ask_j *= (1 + global_return_rate_gross * 0.83); depot_free_j *= (1 + global_return_rate_gross * 0.73)
             
             # 2. Læg derefter årets opsparing til depoterne
@@ -315,8 +315,8 @@ else:
     tabs = st.tabs(tab_names)
 
     with tabs[0]:
-        yd_35 = st.number_input("Realkreditydelse efter skat (3.5M)", value=8516, step=100, key="yd35")
-        simulate_joint_fire_plan("3.5M Bolig", 3500000, 966000, 434000, yd_35, 4564, bolig_solgt=True)
+        yd_35 = st.number_input("Realkreditydelse efter skat (3.5M)", value=3573, step=100, key="yd35")
+        simulate_joint_fire_plan("3.5M Bolig", 3500000, 1750000, 875000, yd_35, 4564, bolig_solgt=True)
     with tabs[1]:
         yd_40 = st.number_input("Realkreditydelse efter skat (4.0M)", value=4075, step=100, key="yd40")
         simulate_joint_fire_plan("4.0M Bolig", 4000000, 1846222, 1153888, yd_40, 4564, bolig_solgt=True)
