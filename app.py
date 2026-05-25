@@ -31,9 +31,27 @@ st.title("FIRE Brofinansiering: Johan & Markus")
 st.sidebar.header("Globale Antagelser")
 st.sidebar.markdown("Juster variablerne for at stress-teste alle scenarier samtidigt.")
 
-global_return_rate_gross = st.sidebar.slider("Bruttoafkast under opsparing (%)", min_value=3.0, max_value=10.0, value=7.0, step=0.5) / 100
-global_return_rate_net_drawdown = st.sidebar.slider("Nettoafkast i passiv fase (%)", min_value=2.0, max_value=8.0, value=4.5, step=0.1) / 100
-global_inflation_rate = st.sidebar.slider("Årlig inflation (%)", min_value=0.0, max_value=5.0, value=2.0, step=0.5) / 100
+# --- PRESET KNAPPER ---
+col_preset1, col_preset2 = st.sidebar.columns(2)
+use_conservative = col_preset1.button("🔴 Konservativ", use_container_width=True, help="Afkast 5,5% / Drawdown 3,5% / Inflation 2,5%")
+use_base = col_preset2.button("🟢 Standard", use_container_width=True, help="Afkast 7% / Drawdown 4,5% / Inflation 2%")
+
+if use_conservative:
+    st.session_state["preset_return"] = 5.5
+    st.session_state["preset_drawdown"] = 3.5
+    st.session_state["preset_inflation"] = 2.5
+elif use_base:
+    st.session_state["preset_return"] = 7.0
+    st.session_state["preset_drawdown"] = 4.5
+    st.session_state["preset_inflation"] = 2.0
+
+default_return = st.session_state.get("preset_return", 7.0)
+default_drawdown = st.session_state.get("preset_drawdown", 4.5)
+default_inflation = st.session_state.get("preset_inflation", 2.0)
+
+global_return_rate_gross = st.sidebar.slider("Bruttoafkast under opsparing (%)", min_value=3.0, max_value=10.0, value=default_return, step=0.5) / 100
+global_return_rate_net_drawdown = st.sidebar.slider("Nettoafkast i passiv fase (%)", min_value=2.0, max_value=8.0, value=default_drawdown, step=0.1) / 100
+global_inflation_rate = st.sidebar.slider("Årlig inflation (%)", min_value=0.0, max_value=5.0, value=default_inflation, step=0.5) / 100
 global_barista_wage_net = st.sidebar.number_input("Baristaløn (Netto kr./t)", min_value=80, max_value=250, value=135, step=5)
 
 st.sidebar.divider()
@@ -66,8 +84,8 @@ with st.expander("⚙️ Modellens Regler & Logik"):
     * **Pension adskilt:** Pensionsdepoter bruges *ikke* før 67 år. Indbetalinger stopper det år fuld FIRE nås, hvorefter depotet kun vokser med afkast minus PAL-skat (15,3%).
     * **Barista-timer:** Timer beregnes på *restbehovet*. Passiv indkomst fra depotet fratrækkes FIRE-udgifterne først.
     * **Dynamiske boligudgifter:** Bliver der optaget realkreditlån, indgår ydelsen fuldt ud i de månedlige FIRE-udgifter for det givne scenarie.
-    * **Risiko - Inflation på udgifter:</b> FIRE-udgifterne fremskrives med 2% årligt. Nominelle 2024-kroner undervurderer systematisk fremtidige udgifter — 10.000 kr./måned i dag svarer til ca. 14.900 kr./måned om 20 år ved 2% inflation.
-    * **Risiko - Folkepensionsmodregning:</b> Folkepension og pensionstillæg medregnes fra år 67, men pensionstillægget reduceres ved formue og øvrig indkomst. Ved større depoter kan det effektive tillæg være markant lavere end grundbeløbet — modellen anvender et konservativt skøn.
+    * **Risiko - Inflation på udgifter:** FIRE-udgifterne fremskrives med 2% årligt. Nominelle 2024-kroner undervurderer systematisk fremtidige udgifter — 10.000 kr./måned i dag svarer til ca. 14.900 kr./måned om 20 år ved 2% inflation.
+    * **Risiko - Folkepensionsmodregning:** Folkepension og pensionstillæg medregnes fra år 67, men pensionstillægget reduceres ved formue og øvrig indkomst. Ved større depoter kan det effektive tillæg være markant lavere end grundbeløbet — modellen anvender et konservativt skøn.
     
     """)
 
