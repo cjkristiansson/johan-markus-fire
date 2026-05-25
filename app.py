@@ -71,12 +71,12 @@ def format_budget(b):
 with st.expander("⚙️ Modellens Regler & Logik"):
     st.markdown("""
     * **Trin 0 (Boligkøb først):** Startdepotet i år 1 er formuen *efter* udbetaling til bolig. Aktiedepoter er låst til FIRE.
-    * **Lagerbeskatning:** ASK beskattes fladt med 17%. Frie midler beskattes progressivt (27% op til grænsen, 42% derover). Progressionsgrænsen (61.300 kr.) indekseres årligt med inflationen.
+    * **Lagerbeskatning:** ASK beskattes fladt med 17%. Frie midler beskattes progressivt (27% op til grænsen, 42% derover). Progressionsgrænsen (79.400 kr. i 2026) indekseres årligt med inflationen.
     * **Inflationseffekt:** Udgifter, opsparingsrate og progressionsgrænser stiger alle med den valgte inflationsrate år for år i modellen.
     * **Pension adskilt:** Pensionsdepoter bruges *ikke* før pensionsalderen nås. Indbetalinger stopper det år fuld FIRE nås, hvorefter depotet kun vokser med afkast minus PAL-skat (15,3%).
     * **Barista-timer:** Timer beregnes på *restbehovet*. Passiv indkomst fra depotet fratrækkes FIRE-udgifterne først.
     * **Dynamiske boligudgifter:** Bliver der optaget realkreditlån, indgår ydelsen fuldt ud i de månedlige FIRE-udgifter for det givne scenarie.
-    * **Risiko - Inflation på udgifter:** FIRE-udgifterne fremskrives med 2% årligt. Nominelle 2024-kroner undervurderer systematisk fremtidige udgifter — 10.000 kr./måned i dag svarer til ca. 14.900 kr./måned om 20 år ved 2% inflation.
+    * **Risiko - Inflation på udgifter:** FIRE-udgifterne fremskrives med 2% årligt. Nominelle 2026-kroner undervurderer systematisk fremtidige udgifter — 10.000 kr./måned i dag svarer til ca. 14.900 kr./måned om 20 år ved 2% inflation.
     * **Risiko - Folkepensionsmodregning:** Folkepension og pensionstillæg medregnes fra pensionsalderen, men pensionstillægget reduceres ved formue og øvrig indkomst. Ved større depoter kan det effektive tillæg være markant lavere end grundbeløbet — modellen anvender et konservativt skøn.
     """)
 
@@ -122,7 +122,7 @@ def calculate_drawdown_monthly_income(depot_total, current_age, target_age, net_
         return depot_total * (monthly_rate * (1 + monthly_rate)**months_left) / ((1 + monthly_rate)**months_left - 1)
 
 def get_emoji_status(barista_hours):
-    if barista_hours == 0: return "🏁 0.0t"
+    if barista_hours == 0: return "🟢 0.0t"
     elif 0 < barista_hours <= 15: return f"🟡 {barista_hours:.1f}t"
     elif 15 < barista_hours <= 25: return f"🟠 {barista_hours:.1f}t"
     else: return f"🔴 {barista_hours:.1f}t"
@@ -205,8 +205,10 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
     cur_yearly_savings_j = start_inv_md_j * 12
     cur_yearly_savings_m = start_inv_md_m * 12
     cur_barista_wage = barista_wage_net_start
-    cur_progression_limit_j = 61300
-    cur_progression_limit_m = 61300
+    
+    # OPDATERET TIL 2026-NIVEAU
+    cur_progression_limit_j = 79400
+    cur_progression_limit_m = 79400
 
     for year in range(0, 26):
         current_age_j = age_j + year
