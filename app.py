@@ -1,134 +1,137 @@
 import streamlit as st
 import pandas as pd
 
-st.set_page_config(page_title="FIRE Dashboard", layout="wide")
+st.set_page_config(page_title="FIRE Brofinansiering", layout="wide")
 
-# --- GLOBAL CSS (Claude-stil, men sikker) ---
+# --- MODERNE CLAUDE-STIL CSS ---
 st.markdown("""
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap');
     
-    html, body, [class*="css"], .stApp {
-        font-family: 'Inter', sans-serif !important;
+    .stApp { background-color: #fcfcfc; font-family: 'Inter', sans-serif; }
+    
+    h1, h2, h3 { color: #1a1a1a !important; font-weight: 600 !important; }
+    
+    /* Moderne boks-design */
+    .metric-card {
+        background: #ffffff;
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        padding: 20px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
     }
     
-    /* Moderne og subtile brofinansieringskasser */
     .success-box {
-        background-color: #f0fdf4;
-        border-left: 4px solid #10b981;
-        border-radius: 4px;
-        padding: 12px 16px;
-        color: #374151;
-        font-size: 0.95em;
-        margin-bottom: 10px;
+        background: #f0fdf4;
+        border: 1px solid #bbf7d0;
+        padding: 16px;
+        border-radius: 8px;
+        color: #166534;
+        font-weight: 500;
+        margin-top: 10px;
     }
+
     @media (prefers-color-scheme: dark) {
-        .success-box {
-            background-color: #064e3b;
-            border-left: 4px solid #34d399;
-            color: #d1fae5;
-        }
+        .stApp { background-color: #0c0c0c; }
+        .metric-card { background: #161616; border: 1px solid #262626; }
+        .success-box { background: #064e3b; border: 1px solid #065f46; color: #d1fae5; }
+        h1, h2, h3 { color: #f0f0f0 !important; }
     }
 </style>
 """, unsafe_allow_html=True)
 
-st.title("FIRE Brofinansiering: Johan & Markus")
+st.title("FIRE Brofinansiering")
 
-# --- 1. SIDEBAR TIL INTERAKTIVE VARIABLER ---
+# --- SIDEBAR ---
 st.sidebar.header("Globale Antagelser")
-st.sidebar.markdown("Juster variablerne for at stress-teste alle scenarier samtidigt.")
-
-global_return_rate_gross = st.sidebar.slider("Bruttoafkast under opsparing (%)", min_value=3.0, max_value=10.0, value=7.0, step=0.5) / 100
-global_return_rate_net_drawdown = st.sidebar.slider("Nettoafkast i passiv fase (%)", min_value=2.0, max_value=8.0, value=4.5, step=0.1) / 100
-global_inflation_rate = st.sidebar.slider("Årlig inflation (%)", min_value=0.0, max_value=5.0, value=2.0, step=0.5) / 100
-global_barista_wage_net = st.sidebar.number_input("Baristaløn (Netto kr./t)", min_value=80, max_value=250, value=135, step=5)
+global_return_rate_gross = st.sidebar.slider("Bruttoafkast (%)", 3.0, 10.0, 7.0, 0.5) / 100
+global_return_rate_net_drawdown = st.sidebar.slider("Nettoafkast (Passiv) (%)", 2.0, 8.0, 4.5, 0.1) / 100
+global_inflation_rate = st.sidebar.slider("Årlig inflation (%)", 0.0, 5.0, 2.0, 0.5) / 100
+global_barista_wage_net = st.sidebar.number_input("Baristaløn (Netto kr./t)", 80, 250, 135, 5)
 
 st.sidebar.divider()
-
-# --- STRESSTEST (KONSVERVATIV TILSTAND) ---
-st.sidebar.markdown("### 🚨 Risikostyring")
-conservative_mode = st.sidebar.toggle("Aktiver Konservativt Estimat")
-
+conservative_mode = st.sidebar.toggle("🚨 Aktiver Stresstest (Konservativ)")
 if conservative_mode:
-    # Overskriver slider-værdierne midlertidigt for at stresse modellen
     global_return_rate_gross = 0.05
     global_return_rate_net_drawdown = 0.03
     global_inflation_rate = 0.03
     st.sidebar.warning("Stresstest aktiv: Afkast sænket til 5% (brutto) / 3% (netto). Inflation hævet til 3%.")
 
-st.sidebar.divider()
-st.sidebar.markdown("💡 *Aktiedepoter (ASK + Frie midler) og Markus' BSU er fastlåst og holdt ude af boligfinansieringen i disse beregninger.*")
-
-# --- BASIS DATA (Brugt i global visning) ---
-inkomst_j, inkomst_m = 38468, 32983
-pension_j, pension_m = 845000, 570000
-
-# Opdateret formue (Johan: Friværdi + Særeje | Markus: Friværdi + Gældsnedbringelse)
-cash_j_base = 2567500
-cash_m_base = 1153888
-
+# --- DATA ---
+cash_j_base, cash_m_base = 2567500, 1153888
 basis_ask_j, basis_frie_j = 174000, 71000
 basis_ask_m, basis_frie_m = 170000, 0
-pensionsalder_j, pensionsalder_m = 67, 67
+budget_j = {"Mad": 6000, "Ferie": 1500, "Renovering": 1000, "A_kasse": 672, "Loensikring": 1674, "Puregym": 279, "Transport": 730, "Oevrig": 3000}
+budget_m = {"Studielaan": 1600, "Ferie": 1500, "Renovering": 1000, "A_kasse": 520, "Loensikring": 720, "Transport": 500, "Streaming": 565, "Oevrig": 3000}
 
-budget_j = {"Studielaan": 0, "Mad": 6000, "Ferie": 1500, "Renovering": 1000, "A_kasse_Fagforening": 672, "Loensikring": 1674, "Puregym": 279, "Transport": 730, "Telefon": 100, "Spotify_Cloud": 100, "Charity": 100, "Frisoer": 450, "Toej": 1200, "Oevrig": 3000}
-budget_m = {"Studielaan": 1600, "Mad": 0, "Ferie": 1500, "Renovering": 1000, "A_kasse_Fagforening": 520, "Loensikring": 720, "Puregym": 0, "Transport": 500, "Telefon": 300, "Streaming": 565, "Charity": 100, "Frisoer": 450, "Toej": 1200, "Oevrig": 3000}
-
-def format_budget(b):
-    return "\n".join([f"- {k.replace('_', ' ')}: {f'{v:,}'.replace(',', '.')} kr." for k, v in b.items() if v > 0])
-
-# --- GLOBALE ACCORDIONS ---
+# --- ACCORDIONS ---
 with st.expander("⚙️ Modellens Regler & Logik"):
-    st.markdown("""
-    * **Trin 0 (Boligkøb først):** Startdepotet i år 1 er formuen *efter* udbetaling til bolig. Aktiedepoter er låst til FIRE.
-    * **Lagerbeskatning:** ASK beskattes fladt med 17%. Frie midler beskattes progressivt (27% op til grænsen, 42% derover). Progressionsgrænsen indekseres årligt med inflationen.
-    * **Inflationseffekt:** Udgifter, opsparingsrate og progressionsgrænser stiger alle med den valgte inflationsrate år for år i modellen.
-    * **Pension adskilt:** Pensionsdepoter bruges *ikke* før 67 år. Indbetalinger stopper det år fuld FIRE nås, hvorefter depotet kun vokser med afkast minus PAL-skat (15,3%).
-    * **Barista-timer:** Timer beregnes på *restbehovet*. Passiv indkomst fra depotet fratrækkes FIRE-udgifterne først.
-    * **Dynamiske boligudgifter:** Bliver der optaget realkreditlån, indgår ydelsen fuldt ud i de månedlige FIRE-udgifter for det givne scenarie.
-    * **Risiko - Inflation på udgifter:** FIRE-udgifterne fremskrives årligt. Nominelle kroner undervurderer systematisk fremtidige udgifter.
-    * **Risiko - Folkepensionsmodregning:** Folkepension og pensionstillæg medregnes fra år 67, men tillægget reduceres ved formue/indkomst. Modellen anvender et konservativt skøn.
-    """)
+    st.markdown("- Startdepot = Formue efter bolig. Aktier låst til FIRE.\n- Skat: Frie midler beskattes progressivt (27/42%).\n- Inflation: Udgifter og progressionsgrænse indekseres årligt.\n- Barista-timer beregnes efter passiv indkomst.")
 
-with st.expander("📊 Se Grunddata - Formue, Budget & Pension"):
-    col_j, col_m = st.columns(2)
-    with col_j:
-        st.markdown(f"""
-        ### JOHAN
-        **Løn (Netto):** {f"{inkomst_j:,}".replace(',', '.')} kr./md  
-        **Pension:** {f"{pension_j:,}".replace(',', '.')} kr. (Udbetales fra {pensionsalder_j} år)  
-        **Formue før boligkøb:**
-        - Kontanter: {f"{cash_j_base:,}".replace(',', '.')} kr.
-        - ASK: {f"{basis_ask_j:,}".replace(',', '.')} kr.
-        - Frie midler: {f"{basis_frie_j:,}".replace(',', '.')} kr.
+with st.expander("📊 Grunddata & Budget"):
+    c1, c2 = st.columns(2)
+    c1.markdown("### Johan\n" + "\n".join([f"- {k}: {v} kr." for k,v in budget_j.items()]))
+    c2.markdown("### Markus\n" + "\n".join([f"- {k}: {v} kr." for k,v in budget_m.items()]))
+
+# --- LOGIK ---
+def calculate_drawdown(depot, cur_age, target_age, rate):
+    if cur_age >= target_age: return 0
+    months = (target_age - cur_age) * 12
+    m_rate = rate / 12
+    if m_rate == 0: return depot / months
+    return depot * (m_rate * (1 + m_rate)**months) / ((1 + m_rate)**months - 1)
+
+def get_emoji_status(h):
+    if h == 0: return "🟢 0.0t"
+    elif h <= 15: return "🟡"
+    else: return "🔴"
+
+def simulate(name, boligpris, udbet_j, udbet_m, realkredit, ejerudgift, bolig_solgt):
+    c_j = cash_j_base if bolig_solgt else 0
+    c_m = cash_m_base if bolig_solgt else 0
+    faktisk_j = (udbet_j + max(0, udbet_m - c_m)) - max(0, (udbet_j + max(0, udbet_m - c_m)) - c_j)
+    faktisk_m = udbet_m - max(0, udbet_m - c_m)
+    
+    depot_j = basis_ask_j + basis_frie_j + (c_j - faktisk_j)
+    depot_m = basis_ask_m + basis_frie_m + (c_m - faktisk_m)
+    bolig_faelles = (realkredit + ejerudgift) / 2
+    
+    st.markdown(f"<div class='metric-card'><b>Udbetaling (J/M):</b> {int(faktisk_j):,} / {int(faktisk_m):,} kr. | <b>Realkredit:</b> {int(realkredit/2):,} kr./md. | <b>Startdepot:</b> {int(depot_j):,} / {int(depot_m):,} kr.</div>", unsafe_allow_html=True)
+    
+    data = []
+    e_j = sum(budget_j.values()) + bolig_faelles
+    e_m = sum(budget_m.values()) + bolig_faelles
+    
+    for y in range(0, 26):
+        # 1. Fremskrivning af udgifter og progressionsgrænse med inflation
+        cur_e_j = e_j * ((1 + global_inflation_rate) ** y)
+        cur_e_m = e_m * ((1 + global_inflation_rate) ** y)
+        cur_progression = 61300 * ((1 + global_inflation_rate) ** y)
         
-        **Personligt Budget (Faste):**
-        {format_budget(budget_j)}
-        """)
-    with col_m:
-        st.markdown(f"""
-        ### MARKUS
-        **Løn (Netto):** {f"{inkomst_m:,}".replace(',', '.')} kr./md  
-        **Pension:** {f"{pension_m:,}".replace(',', '.')} kr. (Udbetales fra {pensionsalder_m} år)  
-        **Formue før boligkøb:**
-        - Kontanter: {f"{cash_m_base:,}".replace(',', '.')} kr.
-        - ASK: {f"{basis_ask_m:,}".replace(',', '.')} kr.
-        - Frie midler: {f"{basis_frie_m:,}".replace(',', '.')} kr.
+        # 2. Beregn Passiv indkomst og Barista-behov
+        p_j = calculate_drawdown(depot_j, 41+y, 67, global_return_rate_net_drawdown)
+        p_m = calculate_drawdown(depot_m, 32+y, 67, global_return_rate_net_drawdown)
         
-        **Personligt Budget (Faste):**
-        {format_budget(budget_m)}
-        """)
+        h_j = max(0, cur_e_j - p_j) / (global_barista_wage_net * 4.33)
+        h_m = max(0, cur_e_m - p_m) / (global_barista_wage_net * 4.33)
+        
+        data.append({"År": y, "J.alder": 41+y, "J.Passiv": int(p_j), "J.Arbtid": get_emoji_status(h_j), "M.alder": 32+y, "M.Passiv": int(p_m), "M.Arbtid": get_emoji_status(h_m)})
+        
+        # 3. Depotvækst med indbygget skatteberegning (27% under grænse, 42% over grænse)
+        ret_j = depot_j * global_return_rate_gross
+        tax_j = ret_j * 0.27 if ret_j <= cur_progression else (cur_progression * 0.27 + (ret_j - cur_progression) * 0.42)
+        depot_j += (ret_j - tax_j)
+        
+        ret_m = depot_m * global_return_rate_gross
+        tax_m = ret_m * 0.27 if ret_m <= cur_progression else (cur_progression * 0.27 + (ret_m - cur_progression) * 0.42)
+        depot_m += (ret_m - tax_m)
+        
+    st.dataframe(pd.DataFrame(data), use_container_width=True, hide_index=True)
+    st.markdown("<div class='success-box'>✅ Simulering fuldført med skat og inflation.</div>", unsafe_allow_html=True)
 
-def calculate_drawdown_monthly_income(depot_total, current_age, target_age, net_return_rate):
-    if current_age >= target_age:
-        return 0
-    years_left = target_age - current_age
-    months_left = years_left * 12
-    monthly_rate = net_return_rate / 12
-
-    if monthly_rate == 0:
-        return depot_total / months_left
-    else:
-        return depot_total * (monthly_rate * (1 + monthly_rate)**months_left) / ((1 + monthly_rate)**months_left - 1)
-
-def get_emoji_status(barista_hours):
+# --- TABS ---
+t1, t2, t3, t4 = st.tabs(["Plan A", "Plan B", "Plan C", "Plan D"])
+with t1: simulate("Plan A", 4000000, 1846222, 1153888, 4075, 4564, True)
+with t2: simulate("Plan B", 4500000, 2250000, 1125000, 4576, 4564, True)
+with t3: simulate("Plan C", 5000000, 2408888, 983888, 6519, 4564, True)
+with t4: simulate("Plan D", 6700000, 0, 0, 15230, 4564, False)
