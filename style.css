@@ -8,43 +8,35 @@ html, body, .stApp, p, div, span, label, input, button, li, a, th, td, h2, h3, h
 }
 
 /* ==========================================
-   LIGHT MODE (Tvinger BEIGE igennem)
+   LIGHT MODE (Den præcise beige/varme stil)
    ========================================== */
 html[data-theme="light"] {
     --bg-color: #fcfaf7 !important;
     --text-color: #4a4742 !important;
     --sidebar-bg: #f3eee7 !important;
-    --accent-color: #eae3d8 !important;
+    --accent-bg: #eae3d8 !important;
     --border-color: #dcd7cc !important;
 }
 
-html[data-theme="light"] body, html[data-theme="light"] .stApp {
-    background-color: var(--bg-color) !important;
-    color: var(--text-color) !important;
-}
-
 /* ==========================================
-   DARK MODE (Tvinger MØRK igennem)
+   DARK MODE (Læsbar mørkegrå stil)
    ========================================== */
 html[data-theme="dark"] {
     --bg-color: #1c1b1a !important;
     --text-color: #e5e7eb !important;
     --sidebar-bg: #262422 !important;
-    --accent-color: #32302d !important;
+    --accent-bg: #32302d !important;
     --border-color: #4a4744 !important;
 }
 
-html[data-theme="dark"] body, html[data-theme="dark"] .stApp {
-    background-color: var(--bg-color) !important;
-    color: var(--text-color) !important;
-}
+/* --- ANVENDELSE AF FARVERNE (Gælder begge modes) --- */
+html, body, .stApp, .main { background-color: var(--bg-color) !important; color: var(--text-color) !important; }
 
-/* --- APPLY VARIABLER (Gælder begge modes) --- */
-h1, h1 * { font-family: 'Spectral', serif !important; color: var(--text-color) !important; font-weight: 600 !important; font-size: 38px !important; }
+h1, h1 * { font-family: 'Spectral', serif !important; color: var(--text-color) !important; font-weight: 600 !important; font-size: 38px !important; margin-bottom: 0.1em !important; }
 
 [data-testid="stSidebar"] { background-color: var(--sidebar-bg) !important; border-right: 1px solid var(--border-color) !important; }
 
-/* PILLS (iOS Style) */
+/* PILLS (iOS style) */
 [data-testid="stPills"] > div { display: flex !important; gap: 16px !important; }
 
 [data-testid="stPill"], [data-testid="stPills"] button {
@@ -58,9 +50,15 @@ h1, h1 * { font-family: 'Spectral', serif !important; color: var(--text-color) !
     color: var(--text-color) !important; font-weight: 600 !important;
 }
 
-/* Aktiv Pill (Dræber den røde farve) */
+/* Aktiv Pill (Ingen rød farve) */
 [data-testid="stPill"][data-checked="true"], 
 [data-testid="stPills"] button[aria-selected="true"] {
-    background-color: var(--accent-color) !important;
+    background-color: var(--accent-bg) !important;
     border-color: var(--border-color) !important;
 }
+
+/* Tabeller */
+[data-testid="stTable"] { border: 1px solid var(--border-color) !important; border-radius: 8px !important; }
+[data-testid="stTable"] th { background-color: var(--accent-bg) !important; color: var(--text-color) !important; }
+[data-testid="stTable"] td { color: var(--text-color) !important; }
+[data-testid="stTable"] tbody tr:nth-child(even) { background-color: rgba(128, 128, 128, 0.05) !important; }
