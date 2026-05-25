@@ -3,32 +3,15 @@ import pandas as pd
 
 st.set_page_config(page_title="FIRE Dashboard", layout="wide")
 
-# --- GLOBAL CSS ---
-st.markdown("""
-<style>
-    /* Subtile brofinansieringskasser */
-    .success-box {
-        background-color: transparent;
-        border-left: 4px solid #81c995;
-        padding: 8px 16px;
-        color: #3c4043;
-        font-family: sans-serif;
-        font-size: 0.95em;
-        margin-bottom: 10px;
-    }
-    @media (prefers-color-scheme: dark) {
-        .success-box {
-            border-left: 4px solid #5bb974;
-            color: #bdc1c6;
-        }
-    }
-    
-    /* Gør font-size på tabs 16px */
-    div[data-baseweb="tab-list"] button p {
-        font-size: 16px !important;
-    }
-</style>
-""", unsafe_allow_html=True)
+# --- INDLÆS EKSTERN CSS ---
+def load_css(file_name):
+    try:
+        with open(file_name) as f:
+            st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
+    except FileNotFoundError:
+        st.warning(f"Kunne ikke finde {file_name}. Sørg for at filen ligger i samme mappe som app.py.")
+
+load_css("style.css")
 
 st.title("FIRE Brofinansiering: Johan & Markus")
 
