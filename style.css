@@ -2,12 +2,11 @@
 @import url('https://fonts.googleapis.com/css2?family=Belleza&family=Spectral:ital,wght@0,400;0,600;0,700;1,400&display=swap');
 
 /* --- SIKKER FONT-TILDELING --- */
-/* Tvinger Belleza ned over alt standard tekst */
 html, body, .stApp, p, div, span, label, input, button, li, a, th, td, h2, h3, h4, h5, h6 {
     font-family: 'Belleza', sans-serif !important;
 }
 
-/* BUGFIX: Beskyt alle ikoner mod at få overskrevet deres font */
+/* Beskyt alle ikoner mod at få overskrevet deres font */
 .material-icons, 
 .material-symbols-rounded, 
 .material-symbols-outlined, 
@@ -50,7 +49,6 @@ h4 { font-size: 18px !important; font-weight: 600 !important; color: #1a1a1a !im
     border-right: 1px solid #e5e0d8 !important;
 }
 
-/* Sidebar tekster */
 [data-testid="stSidebar"] p, 
 [data-testid="stSidebar"] label, 
 [data-testid="stSidebar"] div,
@@ -60,8 +58,8 @@ h4 { font-size: 18px !important; font-weight: 600 !important; color: #1a1a1a !im
 
 /* --- KNAPPER (Beige og Taktile) --- */
 [data-testid="stSidebar"] button {
-    background-color: #fcfaf7 !important; /* Lys beige baggrund */
-    border: 1px solid #dcd7cc !important; /* Varm kant */
+    background-color: #fcfaf7 !important; 
+    border: 1px solid #dcd7cc !important; 
     color: #333333 !important;
     border-radius: 6px !important;
     padding: 6px 12px !important;
@@ -75,13 +73,12 @@ h4 { font-size: 18px !important; font-weight: 600 !important; color: #1a1a1a !im
     margin: 0 !important;
 }
 
-/* Hover og Aktiv tilstand for knapper */
 [data-testid="stSidebar"] button:hover,
 [data-testid="stSidebar"] button:active,
 [data-testid="stSidebar"] button:focus {
     border-color: #b5ae9f !important;
     color: #1a1a1a !important;
-    background-color: #eae3d8 !important; /* Mørkere beige indikation */
+    background-color: #eae3d8 !important; 
     box-shadow: inset 0 1px 2px rgba(0,0,0,0.04) !important;
 }
 
@@ -129,43 +126,46 @@ div[data-baseweb="tab-list"] button[aria-selected="true"] p {
     font-weight: 600 !important;
 }
 
-/* --- TABELLER (DataFrames) --- */
-[data-testid="stDataFrame"] {
-    font-size: 16px !important;
-}
-
-/* Tabellens ydre ramme matcher nu knappernes kant */
-[data-testid="stDataFrame"] table {
-    background-color: transparent !important;
+/* --- NY STYLING TIL ST.TABLE --- */
+[data-testid="stTable"] {
     border: 1px solid #dcd7cc !important;
     border-radius: 8px !important;
     overflow: hidden !important;
 }
 
-/* Overskrifter matcher knappernes hover-farve for at skabe sammenhæng */
-[data-testid="stDataFrame"] th {
+[data-testid="stTable"] table {
+    width: 100% !important;
+    margin: 0 !important;
+}
+
+/* Tabellens overskrifter (matcher knappernes hover-farve) */
+[data-testid="stTable"] th {
     background-color: #eae3d8 !important; 
     color: #1a1a1a !important;
+    font-size: 16px !important;
     font-weight: 600 !important;
     border-bottom: 2px solid #dcd7cc !important;
-    border-right: 1px solid #e5e0d8 !important;
+    padding: 12px !important;
 }
 
-/* Data-celler (Grundfarve for ulige rækker) */
-[data-testid="stDataFrame"] td {
+/* Tabellens data-celler */
+[data-testid="stTable"] td {
     background-color: #fcfaf7 !important;
     color: #2d2d2d !important;
+    font-size: 16px !important;
     border-bottom: 1px solid #e5e0d8 !important;
-    border-right: 1px solid #e5e0d8 !important;
+    padding: 10px 12px !important;
 }
 
-/* Zebra-striber: Hver anden række (lige) får en subtil beige baggrund */
-[data-testid="stDataFrame"] tbody tr:nth-child(even) td {
+/* Zebra-striber: Gør hver anden række lidt mørkere (både index og data) */
+[data-testid="stTable"] tbody tr:nth-child(even) th,
+[data-testid="stTable"] tbody tr:nth-child(even) td {
     background-color: #f5f1ea !important; 
 }
 
-/* Hover-effekt: Fremhæver rækken lidt ekstra når musen er over */
-[data-testid="stDataFrame"] tbody tr:hover td {
+/* Hover-effekt på rækkerne */
+[data-testid="stTable"] tbody tr:hover th,
+[data-testid="stTable"] tbody tr:hover td {
     background-color: #ebdccc !important;
 }
 
@@ -210,24 +210,26 @@ div[data-baseweb="tab-list"] button[aria-selected="true"] p {
         color: #f3f4f6 !important;
     }
     
-    /* Dark mode for tabeller med zebra-striber */
-    [data-testid="stDataFrame"] table {
+    /* Dark mode for st.table */
+    [data-testid="stTable"] {
         border-color: #4a4744 !important;
     }
-    [data-testid="stDataFrame"] th {
+    [data-testid="stTable"] th {
         background-color: #32302d !important;
         color: #f3f4f6 !important;
         border-color: #4a4744 !important;
     }
-    [data-testid="stDataFrame"] td {
+    [data-testid="stTable"] td {
         background-color: #1c1b1a !important;
         color: #e5e7eb !important;
         border-color: #3a3835 !important;
     }
-    [data-testid="stDataFrame"] tbody tr:nth-child(even) td {
+    [data-testid="stTable"] tbody tr:nth-child(even) th,
+    [data-testid="stTable"] tbody tr:nth-child(even) td {
         background-color: #242220 !important;
     }
-    [data-testid="stDataFrame"] tbody tr:hover td {
+    [data-testid="stTable"] tbody tr:hover th,
+    [data-testid="stTable"] tbody tr:hover td {
         background-color: #2a2826 !important;
     }
 }
