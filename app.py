@@ -33,7 +33,29 @@ if "budget_j" not in st.session_state:
 if "budget_m" not in st.session_state:
     st.session_state["budget_m"] = {"Studielaan": 1600, "Mad": 0, "Ferie": 1500, "Renovering": 1000, "A_kasse_Fagforening": 520, "Loensikring": 720, "Puregym": 0, "Transport": 500, "Telefon": 300, "Streaming": 565, "Charity": 100, "Frisoer": 450, "Toej": 1200, "Oevrig": 3000}
 
-st.title("FIRE Brofinansiering: Johan & Markus")
+
+# --- POP-UP MODAL TIL REGLER OG LOGIK ---
+@st.dialog("📜 Modellens Regler & Logik")
+def show_rules_dialog():
+    st.markdown("""
+    * **Trin 0 (Boligkøb først):** Startdepotet i år 1 er formuen *efter* udbetaling til bolig. Aktiedepoter Låst til FIRE.
+    * **Lagerbeskatning:** ASK beskattes fladt med 17%. Frie midler beskattes progressivt (27% op til grænsen, 42% derover). Progressionsgrænsen (79.400 kr. i 2026) indekseres årligt med inflationen.
+    * **Inflationseffekt:** Udgifter, opsparingsrate og progressionsgrænser stiger alle med den valgte inflationsrate år for år i modellen.
+    * **Pension adskilt:** Pensionsdepoter bruges *ikke* før pensionsalderen nås. Indbetalinger stopper det år fuld FIRE nås, hvorefter depotet kun vokser med afkast minus PAL-skat (15,3%).
+    * **Barista-timer:** Timer beregnes på *restbehovet*. Passiv indkomst fra depotet fratrækkes FIRE-udgifterne først.
+    * **Dynamiske boligudgifter:** Bliver der optaget realkreditlån, indgår ydelsen fuldt ud i de månedlige FIRE-udgifter for det givne scenarie.
+    * **Risiko - Inflation på udgifter:** FIRE-udgifterne fremskrives med 2% årligt. Nominelle kroner undervurderer systematisk fremtidige udgifter — 10.000 kr./måned i dag svarer til ca. 14.900 kr./måned om 20 år ved 2% inflation.
+    * **Risiko - Folkepensionsmodregning:** Folkepension og pensionstillæg medregnes fra pensionsalderen, men pensionstillægget reduceres ved formue og øvrig indkomst. Ved større depoter kan det effektive tillæg være markant lavere end grundbeløbet — modellen anvender et konservativt skøn.
+    """)
+
+# --- TOP HEADER MED DISKRET LINK I HØJRE SIDE ---
+col_space, col_link = st.columns([0.85, 0.15])
+with col_link:
+    if st.button("📜 Regler & Logik", type="tertiary", use_container_width=True):
+        show_rules_dialog()
+
+st.title("FIRE Brofinansiering")
+
 
 # --- 1. SIDEBAR TIL INTERAKTIVE VARIABLER ---
 st.sidebar.header("Globale Antagelser")
@@ -264,7 +286,6 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
 
 
 # --- HOVEDNAVIGATION (PILLS) ---
-st.write("")
 view_selection = st.pills(
     "Navigation", 
     options=["Basisdata & Opsætning", "Boligscenarier"], 
@@ -313,19 +334,6 @@ if view_selection == "Basisdata & Opsætning":
 
 # --- VISNING 2: SCENARIER (DEFAULT) ---
 else:
-    # Regler og logik (Nu med dokument-emoji)
-    with st.expander("📜 Modellens Regler & Logik"):
-        st.markdown("""
-        * **Trin 0 (Boligkøb først):** Startdepotet i år 1 er formuen *efter* udbetaling til bolig. Aktiedepoter er låst til FIRE.
-        * **Lagerbeskatning:** ASK beskattes fladt med 17%. Frie midler beskattes progressivt (27% op til grænsen, 42% derover). Progressionsgrænsen (79.400 kr. i 2026) indekseres årligt med inflationen.
-        * **Inflationseffekt:** Udgifter, opsparingsrate og progressionsgrænser stiger alle med den valgte inflationsrate år for år i modellen.
-        * **Pension adskilt:** Pensionsdepoter bruges *ikke* før pensionsalderen nås. Indbetalinger stopper det år fuld FIRE nås, hvorefter depotet kun vokser med afkast minus PAL-skat (15,3%).
-        * **Barista-timer:** Timer beregnes på *restbehovet*. Passiv indkomst fra depotet fratrækkes FIRE-udgifterne først.
-        * **Dynamiske boligudgifter:** Bliver der optaget realkreditlån, indgår ydelsen fuldt ud i de månedlige FIRE-udgifter for det givne scenarie.
-        * **Risiko - Inflation på udgifter:** FIRE-udgifterne fremskrives med 2% årligt. Nominelle kroner undervurderer systematisk fremtidige udgifter — 10.000 kr./måned i dag svarer til ca. 14.900 kr./måned om 20 år ved 2% inflation.
-        * **Risiko - Folkepensionsmodregning:** Folkepension og pensionstillæg medregnes fra pensionsalderen, men pensionstillægget reduceres ved formue og øvrig indkomst. Ved større depoter kan det effektive tillæg være markant lavere end grundbeløbet — modellen anvender et konservativt skøn.
-        """)
-
     # Fanerne med boligplanerne
     tab1, tab2, tab3, tab4 = st.tabs(["Plan A (4.0M)", "Plan B (4.5M)", "Plan C (5.0M)", "Plan D (Valby)"])
 
