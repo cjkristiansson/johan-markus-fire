@@ -13,6 +13,26 @@ def load_css(file_name):
 
 load_css("style.css")
 
+# --- INITIALISERING AF SESSION STATE (BASISDATA) ---
+if "inkomst_j" not in st.session_state: st.session_state["inkomst_j"] = 38468
+if "inkomst_m" not in st.session_state: st.session_state["inkomst_m"] = 32983
+if "pension_j" not in st.session_state: st.session_state["pension_j"] = 845000
+if "pension_m" not in st.session_state: st.session_state["pension_m"] = 570000
+
+# Formue før boligkøb
+if "cash_j_base" not in st.session_state: st.session_state["cash_j_base"] = 2567500
+if "cash_m_base" not in st.session_state: st.session_state["cash_m_base"] = 1153888
+if "basis_ask_j" not in st.session_state: st.session_state["basis_ask_j"] = 174000
+if "basis_frie_j" not in st.session_state: st.session_state["basis_frie_j"] = 71000
+if "basis_ask_m" not in st.session_state: st.session_state["basis_ask_m"] = 170000
+if "basis_frie_m" not in st.session_state: st.session_state["basis_frie_m"] = 0
+
+# Personlige budgetter
+if "budget_j" not in st.session_state:
+    st.session_state["budget_j"] = {"Studielaan": 0, "Mad": 6000, "Ferie": 1500, "Renovering": 1000, "A_kasse_Fagforening": 672, "Loensikring": 1674, "Puregym": 279, "Transport": 730, "Telefon": 100, "Spotify_Cloud": 100, "Charity": 100, "Frisoer": 450, "Toej": 1200, "Oevrig": 3000}
+if "budget_m" not in st.session_state:
+    st.session_state["budget_m"] = {"Studielaan": 1600, "Mad": 0, "Ferie": 1500, "Renovering": 1000, "A_kasse_Fagforening": 520, "Loensikring": 720, "Puregym": 0, "Transport": 500, "Telefon": 300, "Streaming": 565, "Charity": 100, "Frisoer": 450, "Toej": 1200, "Oevrig": 3000}
+
 st.title("FIRE Brofinansiering: Johan & Markus")
 
 # --- 1. SIDEBAR TIL INTERAKTIVE VARIABLER ---
@@ -50,65 +70,8 @@ pensionsalder_m = st.sidebar.number_input("Markus' pensionsalder", min_value=55,
 st.sidebar.divider()
 st.sidebar.markdown("💡 *Aktiedepoter (ASK + Frie midler) og Markus' BSU er fastlåst og holdt ude af boligfinansieringen i disse beregninger.*")
 
-# --- BASIS DATA (Brugt i global visning) ---
-inkomst_j, inkomst_m = 38468, 32983
-pension_j, pension_m = 845000, 570000
 
-# Opdateret formue (Johan: Friværdi + Særeje | Markus: Friværdi + Gældsnedbringelse)
-cash_j_base = 2567500
-cash_m_base = 1153888
-
-basis_ask_j, basis_frie_j = 174000, 71000
-basis_ask_m, basis_frie_m = 170000, 0
-
-budget_j = {"Studielaan": 0, "Mad": 6000, "Ferie": 1500, "Renovering": 1000, "A_kasse_Fagforening": 672, "Loensikring": 1674, "Puregym": 279, "Transport": 730, "Telefon": 100, "Spotify_Cloud": 100, "Charity": 100, "Frisoer": 450, "Toej": 1200, "Oevrig": 3000}
-budget_m = {"Studielaan": 1600, "Mad": 0, "Ferie": 1500, "Renovering": 1000, "A_kasse_Fagforening": 520, "Loensikring": 720, "Puregym": 0, "Transport": 500, "Telefon": 300, "Streaming": 565, "Charity": 100, "Frisoer": 450, "Toej": 1200, "Oevrig": 3000}
-
-def format_budget(b):
-    return "\n".join([f"- {k.replace('_', ' ')}: {f'{v:,}'.replace(',', '.')} kr." for k, v in b.items() if v > 0])
-
-# --- GLOBALE ACCORDIONS ---
-with st.expander("⚙️ Modellens Regler & Logik"):
-    st.markdown("""
-    * **Trin 0 (Boligkøb først):** Startdepotet i år 1 er formuen *efter* udbetaling til bolig. Aktiedepoter er låst til FIRE.
-    * **Lagerbeskatning:** ASK beskattes fladt med 17%. Frie midler beskattes progressivt (27% op til grænsen, 42% derover). Progressionsgrænsen (79.400 kr. i 2026) indekseres årligt med inflationen.
-    * **Inflationseffekt:** Udgifter, opsparingsrate og progressionsgrænser stiger alle med den valgte inflationsrate år for år i modellen.
-    * **Pension adskilt:** Pensionsdepoter bruges *ikke* før pensionsalderen nås. Indbetalinger stopper det år fuld FIRE nås, hvorefter depotet kun vokser med afkast minus PAL-skat (15,3%).
-    * **Barista-timer:** Timer beregnes på *restbehovet*. Passiv indkomst fra depotet fratrækkes FIRE-udgifterne først.
-    * **Dynamiske boligudgifter:** Bliver der optaget realkreditlån, indgår ydelsen fuldt ud i de månedlige FIRE-udgifter for det givne scenarie.
-    * **Risiko - Inflation på udgifter:** FIRE-udgifterne fremskrives med 2% årligt. Nominelle kroner undervurderer systematisk fremtidige udgifter — 10.000 kr./måned i dag svarer til ca. 14.900 kr./måned om 20 år ved 2% inflation.
-    * **Risiko - Folkepensionsmodregning:** Folkepension og pensionstillæg medregnes fra pensionsalderen, men pensionstillægget reduceres ved formue og øvrig indkomst. Ved større depoter kan det effektive tillæg være markant lavere end grundbeløbet — modellen anvender et konservativt skøn.
-    """)
-
-with st.expander("📊 Formue og Budget"):
-    col_j, col_m = st.columns(2)
-    with col_j:
-        st.markdown(f"""
-        ### JOHAN
-        **Løn (Netto):** {f"{inkomst_j:,}".replace(',', '.')} kr./md  
-        **Pension:** {f"{pension_j:,}".replace(',', '.')} kr. (Udbetales fra {pensionsalder_j} år)  
-        **Formue før boligkøb:**
-        - Kontanter: {f"{cash_j_base:,}".replace(',', '.')} kr.
-        - ASK: {f"{basis_ask_j:,}".replace(',', '.')} kr.
-        - Frie midler: {f"{basis_frie_j:,}".replace(',', '.')} kr.
-        
-        **Personligt Budget (Faste):**
-        {format_budget(budget_j)}
-        """)
-    with col_m:
-        st.markdown(f"""
-        ### MARKUS
-        **Løn (Netto):** {f"{inkomst_m:,}".replace(',', '.')} kr./md  
-        **Pension:** {f"{pension_m:,}".replace(',', '.')} kr. (Udbetales fra {pensionsalder_m} år)  
-        **Formue før boligkøb:**
-        - Kontanter: {f"{cash_m_base:,}".replace(',', '.')} kr.
-        - ASK: {f"{basis_ask_m:,}".replace(',', '.')} kr.
-        - Frie midler: {f"{basis_frie_m:,}".replace(',', '.')} kr.
-        
-        **Personligt Budget (Faste):**
-        {format_budget(budget_m)}
-        """)
-
+# --- DYNAMISK SIMULERINGSFUNKTION ---
 def calculate_drawdown_monthly_income(depot_total, current_age, target_age, net_return_rate):
     if current_age >= target_age:
         return 0
@@ -122,7 +85,7 @@ def calculate_drawdown_monthly_income(depot_total, current_age, target_age, net_
         return depot_total * (monthly_rate * (1 + monthly_rate)**months_left) / ((1 + monthly_rate)**months_left - 1)
 
 def get_emoji_status(barista_hours):
-    if barista_hours == 0: return "🏁 0.0t"
+    if barista_hours == 0: return "🟢 0.0t"
     elif 0 < barista_hours <= 15: return f"🟡 {barista_hours:.1f}t"
     elif 15 < barista_hours <= 25: return f"🟠 {barista_hours:.1f}t"
     else: return f"🔴 {barista_hours:.1f}t"
@@ -137,8 +100,15 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
     weeks_per_month = 4.33
     age_j, age_m = 41, 32
 
+    # Trækker dynamisk fra session_state i stedet for statiske variabler
+    inkomst_j = st.session_state["inkomst_j"]
+    inkomst_m = st.session_state["inkomst_m"]
+    pension_j = st.session_state["pension_j"]
+    pension_m = st.session_state["pension_m"]
+
     if bolig_solgt:
-        cash_j, cash_m = cash_j_base, cash_m_base
+        cash_j = st.session_state["cash_j_base"]
+        cash_m = st.session_state["cash_m_base"]
     else:
         cash_j, cash_m = 0, 0
 
@@ -151,21 +121,21 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
     overskud_cash_j = cash_j - faktisk_udbetaling_j
     overskud_cash_m = cash_m - faktisk_udbetaling_m
 
-    depot_ask_j = basis_ask_j
-    depot_free_j = basis_frie_j + overskud_cash_j
-    depot_ask_m = basis_ask_m
-    depot_free_m = basis_frie_m + overskud_cash_m
+    depot_ask_j = st.session_state["basis_ask_j"]
+    depot_free_j = st.session_state["basis_frie_j"] + overskud_cash_j
+    depot_ask_m = st.session_state["basis_ask_m"]
+    depot_free_m = st.session_state["basis_frie_m"] + overskud_cash_m
 
     fire_bortfald_j = ["A_kasse_Fagforening", "Loensikring"]
     fire_bortfald_m = ["A_kasse_Fagforening", "Loensikring", "Studielaan"]
 
     bolig_faelles = (realkreditydelse_netto + ejerudgifter_og_fællesudgifter_total) / 2
     
-    start_inv_md_j = inkomst_j - (sum(budget_j.values()) + bolig_faelles)
-    start_inv_md_m = inkomst_m - (sum(budget_m.values()) + bolig_faelles)
+    start_inv_md_j = inkomst_j - (sum(st.session_state["budget_j"].values()) + bolig_faelles)
+    start_inv_md_m = inkomst_m - (sum(st.session_state["budget_m"].values()) + bolig_faelles)
     
-    start_fire_expenses_j = sum(v for k, v in budget_j.items() if k not in fire_bortfald_j) + bolig_faelles
-    start_fire_expenses_m = sum(v for k, v in budget_m.items() if k not in fire_bortfald_m) + bolig_faelles
+    start_fire_expenses_j = sum(v for k, v in st.session_state["budget_j"].items() if k not in fire_bortfald_j) + bolig_faelles
+    start_fire_expenses_m = sum(v for k, v in st.session_state["budget_m"].items() if k not in fire_bortfald_m) + bolig_faelles
 
     if mangler_j > 0:
         st.error(f"⚠️ ADVARSEL: Udbetalingen er {f'{int(mangler_j):,}'.replace(',', '.')} kr. højere end jeres likviditet til boligkøb. Aktierne er fredet, så I skal øge lånet.")
@@ -272,7 +242,6 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
         if hours_j <= 0 and hours_m <= 0:
             break
 
-    # Konverterer til en statisk HTML-tabel og sætter 'År' som den fede kolonne til venstre
     df = pd.DataFrame(table_data)
     st.table(df.set_index("År"))
     
@@ -294,9 +263,55 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
         </div>
         """, unsafe_allow_html=True)
 
-# --- KØRSELS-SEKTION MED TABS ---
-tab1, tab2, tab3, tab4 = st.tabs(["Plan A (4.0M)", "Plan B (4.5M)", "Plan C (5.0M)", "Plan D (Valby)"])
 
+# --- STRUKTURERING AF FANER (UX ANBEFALING) ---
+tab_setup, tab1, tab2, tab3, tab4 = st.tabs([
+    "⚙️ Basisdata & Opsætning", 
+    "Plan A (4.0M)", 
+    "Plan B (4.5M)", 
+    "Plan C (5.0M)", 
+    "Plan D (Valby)"
+])
+
+# --- FANE 0: DEDIKERET INPUT OG OPSÆTNINGSSIDE ---
+with tab_setup:
+    st.subheader("Konfiguration af personlig økonomi")
+    st.markdown("Ændringer foretaget her opdaterer automatisk alle simulationsmodeller og tabeller med det samme.")
+    
+    col_setup_j, col_setup_m = st.columns(2)
+    
+    with col_setup_j:
+        st.markdown("### 👤 JOHAN DATA")
+        st.session_state["inkomst_j"] = st.number_input("Månedsløn (Netto kr.)", min_value=0, value=st.session_state["inkomst_j"], step=500, key="input_ink_j")
+        st.session_state["pension_j"] = st.number_input("Pensionsopsparing (kr.)", min_value=0, value=st.session_state["pension_j"], step=10000, key="input_pen_j")
+        
+        st.markdown("**Formue før boligkøb:**")
+        st.session_state["cash_j_base"] = st.number_input("Kontanter / Friværdi (kr.)", min_value=0, value=st.session_state["cash_j_base"], step=10000, key="input_cash_j")
+        st.session_state["basis_ask_j"] = st.number_input("Aktiesparekonto (kr.)", min_value=0, value=st.session_state["basis_ask_j"], step=5000, key="input_ask_j")
+        st.session_state["basis_frie_j"] = st.number_input("Frie midler / Aktier (kr.)", min_value=0, value=st.session_state["basis_frie_j"], step=5000, key="input_frie_j")
+        
+        st.markdown("**Personligt Budget (Faste udgifter):**")
+        df_budget_j = pd.DataFrame(list(st.session_state["budget_j"].items()), columns=["Kategori", "Beløb (kr./md)"])
+        edited_df_j = st.data_editor(df_budget_j, hide_index=True, use_container_width=True, key="editor_budget_j")
+        st.session_state["budget_j"] = dict(edited_df_j.values)
+
+    with col_setup_m:
+        st.markdown("### 👤 MARKUS DATA")
+        st.session_state["inkomst_m"] = st.number_input("Månedsløn (Netto kr.)", min_value=0, value=st.session_state["inkomst_m"], step=500, key="input_ink_m")
+        st.session_state["pension_m"] = st.number_input("Pensionsopsparing (kr.)", min_value=0, value=st.session_state["pension_m"], step=10000, key="input_pen_m")
+        
+        st.markdown("**Formue før boligkøb:**")
+        st.session_state["cash_m_base"] = st.number_input("Kontanter / Friværdi (kr.)", min_value=0, value=st.session_state["cash_m_base"], step=10000, key="input_cash_m")
+        st.session_state["basis_ask_m"] = st.number_input("Aktiesparekonto (kr.)", min_value=0, value=st.session_state["basis_ask_m"], step=5000, key="input_ask_m")
+        st.session_state["basis_frie_m"] = st.number_input("Frie midler / Aktier (kr.)", min_value=0, value=st.session_state["basis_frie_m"], step=5000, key="input_frie_m")
+        
+        st.markdown("**Personligt Budget (Faste udgifter):**")
+        df_budget_m = pd.DataFrame(list(st.session_state["budget_m"].items()), columns=["Kategori", "Beløb (kr./md)"])
+        edited_df_m = st.data_editor(df_budget_m, hide_index=True, use_container_width=True, key="editor_budget_m")
+        st.session_state["budget_m"] = dict(edited_df_m.values)
+
+
+# --- FANER TIL KØRSEL AF SCENARIER ---
 with tab1:
     simulate_joint_fire_plan("Plan A (4.0M Bolig)", 4000000, 1846222, 1153888, 4075, 4564, bolig_solgt=True)
 with tab2:
