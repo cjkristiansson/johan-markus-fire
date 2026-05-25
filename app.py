@@ -48,13 +48,11 @@ def show_rules_dialog():
     * **Risiko - Folkepensionsmodregning:** Folkepension og pensionstillæg medregnes fra pensionsalderen, men pensionstillægget reduceres ved formue og øvrig indkomst. Ved større depoter kan det effektive tillæg være markant lavere end grundbeløbet — modellen anvender et konservativt skøn.
     """)
 
-# --- TOP HEADER (TITEL OG KNAP PÅ SAMME LINJE) ---
-col_title, col_link = st.columns([0.85, 0.15])
+# --- TOP HEADER (TITEL OG KNAP PÅ PRÆCIS SAMME LINJE) ---
+col_title, col_link = st.columns([0.85, 0.15], vertical_alignment="center")
 with col_title:
     st.title("FIRE Brofinansiering")
 with col_link:
-    # Lille usynligt mellemrum for at skubbe knappen ned, så den flugter med teksten
-    st.markdown("<div style='margin-top: 12px;'></div>", unsafe_allow_html=True)
     if st.button("📜 Regler & Logik", type="tertiary", use_container_width=True):
         show_rules_dialog()
 
