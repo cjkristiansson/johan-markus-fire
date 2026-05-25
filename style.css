@@ -1,76 +1,66 @@
 @import url('https://fonts.googleapis.com/css2?family=Belleza&family=Spectral:ital,wght@0,400;0,600;0,700;1,400&display=swap');
 
-/* ==========================================================
-   1. LIGHT MODE (Dit beige design)
-   ========================================================== */
-[data-theme="light"] {
-    --bg: #fcfaf7;
-    --text: #4a4742;
-    --sidebar: #f3eee7;
-    --accent: #eae3d8;
-    --border: #dcd7cc;
+/* --- STRIP OVERFLØDIG LUFT --- */
+.block-container {
+    padding-top: 3.5rem !important; 
+    padding-bottom: 1rem !important;
 }
 
-[data-theme="light"] .stApp, [data-theme="light"] body {
-    background-color: var(--bg) !important;
-    color: var(--text) !important;
+/* --- SIKKER FONT-TILDELING --- */
+html, body, .stApp, p, div, span, label, input, button, li, a, th, td, h2, h3, h4, h5, h6 {
+    font-family: 'Belleza', sans-serif !important;
 }
 
-/* ==========================================================
-   2. DARK MODE (Læsbar mørkegrå)
-   ========================================================== */
-[data-theme="dark"] {
-    --bg: #121212;
-    --text: #e0e0e0;
-    --sidebar: #1e1e1e;
-    --accent: #333333;
-    --border: #444444;
+.material-icons, .material-symbols-rounded, .material-symbols-outlined, [class*="icon"], [class*="Icon"], [data-testid*="Icon"], svg, svg * {
+    font-family: 'Material Symbols Rounded', 'Material Icons', sans-serif !important;
 }
 
-[data-theme="dark"] .stApp, [data-theme="dark"] body {
-    background-color: var(--bg) !important;
-    color: var(--text) !important;
+/* Generel tekststørrelse skruet op for læsbarhed */
+p, label, li, a, .markdown-text-container, th, td {
+    font-size: 18px !important;
 }
 
-/* ==========================================================
-   3. FÆLLES STYLING (Bruger variablerne fra ovenstående)
-   ========================================================== */
+/* --- OVERSKRIFTER --- */
+h1, h1 * {
+    font-family: 'Spectral', serif !important;
+    font-weight: 600 !important;
+    font-size: 38px !important;
+    letter-spacing: -0.02em;
+    margin-bottom: 0.1em !important;
+    line-height: 1.2 !important;
+}
+h2 { font-size: 26px !important; font-weight: 600 !important; }
+h3 { font-size: 22px !important; font-weight: 600 !important; }
+h4 { font-size: 18px !important; font-weight: 600 !important; }
 
-/* Hovedtitel og tekst */
-h1, h2, h3, h4, p, label, li, a { font-family: 'Belleza', sans-serif !important; color: var(--text) !important; }
-h1 { font-family: 'Spectral', serif !important; }
-
-/* Sidebar */
-[data-testid="stSidebar"] { background-color: var(--sidebar) !important; }
-
-/* PILLS (iOS-stil) */
-[data-testid="stPills"] { background-color: transparent !important; }
-[data-testid="stPills"] > div { display: flex !important; gap: 16px !important; }
-
-[data-testid="stPill"], [data-testid="stPills"] button {
-    background-color: var(--bg) !important;
-    border: 1px solid var(--border) !important;
-    border-radius: 6px !important;
-    padding: 6px 16px !important;
-    transition: all 0.2s ease !important;
+/* --- ST.TABLE STYLING (Gennemsigtig så det virker i begge modes) --- */
+[data-testid="stTable"] {
+    border: 1px solid rgba(128, 128, 128, 0.2) !important;
+    border-radius: 8px !important;
+    overflow: hidden !important;
+}
+[data-testid="stTable"] table {
+    width: 100% !important;
+    margin: 0 !important;
+}
+[data-testid="stTable"] th {
+    font-size: 16px !important;
+    font-weight: 600 !important;
+    border-bottom: 2px solid rgba(128, 128, 128, 0.2) !important;
+    padding: 12px !important;
+}
+[data-testid="stTable"] td {
+    font-size: 16px !important;
+    border-bottom: 1px solid rgba(128, 128, 128, 0.1) !important;
+    padding: 10px 12px !important;
 }
 
-/* Aktiv Pill (Tvinger farve) */
-[data-testid="stPill"][data-checked="true"], 
-[data-testid="stPills"] button[aria-selected="true"] {
-    background-color: var(--accent) !important;
-    border-color: var(--border) !important;
+/* Zebra-striber med neutrale opaciteter */
+[data-testid="stTable"] tbody tr:nth-child(even) th,
+[data-testid="stTable"] tbody tr:nth-child(even) td {
+    background-color: rgba(128, 128, 128, 0.05) !important; 
 }
-
-/* Tabeller */
-[data-testid="stTable"] { border: 1px solid var(--border) !important; }
-[data-testid="stTable"] th { background-color: var(--accent) !important; color: var(--text) !important; }
-[data-testid="stTable"] td { color: var(--text) !important; }
-[data-testid="stTable"] tbody tr:nth-child(even) { background-color: rgba(128,128,128,0.1) !important; }
-
-/* Success-boks */
-.success-box { 
-    background-color: var(--accent) !important; 
-    border: 1px solid var(--border) !important; 
-    padding: 16px; border-radius: 8px; 
+[data-testid="stTable"] tbody tr:hover th,
+[data-testid="stTable"] tbody tr:hover td {
+    background-color: rgba(128, 128, 128, 0.1) !important;
 }
