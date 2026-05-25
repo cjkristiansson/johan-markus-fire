@@ -369,7 +369,7 @@ else:
 
     with tab_55:
         # 🟢 RET DISSE TAL NÅR DU HAR BANKENS ESTIMAT
-        ydelse_netto_55 = 11000
+        ydelse_netto_55 = 13659
         ejerudgifter_55 = 4564
         
         simulate_joint_fire_plan("Køb af 5.5M Bolig", 5500000, 1515000, 685000, ydelse_netto_55, ejerudgifter_55, bolig_solgt=True)
