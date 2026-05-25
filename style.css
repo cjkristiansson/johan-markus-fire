@@ -1,26 +1,26 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
 
-/* Global indstillinger - Claude's beige/varme farvepalet */
+/* Global indstillinger - Varm Claude-palet med moderne font */
 html, body, [class*="css"], .stApp {
-    font-family: 'Inter', sans-serif !important;
-    background-color: #fcfaf7 !important; /* Blød beige/råhvid baggrund */
+    font-family: 'Plus Jakarta Sans', sans-serif !important;
+    background-color: #fcfaf7 !important; 
     color: #2d2d2d !important;
 }
 
-/* Sidebarren tilpasses med en mørkere beige tone og en subtil kant */
+/* Sidebarren */
 [data-testid="stSidebar"] {
     background-color: #f3eee7 !important;
     border-right: 1px solid #e5e0d8 !important;
 }
 
-/* Rene, moderne overskrifter */
+/* Overskrifter */
 h1, h2, h3, h4 {
     color: #1a1a1a !important;
     font-weight: 600 !important;
     letter-spacing: -0.02em;
 }
 
-/* Knapperne i sidebaren - Claude-inspireret udtryk og hover-effekt */
+/* Knapper i sidebaren */
 [data-testid="stSidebar"] button {
     background-color: #ffffff !important;
     border: 1px solid #dcd7cc !important;
@@ -35,7 +35,7 @@ h1, h2, h3, h4 {
     background-color: #faf8f5 !important;
 }
 
-/* Subtile brofinansieringskasser - Claude stil */
+/* Brofinansieringskasser */
 .success-box {
     background-color: #f8fbf8;
     border: 1px solid #d1e0d5;
@@ -48,35 +48,43 @@ h1, h2, h3, h4 {
     box-shadow: 0 1px 2px rgba(0,0,0,0.02);
 }
 
-/* Styling af faner (Tabs) med 16px font og moderne kort-look */
+/* --- NYT TAB DESIGN (Minimalistisk linje i stedet for knapper) --- */
 div[data-baseweb="tab-list"] {
-    gap: 8px;
-    padding-bottom: 10px;
+    gap: 24px; /* Giver mere luft mellem teksterne */
+    padding-bottom: 0px;
+    border-bottom: 1px solid #e5e0d8; /* Subtil gennemgående linje */
 }
+
+/* Fjerner knap-looket fuldstændig */
 div[data-baseweb="tab-list"] button {
     background-color: transparent !important;
-    border-radius: 6px !important;
-    padding: 8px 16px !important;
+    border: none !important;
+    border-radius: 0px !important;
+    padding: 10px 4px !important;
+    box-shadow: none !important;
 }
-/* Den aktive fane */
+
+/* Den aktive fane får en streg i bunden */
 div[data-baseweb="tab-list"] button[aria-selected="true"] {
-    background-color: #ffffff !important;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.06) !important;
-    border: 1px solid #e5e5e5 !important;
+    background-color: transparent !important;
+    border-bottom: 2px solid #1a1a1a !important; 
+    box-shadow: none !important;
 }
-/* Teksten i fanerne */
+
+/* Tab tekst (Inaktiv) */
 div[data-baseweb="tab-list"] button p {
     font-size: 16px !important;
     font-weight: 500 !important;
-    color: #5c5c5c;
+    color: #8c857b; /* Afdæmpet farve */
 }
-/* Teksten i den aktive fane */
+
+/* Tab tekst (Aktiv) */
 div[data-baseweb="tab-list"] button[aria-selected="true"] p {
     color: #1a1a1a !important;
     font-weight: 600 !important;
 }
 
-/* Mørk tilstand (Dark Mode) */
+/* --- MØRK TILSTAND (Dark Mode) --- */
 @media (prefers-color-scheme: dark) {
     html, body, [class*="css"], .stApp {
         background-color: #1c1b1a !important;
@@ -104,12 +112,16 @@ div[data-baseweb="tab-list"] button[aria-selected="true"] p {
         border: 1px solid #274533;
         color: #a7d3b9;
     }
+    
+    /* Dark mode for minimalistiske tabs */
+    div[data-baseweb="tab-list"] {
+        border-bottom: 1px solid #3a3835;
+    }
     div[data-baseweb="tab-list"] button[aria-selected="true"] {
-        background-color: #2d2c2b !important;
-        border: 1px solid #403e3c !important;
+        border-bottom: 2px solid #f3f4f6 !important;
     }
     div[data-baseweb="tab-list"] button p {
-        color: #9ca3af;
+        color: #8b8986;
     }
     div[data-baseweb="tab-list"] button[aria-selected="true"] p {
         color: #f3f4f6 !important;
