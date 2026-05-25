@@ -134,24 +134,24 @@ div[data-baseweb="tab-list"] button[aria-selected="true"] p {
     font-size: 16px !important;
 }
 
-/* Fjerner Streamlits standard hvide baggrund på selve tabellen */
+/* Tabellens ydre ramme matcher nu knappernes kant */
 [data-testid="stDataFrame"] table {
     background-color: transparent !important;
-    border: 1px solid #e5e0d8 !important;
+    border: 1px solid #dcd7cc !important;
     border-radius: 8px !important;
     overflow: hidden !important;
 }
 
-/* Overskrifter i tabellen */
+/* Overskrifter matcher knappernes hover-farve for at skabe sammenhæng */
 [data-testid="stDataFrame"] th {
-    background-color: #f3eee7 !important; /* Samme varme farve som sidebaren */
-    color: #2d2d2d !important;
+    background-color: #eae3d8 !important; 
+    color: #1a1a1a !important;
     font-weight: 600 !important;
     border-bottom: 2px solid #dcd7cc !important;
     border-right: 1px solid #e5e0d8 !important;
 }
 
-/* Data-celler i tabellen */
+/* Data-celler (Grundfarve for ulige rækker) */
 [data-testid="stDataFrame"] td {
     background-color: #fcfaf7 !important;
     color: #2d2d2d !important;
@@ -159,9 +159,14 @@ div[data-baseweb="tab-list"] button[aria-selected="true"] p {
     border-right: 1px solid #e5e0d8 !important;
 }
 
-/* Subtil række-hover effekt */
+/* Zebra-striber: Hver anden række (lige) får en subtil beige baggrund */
+[data-testid="stDataFrame"] tbody tr:nth-child(even) td {
+    background-color: #f5f1ea !important; 
+}
+
+/* Hover-effekt: Fremhæver rækken lidt ekstra når musen er over */
 [data-testid="stDataFrame"] tbody tr:hover td {
-    background-color: #f5f1ea !important;
+    background-color: #ebdccc !important;
 }
 
 /* --- DARK MODE --- */
@@ -204,16 +209,23 @@ div[data-baseweb="tab-list"] button[aria-selected="true"] p {
     div[data-baseweb="tab-list"] button[aria-selected="true"] p {
         color: #f3f4f6 !important;
     }
-    /* Dark mode for tabeller */
+    
+    /* Dark mode for tabeller med zebra-striber */
+    [data-testid="stDataFrame"] table {
+        border-color: #4a4744 !important;
+    }
     [data-testid="stDataFrame"] th {
-        background-color: #262422 !important;
-        color: #e5e7eb !important;
+        background-color: #32302d !important;
+        color: #f3f4f6 !important;
         border-color: #4a4744 !important;
     }
     [data-testid="stDataFrame"] td {
         background-color: #1c1b1a !important;
         color: #e5e7eb !important;
         border-color: #3a3835 !important;
+    }
+    [data-testid="stDataFrame"] tbody tr:nth-child(even) td {
+        background-color: #242220 !important;
     }
     [data-testid="stDataFrame"] tbody tr:hover td {
         background-color: #2a2826 !important;
