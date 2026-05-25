@@ -1,7 +1,6 @@
-/* Import Spectral (overskrift) og Belleza (brødtekst) */
 @import url('https://fonts.googleapis.com/css2?family=Belleza&family=Spectral:ital,wght@0,400;0,600;0,700;1,400&display=swap');
 
-/* --- STRIP OVERFLØDIG LUFT I TOPPEN AF STREAMLIT --- */
+/* --- STRIP OVERFLØDIG LUFT --- */
 .block-container {
     padding-top: 3.5rem !important; 
     padding-bottom: 1rem !important;
@@ -12,138 +11,31 @@ html, body, .stApp, p, div, span, label, input, button, li, a, th, td, h2, h3, h
     font-family: 'Belleza', sans-serif !important;
 }
 
-/* Beskyt alle ikoner mod at få overskrevet deres font */
 .material-icons, .material-symbols-rounded, .material-symbols-outlined, [class*="icon"], [class*="Icon"], [data-testid*="Icon"], svg, svg * {
     font-family: 'Material Symbols Rounded', 'Material Icons', sans-serif !important;
 }
 
-/* Base baggrund og tekstfarve (Light Mode Default) */
-html, body, .stApp {
-    background-color: #fcfaf7 !important; 
-    color: #4a4742 !important; 
-}
-
-/* Tving tekstfarve i light mode for alle tekstelementer */
-p, label, li, a, span, .markdown-text-container {
+/* Generel tekststørrelse skruet op for læsbarhed */
+p, label, li, a, .markdown-text-container, th, td {
     font-size: 18px !important;
-    color: #4a4742 !important;
 }
 
 /* --- OVERSKRIFTER --- */
 h1, h1 * {
     font-family: 'Spectral', serif !important;
-    color: #2c2925 !important; 
     font-weight: 600 !important;
     font-size: 38px !important;
     letter-spacing: -0.02em;
     margin-bottom: 0.1em !important;
     line-height: 1.2 !important;
 }
-h2 { font-size: 26px !important; font-weight: 600 !important; color: #2c2925 !important; }
-h3 { font-size: 22px !important; font-weight: 600 !important; color: #2c2925 !important; }
-h4 { font-size: 18px !important; font-weight: 600 !important; color: #2c2925 !important; }
+h2 { font-size: 26px !important; font-weight: 600 !important; }
+h3 { font-size: 22px !important; font-weight: 600 !important; }
+h4 { font-size: 18px !important; font-weight: 600 !important; }
 
-/* --- SIDEBAR STYLING --- */
-[data-testid="stSidebar"] {
-    background-color: #f3eee7 !important;
-    border-right: 1px solid #e5e0d8 !important;
-}
-
-/* --- ALMINDELIGE KNAPPER (Standard/Konservativ) --- */
-[data-testid="stSidebar"] button {
-    background-color: #fcfaf7 !important; 
-    border: 1px solid #dcd7cc !important; 
-    color: #4a4742 !important;
-    border-radius: 6px !important;
-    padding: 6px 12px !important;
-    transition: all 0.2s ease !important;
-    box-shadow: 0 1px 2px rgba(0,0,0,0.02) !important;
-}
-[data-testid="stSidebar"] button p {
-    font-size: 16px !important;
-    font-weight: 600 !important;
-    margin: 0 !important;
-}
-[data-testid="stSidebar"] button:hover {
-    border-color: #b5ae9f !important;
-    color: #2c2925 !important;
-    background-color: #eae3d8 !important; 
-    box-shadow: inset 0 1px 2px rgba(0,0,0,0.04) !important;
-}
-
-/* --- PILLS / HOVEDNAVIGATION (TVUNGEN STYLING & SPACING) --- */
-[data-testid="stPills"] {
-    background-color: transparent !important;
-    border: none !important;
-}
-
-/* Tvinger afstanden (spacing) mellem de to pills */
-[data-testid="stPills"] [data-testid="stPill"],
-[data-testid="stPills"] button,
-[data-testid="stPills"] label {
-    margin-right: 16px !important; 
-    background-color: #fcfaf7 !important; 
-    border: 1px solid #dcd7cc !important; 
-    border-radius: 6px !important;
-    padding: 6px 16px !important;
-    transition: all 0.2s ease !important;
-    box-shadow: 0 1px 2px rgba(0,0,0,0.02) !important;
-}
-
-/* Sikrer teksten i pills matcher knapperne (og ikke er rød) */
-[data-testid="stPills"] [data-testid="stPill"] p,
-[data-testid="stPills"] [data-testid="stPill"] span,
-[data-testid="stPills"] button p,
-[data-testid="stPills"] label p {
-    font-weight: 600 !important;
-    color: #4a4742 !important; 
-    margin: 0 !important;
-    font-size: 16px !important;
-}
-
-/* Hover effect */
-[data-testid="stPills"] [data-testid="stPill"]:hover,
-[data-testid="stPills"] button:hover,
-[data-testid="stPills"] label:hover {
-    border-color: #b5ae9f !important;
-    background-color: #eae3d8 !important;
-}
-
-/* AKTIV (Selected) state - DRÆBER DEN RØDE FARVE FULDSTÆNDIG */
-[data-testid="stPills"] [data-checked="true"],
-[data-testid="stPills"] [aria-pressed="true"],
-[data-testid="stPills"] [aria-selected="true"],
-[data-testid="stPill"][data-checked="true"],
-[data-testid="stPills"] button[data-checked="true"] {
-    background-color: #eae3d8 !important; 
-    border-color: #b5ae9f !important; 
-    box-shadow: inset 0 1px 2px rgba(0,0,0,0.04) !important;
-}
-
-/* Tvinger teksten til at være koksgrå fremfor rød, når den er aktiv */
-[data-testid="stPills"] [data-checked="true"] *,
-[data-testid="stPills"] [aria-pressed="true"] *,
-[data-testid="stPill"][data-checked="true"] *,
-[data-testid="stPills"] button[data-checked="true"] * {
-    color: #2c2925 !important;
-}
-
-
-/* --- BROFINANSIERINGSKASSER --- */
-.success-box {
-    background-color: #f8fbf8;
-    border: 1px solid #d1e0d5;
-    border-radius: 8px;
-    padding: 16px 20px;
-    color: #2b593f;
-    font-size: 18px !important; 
-    margin-top: 10px;
-    margin-bottom: 12px;
-}
-
-/* --- ST.TABLE STYLING --- */
+/* --- ST.TABLE STYLING (Gennemsigtig så det virker i begge modes) --- */
 [data-testid="stTable"] {
-    border: 1px solid #dcd7cc !important;
+    border: 1px solid rgba(128, 128, 128, 0.2) !important;
     border-radius: 8px !important;
     overflow: hidden !important;
 }
@@ -152,92 +44,23 @@ h4 { font-size: 18px !important; font-weight: 600 !important; color: #2c2925 !im
     margin: 0 !important;
 }
 [data-testid="stTable"] th {
-    background-color: #eae3d8 !important; 
-    color: #2c2925 !important;
     font-size: 16px !important;
     font-weight: 600 !important;
-    border-bottom: 2px solid #dcd7cc !important;
+    border-bottom: 2px solid rgba(128, 128, 128, 0.2) !important;
     padding: 12px !important;
 }
 [data-testid="stTable"] td {
-    background-color: #fcfaf7 !important;
-    color: #4a4742 !important;
     font-size: 16px !important;
-    border-bottom: 1px solid #e5e0d8 !important;
+    border-bottom: 1px solid rgba(128, 128, 128, 0.1) !important;
     padding: 10px 12px !important;
 }
+
+/* Zebra-striber med neutrale opaciteter */
 [data-testid="stTable"] tbody tr:nth-child(even) th,
 [data-testid="stTable"] tbody tr:nth-child(even) td {
-    background-color: #f5f1ea !important; 
+    background-color: rgba(128, 128, 128, 0.05) !important; 
 }
 [data-testid="stTable"] tbody tr:hover th,
 [data-testid="stTable"] tbody tr:hover td {
-    background-color: #ebdccc !important;
-}
-
-/* ==========================================
-   DARK MODE (Fokus: 100% Læsbarhed)
-   ========================================== */
-@media (prefers-color-scheme: dark) {
-    /* 1. Tving baggrunden til at være mørk */
-    html, body, .stApp, .main, .block-container {
-        background-color: #121212 !important;
-    }
-    
-    /* 2. Tving al tekst til at være lys (overskriver Light Mode) */
-    p, span, div, label, li, a, h1, h2, h3, h4, h5, h6, th, td {
-        color: #e0e0e0 !important;
-    }
-    
-    /* 3. Sidebar */
-    [data-testid="stSidebar"] {
-        background-color: #1e1e1e !important;
-        border-right: 1px solid #333333 !important;
-    }
-
-    /* 4. Alle Knapper og Pills */
-    [data-testid="stSidebar"] button, 
-    [data-testid="stPills"] [data-testid="stPill"],
-    [data-testid="stPills"] button,
-    [data-testid="stPills"] label {
-        background-color: #2c2c2c !important;
-        border-color: #555555 !important;
-    }
-    
-    /* Alle Knapper/Pills - Hover og Aktiv */
-    [data-testid="stSidebar"] button:hover,
-    [data-testid="stPills"] [data-testid="stPill"]:hover,
-    [data-testid="stPills"] [data-checked="true"],
-    [data-testid="stPills"] [aria-pressed="true"] {
-        background-color: #444444 !important;
-        border-color: #777777 !important;
-    }
-
-    /* 5. Brofinansierings kassen */
-    .success-box {
-        background-color: #1a2b20 !important;
-        border-color: #2d4a35 !important;
-        color: #a3d3b1 !important;
-    }
-
-    /* 6. Tabeller */
-    [data-testid="stTable"] {
-        border-color: #333333 !important;
-    }
-    [data-testid="stTable"] th {
-        background-color: #1e1e1e !important;
-        border-color: #333333 !important;
-    }
-    [data-testid="stTable"] td {
-        background-color: #121212 !important;
-        border-color: #333333 !important;
-    }
-    [data-testid="stTable"] tbody tr:nth-child(even) th,
-    [data-testid="stTable"] tbody tr:nth-child(even) td {
-        background-color: #1a1a1a !important;
-    }
-    [data-testid="stTable"] tbody tr:hover th,
-    [data-testid="stTable"] tbody tr:hover td {
-        background-color: #2c2c2c !important;
-    }
+    background-color: rgba(128, 128, 128, 0.1) !important;
 }
