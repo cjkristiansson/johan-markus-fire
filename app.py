@@ -288,14 +288,14 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
 # --- HOVEDNAVIGATION (PILLS) ---
 view_selection = st.pills(
     "Navigation", 
-    options=["Basisdata & Opsætning", "Boligscenarier"], 
+    options=["Boligscenarier", "⚙️ Basisdata & Opsætning"], 
     default="Boligscenarier", 
     label_visibility="collapsed"
 )
 st.write("")
 
 # --- VISNING 1: OPSÆTNING ---
-if view_selection == "Basisdata & Opsætning":
+if view_selection == "⚙️ Basisdata & Opsætning":
     st.subheader("Konfiguration af personlig økonomi")
     st.markdown("Ændringer foretaget her gemmes automatisk og bruges i alle boligscenarier.")
     
@@ -332,7 +332,7 @@ if view_selection == "Basisdata & Opsætning":
         st.session_state["budget_m"] = dict(edited_df_m.values)
 
 
-# --- VISNING 2: SCENARIER (DEFAULT) ---
+# --- VISNING 2: SCENARIER ---
 else:
     # Fanerne med boligplanerne
     tab1, tab2, tab3, tab4 = st.tabs(["Plan A (4.0M)", "Plan B (4.5M)", "Plan C (5.0M)", "Plan D (Valby)"])
