@@ -9,7 +9,7 @@ def load_css(file_name):
         with open(file_name) as f:
             st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
     except FileNotFoundError:
-        st.warning(f"Kunne ikke finde {file_name}. Sørg for at filen ligger i samme mappe som app.py.")
+        pass
 
 load_css("style.css")
 
@@ -264,14 +264,29 @@ if view_selection == "⚙️ Basisdata & Opsætning":
 
 # --- VISNING 2: SCENARIER ---
 else:
-    # Robust kontrol af URL parametre der fungerer i alle Streamlit versioner
+    # ---------------------------------------------------------
+    # SUPER-ROBUST TJEK: Henter 'solo' uanset fejl i URL'en
+    # ---------------------------------------------------------
     is_solo_mode = False
-    if hasattr(st, "query_params"):
-        if st.query_params.get("mode") == "solo":
-            is_solo_mode = True
-    elif hasattr(st, "experimental_get_query_params"):
-        if "solo" in st.experimental_get_query_params().get("mode", []):
-            is_solo_mode = True
+    
+    # Check 1: Den hemmelige "Bagdør" (Indtast 9999999 i opsætning)
+    if st.session_state.get("cash_j_base", 0) == 9999999:
+        is_solo_mode = True
+
+    # Check 2: Streamlits Query Params
+    try:
+        if hasattr(st, "query_params"):
+            val = str(st.query_params.get("mode", "")).lower()
+            if "solo" in val:
+                is_solo_mode = True
+        if not is_solo_mode and hasattr(st, "experimental_get_query_params"):
+            params = st.experimental_get_query_params()
+            if "mode" in params:
+                for v in params["mode"]:
+                    if "solo" in str(v).lower():
+                        is_solo_mode = True
+    except Exception:
+        pass
 
     tab_names = ["3.5M", "4.0M", "4.5M", "5.0M", "5.5M", "Valby"]
     if is_solo_mode: 
