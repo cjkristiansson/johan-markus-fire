@@ -13,7 +13,7 @@ def load_css(file_name):
 
 load_css("style.css")
 
-st.title("FIRE Brofinansiering: Johan & Markus")
+st.title("FIRE Brofinansiering")
 
 # --- 1. SIDEBAR TIL INTERAKTIVE VARIABLER ---
 st.sidebar.header("Globale Antagelser")
