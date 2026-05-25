@@ -195,9 +195,13 @@ def simulate_solo_fire_plan(scenario_name, boligpris, udbetaling_j, realkredityd
     depot_free_j = st.session_state["basis_frie_j"] + (cash_j - faktisk_udbetaling_j)
     depot_ask_j = st.session_state["basis_ask_j"]
 
+    # SOLO BUDGET TILPASNING (Mad nedjusteres til 3000 kr. for en person)
+    solo_budget_j = st.session_state["budget_j"].copy()
+    solo_budget_j["Mad"] = 3000
+
     bolig_total = realkreditydelse_netto + ejerudgifter_total
-    start_inv_md_j = st.session_state["inkomst_j"] - (sum(st.session_state["budget_j"].values()) + bolig_total)
-    start_fire_j = sum(v for k, v in st.session_state["budget_j"].items() if k not in ["A_kasse_Fagforening", "Loensikring"]) + bolig_total
+    start_inv_md_j = st.session_state["inkomst_j"] - (sum(solo_budget_j.values()) + bolig_total)
+    start_fire_j = sum(v for k, v in solo_budget_j.items() if k not in ["A_kasse_Fagforening", "Loensikring"]) + bolig_total
 
     st.subheader(f"JOHAN (SOLO: {scenario_name})")
     st.markdown(f"""
@@ -269,11 +273,11 @@ if view_selection == "⚙️ Basisdata & Opsætning":
 else:
     is_solo_mode = False
     
-    # 1. Den sikre UI bagdør: Skriv "solo" i tekstfeltet nederst i venstre side.
+    # Den sikre UI bagdør: Skriv "solo" i tekstfeltet nederst i venstre side.
     if st.session_state.get("secret_id", "").strip().lower() == "solo":
         is_solo_mode = True
 
-    # 2. URL Fallback (I fald Streamlit opdaterer deres caching)
+    # URL Fallback
     try:
         if "mode" in st.query_params and st.query_params["mode"] == "solo":
             is_solo_mode = True
@@ -307,11 +311,11 @@ else:
 
     if is_solo_mode:
         with tabs[6]:
-            yd_s30 = st.number_input("Månedlig nettoydelse (Solo 3.0M)", value=6000, step=100, key="yds30")
+            yd_s30 = st.number_input("Månedlig nettoydelse (Solo 3.0M)", value=7308, step=100, key="yds30")
             simulate_solo_fire_plan("3.0M Solo", 3000000, 1200000, yd_s30, 3500)
         with tabs[7]:
-            yd_s35 = st.number_input("Månedlig nettoydelse (Solo 3.5M)", value=7000, step=100, key="yds35")
+            yd_s35 = st.number_input("Månedlig nettoydelse (Solo 3.5M)", value=8516, step=100, key="yds35")
             simulate_solo_fire_plan("3.5M Solo", 3500000, 1400000, yd_s35, 4000)
         with tabs[8]:
-            yd_s40 = st.number_input("Månedlig nettoydelse (Solo 4.0M)", value=8000, step=100, key="yds40")
+            yd_s40 = st.number_input("Månedlig nettoydelse (Solo 4.0M)", value=9724, step=100, key="yds40")
             simulate_solo_fire_plan("4.0M Solo", 4000000, 1600000, yd_s40, 4500)
