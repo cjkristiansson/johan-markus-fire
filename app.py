@@ -263,33 +263,20 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
         """, unsafe_allow_html=True)
 
 
-# --- GLOBALE ACCORDIONS ---
-with st.expander("⚙️ Modellens Regler & Logik"):
-    st.markdown("""
-    * **Trin 0 (Boligkøb først):** Startdepotet i år 1 er formuen *efter* udbetaling til bolig. Aktiedepoter er låst til FIRE.
-    * **Lagerbeskatning:** ASK beskattes fladt med 17%. Frie midler beskattes progressivt (27% op til grænsen, 42% derover). Progressionsgrænsen (79.400 kr. i 2026) indekseres årligt med inflationen.
-    * **Inflationseffekt:** Udgifter, opsparingsrate og progressionsgrænser stiger alle med den valgte inflationsrate år for år i modellen.
-    * **Pension adskilt:** Pensionsdepoter bruges *ikke* før pensionsalderen nås. Indbetalinger stopper det år fuld FIRE nås, hvorefter depotet kun vokser med afkast minus PAL-skat (15,3%).
-    * **Barista-timer:** Timer beregnes på *restbehovet*. Passiv indkomst fra depotet fratrækkes FIRE-udgifterne først.
-    * **Dynamiske boligudgifter:** Bliver der optaget realkreditlån, indgår ydelsen fuldt ud i de månedlige FIRE-udgifter for det givne scenarie.
-    * **Risiko - Inflation på udgifter:** FIRE-udgifterne fremskrives med 2% årligt. Nominelle kroner undervurderer systematisk fremtidige udgifter — 10.000 kr./måned i dag svarer til ca. 14.900 kr./måned om 20 år ved 2% inflation.
-    * **Risiko - Folkepensionsmodregning:** Folkepension og pensionstillæg medregnes fra pensionsalderen, men pensionstillægget reduceres ved formue og øvrig indkomst. Ved større depoter kan det effektive tillæg være markant lavere end grundbeløbet — modellen anvender et konservativt skøn.
-    """)
+# --- HOVEDNAVIGATION ---
+st.write("")
+view_selection = st.radio(
+    "Vælg visning:", 
+    ["1. Basisdata & Opsætning", "2. Boligscenarier"], 
+    horizontal=True, 
+    label_visibility="collapsed"
+)
+st.write("")
 
-
-# --- STRUKTURERING AF FANER ---
-tab_setup, tab1, tab2, tab3, tab4 = st.tabs([
-    "⚙️ Basisdata & Opsætning", 
-    "Plan A (4.0M)", 
-    "Plan B (4.5M)", 
-    "Plan C (5.0M)", 
-    "Plan D (Valby)"
-])
-
-# --- FANE 0: DEDIKERET INPUT OG OPSÆTNINGSSIDE ---
-with tab_setup:
+# --- VISNING 1: OPSÆTNING ---
+if view_selection == "1. Basisdata & Opsætning":
     st.subheader("Konfiguration af personlig økonomi")
-    st.markdown("Ændringer foretaget her opdaterer automatisk alle simulationsmodeller og tabeller med det samme.")
+    st.markdown("Ændringer foretaget her gemmes automatisk og bruges i alle boligscenarier.")
     
     col_setup_j, col_setup_m = st.columns(2)
     
@@ -324,12 +311,29 @@ with tab_setup:
         st.session_state["budget_m"] = dict(edited_df_m.values)
 
 
-# --- FANER TIL KØRSEL AF SCENARIER ---
-with tab1:
-    simulate_joint_fire_plan("Plan A (4.0M Bolig)", 4000000, 1846222, 1153888, 4075, 4564, bolig_solgt=True)
-with tab2:
-    simulate_joint_fire_plan("Plan B (4.5M Bolig)", 4500000, 2250000, 1125000, 4576, 4564, bolig_solgt=True)
-with tab3:
-    simulate_joint_fire_plan("Plan C (5.0M Bolig)", 5000000, 2408888, 983888, 6519, 4564, bolig_solgt=True)
-with tab4:
-    simulate_joint_fire_plan("Plan D (Valby Nuværende)", 6700000, 0, 0, 15230, 4564, bolig_solgt=False)
+# --- VISNING 2: SCENARIER ---
+else:
+    # Regler og logik (Nu med dokument-emoji)
+    with st.expander("📜 Modellens Regler & Logik"):
+        st.markdown("""
+        * **Trin 0 (Boligkøb først):** Startdepotet i år 1 er formuen *efter* udbetaling til bolig. Aktiedepoter er låst til FIRE.
+        * **Lagerbeskatning:** ASK beskattes fladt med 17%. Frie midler beskattes progressivt (27% op til grænsen, 42% derover). Progressionsgrænsen (79.400 kr. i 2026) indekseres årligt med inflationen.
+        * **Inflationseffekt:** Udgifter, opsparingsrate og progressionsgrænser stiger alle med den valgte inflationsrate år for år i modellen.
+        * **Pension adskilt:** Pensionsdepoter bruges *ikke* før pensionsalderen nås. Indbetalinger stopper det år fuld FIRE nås, hvorefter depotet kun vokser med afkast minus PAL-skat (15,3%).
+        * **Barista-timer:** Timer beregnes på *restbehovet*. Passiv indkomst fra depotet fratrækkes FIRE-udgifterne først.
+        * **Dynamiske boligudgifter:** Bliver der optaget realkreditlån, indgår ydelsen fuldt ud i de månedlige FIRE-udgifter for det givne scenarie.
+        * **Risiko - Inflation på udgifter:** FIRE-udgifterne fremskrives med 2% årligt. Nominelle kroner undervurderer systematisk fremtidige udgifter — 10.000 kr./måned i dag svarer til ca. 14.900 kr./måned om 20 år ved 2% inflation.
+        * **Risiko - Folkepensionsmodregning:** Folkepension og pensionstillæg medregnes fra pensionsalderen, men pensionstillægget reduceres ved formue og øvrig indkomst. Ved større depoter kan det effektive tillæg være markant lavere end grundbeløbet — modellen anvender et konservativt skøn.
+        """)
+
+    # Fanerne med boligplanerne
+    tab1, tab2, tab3, tab4 = st.tabs(["Plan A (4.0M)", "Plan B (4.5M)", "Plan C (5.0M)", "Plan D (Valby)"])
+
+    with tab1:
+        simulate_joint_fire_plan("Plan A (4.0M Bolig)", 4000000, 1846222, 1153888, 4075, 4564, bolig_solgt=True)
+    with tab2:
+        simulate_joint_fire_plan("Plan B (4.5M Bolig)", 4500000, 2250000, 1125000, 4576, 4564, bolig_solgt=True)
+    with tab3:
+        simulate_joint_fire_plan("Plan C (5.0M Bolig)", 5000000, 2408888, 983888, 6519, 4564, bolig_solgt=True)
+    with tab4:
+        simulate_joint_fire_plan("Plan D (Valby Nuværende)", 6700000, 0, 0, 15230, 4564, bolig_solgt=False)
