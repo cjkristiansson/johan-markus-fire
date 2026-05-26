@@ -48,10 +48,16 @@ def show_rules_dialog():
 # --- TOP HEADER ---
 col_title, col_link = st.columns([0.85, 0.15], vertical_alignment="center")
 with col_title:
-    st.title("FIRE Brofinansiering")
+    # Bruger raw HTML for at fjerne margin og tvinge overskriften op
+    st.markdown("<h1 style='margin-top: -15px; margin-bottom: 0px;'>FIRE Brofinansiering</h1>", unsafe_allow_html=True)
 with col_link:
     if st.button("📜 Regler & Logik", type="tertiary", use_container_width=True):
         show_rules_dialog()
+
+# --- HOVEDNAVIGATION (PILLS) ---
+# st.write("") er fjernet for at rykke pills tættere på overskriften
+view_selection = st.pills("Navigation", options=["Boligscenarier", "⚙️ Basisdata & Opsætning"], default="Boligscenarier", label_visibility="collapsed")
+st.write("") 
 
 # --- SIDEBAR ---
 st.sidebar.header("Globale Antagelser")
@@ -91,7 +97,7 @@ def calculate_drawdown_monthly_income(depot_total, current_age, target_age, net_
     return depot_total * (monthly_rate * (1 + monthly_rate)**months_left) / ((1 + monthly_rate)**months_left - 1)
 
 def get_emoji_status(barista_hours):
-    if barista_hours == 0: return "🟢 0.0t"
+    if barista_hours == 0: return "🏁 0.0t"
     elif 0 < barista_hours <= 15: return f"🟡 {barista_hours:.1f}t"
     elif 15 < barista_hours <= 25: return f"🟠 {barista_hours:.1f}t"
     else: return f"🔴 {barista_hours:.1f}t"
@@ -281,10 +287,6 @@ def simulate_solo_fire_plan(scenario_name, boligpris, udbetaling_j, ydelse_defau
     if j_reached:
         st.markdown(f"<div class='success-box'>✅ <b>Johans brofinansiering er sikret ved alder {j_fire_age}.</b><br>Pension forventes ca. {pension_at_target_j / 1_000_000:.2f}M kr.</div>", unsafe_allow_html=True)
 
-
-# --- HOVEDNAVIGATION (PILLS) ---
-view_selection = st.pills("Navigation", options=["Boligscenarier", "⚙️ Basisdata & Opsætning"], default="Boligscenarier", label_visibility="collapsed")
-st.write("")
 
 # --- VISNING 1: OPSÆTNING ---
 if view_selection == "⚙️ Basisdata & Opsætning":
