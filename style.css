@@ -1,12 +1,26 @@
 /* Import Spectral (overskrift) og Belleza (brødtekst) */
 @import url('https://fonts.googleapis.com/css2?family=Belleza&family=Spectral:ital,wght@0,400;0,600;0,700;1,400&display=swap');
 
-/* --- LAYOUT JUSTERING (Trækker overskrift op) --- */
+/* --- LAYOUT JUSTERING (Trækker alt op - reduceret padding) --- */
 .block-container {
-    padding-top: 2.5rem !important; /* Justér mellem 1.5rem og 3.0rem for perfekt horisontal alignment */
+    padding-top: 0.5rem !important; 
 }
+
+/* Tvinger også sidebaren op */
+[data-testid="stSidebar"] .block-container {
+    padding-top: 0.5rem !important;
+}
+
+/* Fjerner det usynlige logo-område i toppen af sidebaren */
+[data-testid="stSidebarHeader"] {
+    padding: 0 !important;
+    height: 0 !important;
+    min-height: 0 !important;
+    display: none !important;
+}
+
 header[data-testid="stHeader"] {
-    display: none; /* Skjuler Streamlits default tomme header bar */
+    display: none !important; 
 }
 
 /* --- SIKKER FONT-TILDELING --- */
@@ -40,7 +54,7 @@ p, label, li, a, .markdown-text-container {
 /* --- OVERSKRIFTER --- */
 h1, h1 * {
     font-family: 'Spectral', serif !important;
-    color: #2c2925 !important;
+    color: #2c2925 !important; 
     font-weight: 600 !important;
     font-size: 38px !important;
     letter-spacing: -0.02em;
