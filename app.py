@@ -119,18 +119,16 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
     cash_pct = (total_udbetaling / boligpris * 100) if boligpris > 0 else 0
     loan_pct = 100 - cash_pct
 
-    # Boligfinansiering tekst udskrives over kolonnerne
-    st.markdown(
-        f"<p style='font-size: 18px; font-weight: 600; color: #2c2925; margin-bottom: 1.5rem; background-color: transparent;'>"
-        f"Boligfinansiering: I køber {int(cash_pct)}% af boligen kontant ({f'{int(total_udbetaling):,}'.replace(',', '.')} kr.) "
-        f"og låner de resterende {int(loan_pct)}%.</p>", 
-        unsafe_allow_html=True
-    )
+    # 3 Kolonner justeret til bunden (vertical_alignment="bottom")
+    col_j, col_m, col_inp = st.columns([0.41, 0.41, 0.18], vertical_alignment="bottom")
 
-    # 3 Kolonner: [Johan, Markus, Inputfelt]. Den 3. kolonne holdes meget smal (14% bredde).
-    col_j, col_m, col_inp = st.columns([0.43, 0.43, 0.14])
-    
+    # Vi kalder inputfeltet først, så værdien kan bruges i beregningerne
     with col_inp:
+        st.markdown(
+            f"<div style='font-size: 13px; color: #8c857b; margin-bottom: 5px; line-height: 1.3;'>"
+            f"{int(cash_pct)}% kontantudbetaling ({f'{int(total_udbetaling):,}'.replace(',', '.')} kr.) | {int(loan_pct)}% lån</div>", 
+            unsafe_allow_html=True
+        )
         realkreditydelse_netto = st.number_input("Realkreditydelse", value=ydelse_default, step=100, key=ydelse_key)
 
     # --- FIRE BEREGNINGER ---
@@ -144,7 +142,7 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
     start_fire_j = sum(v for k, v in st.session_state["budget_j"].items() if k not in ["A_kasse_Fagforening", "Loensikring"]) + bolig_faelles
     start_fire_m = sum(v for k, v in st.session_state["budget_m"].items() if k not in ["A_kasse_Fagforening", "Loensikring", "Studielaan"]) + bolig_faelles
 
-    # --- RESULTAT-KOLONNER UDFYLDES ---
+    # --- UDSKRIFT AF DATA ---
     with col_j:
         st.subheader(f"JOHAN")
         st.markdown(f"""
@@ -216,16 +214,14 @@ def simulate_solo_fire_plan(scenario_name, boligpris, udbetaling_j, ydelse_defau
     cash_pct = (faktisk_udbetaling_j / boligpris * 100) if boligpris > 0 else 0
     loan_pct = 100 - cash_pct
 
-    st.markdown(
-        f"<p style='font-size: 18px; font-weight: 600; color: #2c2925; margin-bottom: 1.5rem; background-color: transparent;'>"
-        f"Boligfinansiering: Du køber {int(cash_pct)}% af boligen kontant ({f'{int(faktisk_udbetaling_j):,}'.replace(',', '.')} kr.) "
-        f"og låner de resterende {int(loan_pct)}%.</p>", 
-        unsafe_allow_html=True
-    )
-    
-    col_j, col_space, col_inp = st.columns([0.45, 0.41, 0.14])
-    
+    col_j, col_m, col_inp = st.columns([0.41, 0.41, 0.18], vertical_alignment="bottom")
+
     with col_inp:
+        st.markdown(
+            f"<div style='font-size: 13px; color: #8c857b; margin-bottom: 5px; line-height: 1.3;'>"
+            f"{int(cash_pct)}% kontantudbetaling ({f'{int(faktisk_udbetaling_j):,}'.replace(',', '.')} kr.) | {int(loan_pct)}% lån</div>", 
+            unsafe_allow_html=True
+        )
         realkreditydelse_netto = st.number_input("Realkreditydelse", value=ydelse_default, step=100, key=ydelse_key)
     
     # --- FIRE BEREGNINGER ---
