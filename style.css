@@ -116,6 +116,11 @@ h4 { font-size: 18px !important; font-weight: 600 !important; color: #2c2925 !im
     color: #2c2925 !important;
 }
 
+[data-testid="stPills"] > div,
+[data-testid="stPills"] li {
+    margin-right: 8px !important;
+    gap: 8px !important;
+}
 
 /* --- BROFINANSIERINGSKASSER --- */
 .success-box {
