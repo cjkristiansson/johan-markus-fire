@@ -300,6 +300,24 @@ def simulate_solo_fire_plan(scenario_name, boligpris, udbetaling_j, realkredityd
 
 # --- HOVEDNAVIGATION (PILLS) ---
 view_selection = st.pills("Navigation", options=["Boligscenarier", "⚙️ Basisdata & Opsætning"], default="Boligscenarier", label_visibility="collapsed")
+
+# --- DOM DIAGNOSTIK: Fjern denne blok når du har fundet de rigtige selektorer ---
+import streamlit.components.v1 as components
+components.html("""
+<script>
+setTimeout(() => {
+    const pills = document.querySelectorAll('[data-testid="stPills"] *');
+    const info = [...pills].slice(0, 30).map(el => {
+        const attrs = [...el.attributes].map(a => a.name + '="' + a.value + '"').join(' ');
+        return el.tagName + (attrs ? ' | ' + attrs : '');
+    }).join('\\n');
+    document.getElementById('out').innerText = info || 'Ingen elementer fundet under stPills';
+}, 800);
+</script>
+<pre id="out" style="font-size:11px; white-space:pre-wrap; background:#f5f1ea; padding:10px; border-radius:6px;">Indlæser DOM-info...</pre>
+""", height=400)
+# --- SLUT DIAGNOSTIK ---
+
 st.write("")
 
 # --- VISNING 1: OPSÆTNING ---
