@@ -119,15 +119,14 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
     cash_pct = (total_udbetaling / boligpris * 100) if boligpris > 0 else 0
     loan_pct = 100 - cash_pct
 
-    # 3 Kolonner justeret til bunden (vertical_alignment="bottom")
+    # 3 Kolonner justeret til bunden
     col_j, col_m, col_inp = st.columns([0.41, 0.41, 0.18], vertical_alignment="bottom")
 
-    # Vi kalder inputfeltet først, så værdien kan bruges i beregningerne
     with col_inp:
-        # Fjerner inline styling, så teksten arver standard CSS p-tag font
+        # Nu som et <p> tag, så den arver global font-size på 18px
         st.markdown(
-            f"<div style='margin-bottom: 5px; line-height: 1.3;'>"
-            f"{int(cash_pct)}% kontantudbetaling ({f'{int(total_udbetaling):,}'.replace(',', '.')} kr.) | {int(loan_pct)}% lån</div>", 
+            f"<p style='margin-bottom: 5px; margin-top: 0; line-height: 1.3;'>"
+            f"{int(cash_pct)}% kontantudbetaling ({f'{int(total_udbetaling):,}'.replace(',', '.')} kr.) | {int(loan_pct)}% lån</p>", 
             unsafe_allow_html=True
         )
         realkreditydelse_netto = st.number_input("Realkreditydelse", value=ydelse_default, step=100, key=ydelse_key)
@@ -218,10 +217,10 @@ def simulate_solo_fire_plan(scenario_name, boligpris, udbetaling_j, ydelse_defau
     col_j, col_m, col_inp = st.columns([0.41, 0.41, 0.18], vertical_alignment="bottom")
 
     with col_inp:
-        # Fjerner inline styling her også
+        # Nu som et <p> tag
         st.markdown(
-            f"<div style='margin-bottom: 5px; line-height: 1.3;'>"
-            f"{int(cash_pct)}% kontantudbetaling ({f'{int(faktisk_udbetaling_j):,}'.replace(',', '.')} kr.) | {int(loan_pct)}% lån</div>", 
+            f"<p style='margin-bottom: 5px; margin-top: 0; line-height: 1.3;'>"
+            f"{int(cash_pct)}% kontantudbetaling ({f'{int(faktisk_udbetaling_j):,}'.replace(',', '.')} kr.) | {int(loan_pct)}% lån</p>", 
             unsafe_allow_html=True
         )
         realkreditydelse_netto = st.number_input("Realkreditydelse", value=ydelse_default, step=100, key=ydelse_key)
