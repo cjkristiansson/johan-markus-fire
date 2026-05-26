@@ -271,7 +271,7 @@ div[data-baseweb="tab-list"] button[aria-selected="true"] p {
     }
    
     [data-testid="stIconMaterial"]
-color: rgba(252, 253, 255, 0.6);
+color: #3a3835 !important;
 }
     /* --- AGGRESSIV DARK MODE FIX FOR INPUT & IKONER --- */
     
