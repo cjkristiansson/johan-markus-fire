@@ -124,8 +124,9 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
 
     # Vi kalder inputfeltet først, så værdien kan bruges i beregningerne
     with col_inp:
+        # Fjerner inline styling, så teksten arver standard CSS p-tag font
         st.markdown(
-            f"<div style='font-size: 13px; color: #8c857b; margin-bottom: 5px; line-height: 1.3;'>"
+            f"<div style='margin-bottom: 5px; line-height: 1.3;'>"
             f"{int(cash_pct)}% kontantudbetaling ({f'{int(total_udbetaling):,}'.replace(',', '.')} kr.) | {int(loan_pct)}% lån</div>", 
             unsafe_allow_html=True
         )
@@ -150,7 +151,7 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
         **Realkreditydelse (egen andel):** {f'{int(realkreditydelse_netto / 2):,}'.replace(',', '.')} kr./md.  
         **Startdepot (Efter boligkøb):** {f'{int(depot_free_j + depot_ask_j):,}'.replace(',', '.')} kr.  
         **Mdl. opsparing:** {f'{int(start_inv_md_j):,}'.replace(',', '.')} kr.  
-        **FIRE udgift (Start):** {f'{int(start_fire_j):,}'.replace(',', '.')} kr./md.
+        **Mdl. Udgifter:** {f'{int(start_fire_j):,}'.replace(',', '.')} kr./md.
         """)
     
     with col_m:
@@ -160,7 +161,7 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
         **Realkreditydelse (egen andel):** {f'{int(realkreditydelse_netto / 2):,}'.replace(',', '.')} kr./md.  
         **Startdepot (Efter boligkøb):** {f'{int(depot_free_m + depot_ask_m):,}'.replace(',', '.')} kr.  
         **Mdl. opsparing:** {f'{int(start_inv_md_m):,}'.replace(',', '.')} kr.  
-        **FIRE udgift (Start):** {f'{int(start_fire_m):,}'.replace(',', '.')} kr./md.
+        **Mdl. Udgifter:** {f'{int(start_fire_m):,}'.replace(',', '.')} kr./md.
         """)
 
     st.write("")
@@ -217,8 +218,9 @@ def simulate_solo_fire_plan(scenario_name, boligpris, udbetaling_j, ydelse_defau
     col_j, col_m, col_inp = st.columns([0.41, 0.41, 0.18], vertical_alignment="bottom")
 
     with col_inp:
+        # Fjerner inline styling her også
         st.markdown(
-            f"<div style='font-size: 13px; color: #8c857b; margin-bottom: 5px; line-height: 1.3;'>"
+            f"<div style='margin-bottom: 5px; line-height: 1.3;'>"
             f"{int(cash_pct)}% kontantudbetaling ({f'{int(faktisk_udbetaling_j):,}'.replace(',', '.')} kr.) | {int(loan_pct)}% lån</div>", 
             unsafe_allow_html=True
         )
@@ -243,7 +245,7 @@ def simulate_solo_fire_plan(scenario_name, boligpris, udbetaling_j, ydelse_defau
         **Boligudgifter total:** {f'{int(bolig_total):,}'.replace(',', '.')} kr./md.  
         **Startdepot (Efter boligkøb):** {f'{int(depot_free_j + depot_ask_j):,}'.replace(',', '.')} kr.  
         **Mdl. opsparing:** {f'{int(start_inv_md_j):,}'.replace(',', '.')} kr.  
-        **FIRE udgift (Start):** {f'{int(start_fire_j):,}'.replace(',', '.')} kr./md.
+        **Mdl. Udgifter:** {f'{int(start_fire_j):,}'.replace(',', '.')} kr./md.
         """)
         
     st.write("")
