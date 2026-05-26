@@ -33,7 +33,6 @@ if "budget_j" not in st.session_state:
 if "budget_m" not in st.session_state:
     st.session_state["budget_m"] = {"Studielaan": 1600, "Mad": 0, "Ferie": 1500, "Renovering": 1000, "A_kasse_Fagforening": 520, "Loensikring": 720, "Puregym": 0, "Transport": 500, "Telefon": 300, "Streaming": 565, "Charity": 100, "Frisoer": 450, "Toej": 1200, "Oevrig": 3000}
 
-
 # --- POP-UP MODAL TIL REGLER OG LOGIK ---
 @st.dialog("📜 Modellens Regler & Logik")
 def show_rules_dialog():
@@ -53,7 +52,6 @@ with col_title:
 with col_link:
     if st.button("📜 Regler & Logik", type="tertiary", use_container_width=True):
         show_rules_dialog()
-
 
 # --- SIDEBAR ---
 st.sidebar.header("Globale Antagelser")
@@ -79,10 +77,9 @@ st.sidebar.divider()
 pensionsalder_j = st.sidebar.number_input("Johans pensionsalder", min_value=55, max_value=75, value=67, step=1)
 pensionsalder_m = st.sidebar.number_input("Markus' pensionsalder", min_value=55, max_value=75, value=65, step=1)
 
-# DEN HEMMELIGE BAGDØR - Ligner en normal teknisk funktion
+# DEN HEMMELIGE BAGDØR
 st.sidebar.divider()
 st.sidebar.text_input("Gendan Scenarie-ID", help="Indtast ID for at indlæse specifik konfiguration.", key="secret_id")
-
 
 # --- DYNAMISKE SIMULERINGSFUNKTIONER ---
 def calculate_drawdown_monthly_income(depot_total, current_age, target_age, net_return_rate):
@@ -108,8 +105,6 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
     faktisk_udbetaling_m = udbetaling_m - mangler_m
     udbetaling_j_total = udbetaling_j + mangler_m
     faktisk_udbetaling_j = udbetaling_j_total - max(0, udbetaling_j_total - cash_j)
-    
-    total_udbetaling = faktisk_udbetaling_j + faktisk_udbetaling_m
 
     depot_free_j = st.session_state["basis_frie_j"] + (cash_j - faktisk_udbetaling_j)
     depot_free_m = st.session_state["basis_frie_m"] + (cash_m - faktisk_udbetaling_m)
@@ -125,12 +120,18 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
         st.error(f"⚠️ ADVARSEL: Udbetalingen overstiger jeres likviditet.")
 
     st.write("") 
-    
-    # VIS FINANSIERINGSANDEL
-    if bolig_solgt and boligpris > 0:
-        egen_pct = (total_udbetaling / boligpris) * 100
-        laan_pct = 100 - egen_pct
-        st.info(f"🏠 **Boligfinansiering:** I køber **{egen_pct:.0f}%** af boligen kontant ({int(total_udbetaling):,} kr.) og låner de resterende **{laan_pct:.0f}%**.".replace(',', '.'))
+
+    # --- TILFØJET: Boligfinansieringstekst (Uden baggrund) ---
+    total_udbetaling = faktisk_udbetaling_j + faktisk_udbetaling_m
+    cash_pct = (total_udbetaling / boligpris * 100) if boligpris > 0 else 0
+    loan_pct = 100 - cash_pct
+
+    st.markdown(
+        f"<p style='font-size: 14px; color: #8c857b; margin-bottom: 1rem; background-color: transparent; padding: 0;'>"
+        f"Boligfinansiering: I køber {int(cash_pct)}% af boligen kontant ({f'{int(total_udbetaling):,}'.replace(',', '.')} kr.) "
+        f"og låner de resterende {int(loan_pct)}%.</p>", 
+        unsafe_allow_html=True
+    )
 
     col1, col2 = st.columns(2)
     with col1:
@@ -164,34 +165,10 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
         c_age_j, c_age_m = age_j + year, age_m + year
         if year > 0:
             start_fire_j *= (1 + global_inflation_rate); start_fire_m *= (1 + global_inflation_rate)
-            
-            # --- 1. Tilskriv afkast og progressiv skat på den eksisterende balance ---
-            # ASK (Flad 17% skat)
-            depot_ask_j *= (1 + global_return_rate_gross * 0.83)
-            depot_ask_m *= (1 + global_return_rate_gross * 0.83)
-            
-            # Definer årets progressionsgrænse (inflationsjusteret fra 2026-niveau)
-            current_progression_limit = 79400 * ((1 + global_inflation_rate)**year)
-            
-            # JOHAN: Progressiv skat på frie midler
-            return_j_frie = depot_free_j * global_return_rate_gross
-            if return_j_frie <= current_progression_limit:
-                tax_j_frie = return_j_frie * 0.27
-            else:
-                tax_j_frie = (current_progression_limit * 0.27) + ((return_j_frie - current_progression_limit) * 0.42)
-            depot_free_j += (return_j_frie - tax_j_frie)
-            
-            # MARKUS: Progressiv skat på frie midler
-            return_m_frie = depot_free_m * global_return_rate_gross
-            if return_m_frie <= current_progression_limit:
-                tax_m_frie = return_m_frie * 0.27
-            else:
-                tax_m_frie = (current_progression_limit * 0.27) + ((return_m_frie - current_progression_limit) * 0.42)
-            depot_free_m += (return_m_frie - tax_m_frie)
-            
-            # --- 2. Læg derefter årets opsparing til depoterne ---
             if not j_reached: depot_free_j += start_inv_md_j * 12 * ((1 + global_inflation_rate)**year)
             if not m_reached: depot_free_m += start_inv_md_m * 12 * ((1 + global_inflation_rate)**year)
+            depot_ask_j *= (1 + global_return_rate_gross * 0.83); depot_free_j *= (1 + global_return_rate_gross * 0.73)
+            depot_ask_m *= (1 + global_return_rate_gross * 0.83); depot_free_m *= (1 + global_return_rate_gross * 0.73)
 
         p_j = calculate_drawdown_monthly_income(depot_ask_j + depot_free_j, c_age_j, pensionsalder_j, global_return_rate_net_drawdown)
         h_j = max(0, start_fire_j - p_j) / (global_barista_wage_net * ((1+global_inflation_rate)**year) * weeks_per_month)
@@ -227,7 +204,6 @@ def simulate_solo_fire_plan(scenario_name, boligpris, udbetaling_j, realkredityd
     depot_free_j = st.session_state["basis_frie_j"] + (cash_j - faktisk_udbetaling_j)
     depot_ask_j = st.session_state["basis_ask_j"]
 
-    # SOLO BUDGET TILPASNING (Mad nedjusteres til 3000 kr. for en person)
     solo_budget_j = st.session_state["budget_j"].copy()
     solo_budget_j["Mad"] = 3000
 
@@ -235,15 +211,19 @@ def simulate_solo_fire_plan(scenario_name, boligpris, udbetaling_j, realkredityd
     start_inv_md_j = st.session_state["inkomst_j"] - (sum(solo_budget_j.values()) + bolig_total)
     start_fire_j = sum(v for k, v in solo_budget_j.items() if k not in ["A_kasse_Fagforening", "Loensikring"]) + bolig_total
 
-    st.write("")
-    
-    # VIS FINANSIERINGSANDEL
-    if boligpris > 0:
-        egen_pct = (faktisk_udbetaling_j / boligpris) * 100
-        laan_pct = 100 - egen_pct
-        st.info(f"🏠 **Boligfinansiering:** Du køber **{egen_pct:.0f}%** af boligen kontant ({int(faktisk_udbetaling_j):,} kr.) og låner de resterende **{laan_pct:.0f}%**.".replace(',', '.'))
-
     st.subheader(f"JOHAN (SOLO: {scenario_name})")
+    
+    # --- TILFØJET: Boligfinansieringstekst (Uden baggrund) ---
+    cash_pct = (faktisk_udbetaling_j / boligpris * 100) if boligpris > 0 else 0
+    loan_pct = 100 - cash_pct
+
+    st.markdown(
+        f"<p style='font-size: 14px; color: #8c857b; margin-bottom: 1rem; background-color: transparent; padding: 0;'>"
+        f"Boligfinansiering: Du køber {int(cash_pct)}% af boligen kontant ({f'{int(faktisk_udbetaling_j):,}'.replace(',', '.')} kr.) "
+        f"og låner de resterende {int(loan_pct)}%.</p>", 
+        unsafe_allow_html=True
+    )
+
     st.markdown(f"""
     **Boligpris:** {f'{int(boligpris):,}'.replace(',', '.')} kr.  
     **Udbetaling (betalt af formue):** {f'{int(faktisk_udbetaling_j):,}'.replace(',', '.')} kr.  
@@ -263,24 +243,8 @@ def simulate_solo_fire_plan(scenario_name, boligpris, udbetaling_j, realkredityd
         c_age_j = age_j + year
         if year > 0:
             start_fire_j *= (1 + global_inflation_rate)
-            
-            # --- 1. Tilskriv afkast og progressiv skat på den eksisterende balance ---
-            # ASK (Flad 17% skat)
-            depot_ask_j *= (1 + global_return_rate_gross * 0.83)
-            
-            # Definer årets progressionsgrænse (inflationsjusteret fra 2026-niveau)
-            current_progression_limit = 79400 * ((1 + global_inflation_rate)**year)
-            
-            # JOHAN: Progressiv skat på frie midler
-            return_j_frie = depot_free_j * global_return_rate_gross
-            if return_j_frie <= current_progression_limit:
-                tax_j_frie = return_j_frie * 0.27
-            else:
-                tax_j_frie = (current_progression_limit * 0.27) + ((return_j_frie - current_progression_limit) * 0.42)
-            depot_free_j += (return_j_frie - tax_j_frie)
-            
-            # --- 2. Læg derefter årets opsparing til depoterne ---
             if not j_reached: depot_free_j += start_inv_md_j * 12 * ((1 + global_inflation_rate)**year)
+            depot_ask_j *= (1 + global_return_rate_gross * 0.83); depot_free_j *= (1 + global_return_rate_gross * 0.73)
 
         p_j = calculate_drawdown_monthly_income(depot_ask_j + depot_free_j, c_age_j, pensionsalder_j, global_return_rate_net_drawdown)
         h_j = max(0, start_fire_j - p_j) / (global_barista_wage_net * ((1+global_inflation_rate)**year) * weeks_per_month)
@@ -329,11 +293,9 @@ if view_selection == "⚙️ Basisdata & Opsætning":
 else:
     is_solo_mode = False
     
-    # Den sikre UI bagdør: Skriv "solo" i tekstfeltet nederst i venstre side.
     if st.session_state.get("secret_id", "").strip().lower() == "solo":
         is_solo_mode = True
 
-    # URL Fallback
     try:
         if "mode" in st.query_params and st.query_params["mode"] == "solo":
             is_solo_mode = True
@@ -347,8 +309,8 @@ else:
     tabs = st.tabs(tab_names)
 
     with tabs[0]:
-        yd_35 = st.number_input("Realkreditydelse efter skat (3.5M)", value=3573, step=100, key="yd35")
-        simulate_joint_fire_plan("3.5M Bolig", 3500000, 1750000, 875000, yd_35, 4564, bolig_solgt=True)
+        yd_35 = st.number_input("Realkreditydelse efter skat (3.5M)", value=8516, step=100, key="yd35")
+        simulate_joint_fire_plan("3.5M Bolig", 3500000, 966000, 434000, yd_35, 4564, bolig_solgt=True)
     with tabs[1]:
         yd_40 = st.number_input("Realkreditydelse efter skat (4.0M)", value=4075, step=100, key="yd40")
         simulate_joint_fire_plan("4.0M Bolig", 4000000, 1846222, 1153888, yd_40, 4564, bolig_solgt=True)
