@@ -83,66 +83,35 @@ h4 { font-size: 18px !important; font-weight: 600 !important; color: #2c2925 !im
     box-shadow: inset 0 1px 2px rgba(0,0,0,0.04) !important;
 }
 
-/* --- PILLS (HOVEDNAVIGATION) --- */
-[data-testid="stPills"], 
-[data-testid="stSegmentedControl"] {
-    background-color: transparent !important;
-    padding: 0 !important;
-}
+/* --- PILLS --- */
 
-/* Inactive pill buttons */
-[data-testid="stPills"] button, 
-[data-testid="stSegmentedControl"] button {
+/* Inactive pill */
+[data-testid="stBaseButton-pills"] {
     background-color: #fcfaf7 !important;
     border: 1px solid #dcd7cc !important;
     color: #8c857b !important;
     border-radius: 20px !important;
-    padding: 8px 16px !important;
-    margin-right: 8px !important;
     transition: all 0.2s ease !important;
     box-shadow: 0 1px 2px rgba(0,0,0,0.02) !important;
 }
 
-/* Text inside inactive pills */
-[data-testid="stPills"] button p, 
-[data-testid="stPills"] button span,
-[data-testid="stSegmentedControl"] button p,
-[data-testid="stSegmentedControl"] button span {
-    font-size: 16px !important;
-    font-weight: 600 !important;
-    margin: 0 !important;
-    color: inherit !important;
-}
-
-/* Hover on inactive pills */
-[data-testid="stPills"] button:hover, 
-[data-testid="stSegmentedControl"] button:hover {
+[data-testid="stBaseButton-pills"]:hover {
     border-color: #b5ae9f !important;
     color: #4a4742 !important;
     background-color: #f5f1ea !important;
 }
 
-/* ACTIVE pill — matches button hover state */
-[data-testid="stPills"] button[aria-pressed="true"],
-[data-testid="stPills"] button[data-selected="true"],
-[data-testid="stPills"] [data-active="true"],
-[data-testid="stPills"] li[aria-selected="true"] button,
-[data-testid="stSegmentedControl"] button[data-selected="true"],
-[data-testid="stSegmentedControl"] button[aria-pressed="true"] {
+/* Active pill — matches button hover state */
+[data-testid="stBaseButton-pillsActive"] {
     background-color: #eae3d8 !important;
-    border-color: #b5ae9f !important;
+    border: 1px solid #b5ae9f !important;
     color: #2c2925 !important;
+    border-radius: 20px !important;
     box-shadow: inset 0 1px 2px rgba(0,0,0,0.04) !important;
 }
 
-/* Text color inside active pill — needs its own rule to win the cascade */
-[data-testid="stPills"] button[aria-pressed="true"] p,
-[data-testid="stPills"] button[aria-pressed="true"] span,
-[data-testid="stPills"] button[data-selected="true"] p,
-[data-testid="stPills"] button[data-selected="true"] span,
-[data-testid="stPills"] li[aria-selected="true"] button span,
-[data-testid="stSegmentedControl"] button[data-selected="true"] p,
-[data-testid="stSegmentedControl"] button[data-selected="true"] span {
+[data-testid="stBaseButton-pillsActive"] p,
+[data-testid="stBaseButton-pillsActive"] span {
     color: #2c2925 !important;
 }
 
