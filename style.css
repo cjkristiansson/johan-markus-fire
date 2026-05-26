@@ -1,6 +1,14 @@
 /* Import Spectral (overskrift) og Belleza (brødtekst) */
 @import url('https://fonts.googleapis.com/css2?family=Belleza&family=Spectral:ital,wght@0,400;0,600;0,700;1,400&display=swap');
 
+/* --- LAYOUT JUSTERING (Trækker overskrift op) --- */
+.block-container {
+    padding-top: 2.5rem !important; /* Justér mellem 1.5rem og 3.0rem for perfekt horisontal alignment */
+}
+header[data-testid="stHeader"] {
+    display: none; /* Skjuler Streamlits default tomme header bar */
+}
+
 /* --- SIKKER FONT-TILDELING --- */
 html, body, .stApp, p, div, span, label, input, button, li, a, th, td, h2, h3, h4, h5, h6 {
     font-family: 'Belleza', sans-serif !important;
@@ -32,7 +40,7 @@ p, label, li, a, .markdown-text-container {
 /* --- OVERSKRIFTER --- */
 h1, h1 * {
     font-family: 'Spectral', serif !important;
-    color: #2c2925 !important; /* Dyb, varm koksgrå */
+    color: #2c2925 !important;
     font-weight: 600 !important;
     font-size: 38px !important;
     letter-spacing: -0.02em;
