@@ -6,9 +6,9 @@
     padding-top: 0.5rem !important; 
 }
 
-/* Tvinger sidebaren en lille smule ned, så den flugter med hovedoverskriften */
+/* Tvinger sidebaren længere ned, så den flugter perfekt med overskriften */
 [data-testid="stSidebar"] .block-container {
-    padding-top: 1.75rem !important;
+    padding-top: 2.5rem !important;
 }
 
 /* Fjerner det usynlige logo-område i toppen af sidebaren */
@@ -108,8 +108,6 @@ h4 { font-size: 18px !important; font-weight: 600 !important; color: #2c2925 !im
 }
 
 /* --- PILLS --- */
-
-/* Inactive pill */
 [data-testid="stBaseButton-pills"] {
     background-color: #fcfaf7 !important;
     border: 1px solid #dcd7cc !important;
@@ -126,7 +124,6 @@ h4 { font-size: 18px !important; font-weight: 600 !important; color: #2c2925 !im
     margin-right: 16px !important;
 }
 
-/* Active pill — matches button hover state */
 [data-testid="stBaseButton-pillsActive"] {
     background-color: #eae3d8 !important;
     border: 1px solid #b5ae9f !important;
@@ -139,10 +136,9 @@ h4 { font-size: 18px !important; font-weight: 600 !important; color: #2c2925 !im
 [data-testid="stBaseButton-pillsActive"] span {
     color: #2c2925 !important;
 }
-[data-testid="st-emotion-cache-1uvhpyl"]
-{
+
+[data-testid="st-emotion-cache-1uvhpyl"] {
     margin-right: 16px !important;
- 
 }
 
 /* --- BROFINANSIERINGSKASSER --- */
@@ -201,7 +197,6 @@ div[data-baseweb="tab-list"] button[aria-selected="true"] p {
     margin: 0 !important;
 }
 
-/* Tabellens overskrifter (matcher knappernes hover-farve) */
 [data-testid="stTable"] th {
     background-color: #eae3d8 !important; 
     color: #2c2925 !important;
@@ -211,7 +206,6 @@ div[data-baseweb="tab-list"] button[aria-selected="true"] p {
     padding: 12px !important;
 }
 
-/* Tabellens data-celler */
 [data-testid="stTable"] td {
     background-color: #fcfaf7 !important;
     color: #4a4742 !important;
@@ -220,13 +214,11 @@ div[data-baseweb="tab-list"] button[aria-selected="true"] p {
     padding: 10px 12px !important;
 }
 
-/* Zebra-striber: Gør hver anden række lidt mørkere (både index og data) */
 [data-testid="stTable"] tbody tr:nth-child(even) th,
 [data-testid="stTable"] tbody tr:nth-child(even) td {
     background-color: #f5f1ea !important; 
 }
 
-/* Hover-effekt på rækkerne */
 [data-testid="stTable"] tbody tr:hover th,
 [data-testid="stTable"] tbody tr:hover td {
     background-color: #ebdccc !important;
@@ -258,30 +250,24 @@ div[data-baseweb="tab-list"] button[aria-selected="true"] p {
         border-color: #625f5c !important;
         color: #ffffff !important;
     }
-    
-    /* Dark mode for Pills */
     [data-testid="stSegmentedControl"] button {
         background-color: #2a2826 !important;
         border: 1px solid #4a4744 !important;
         color: #8b8986 !important;
     }
-    
     [data-testid="stSegmentedControl"] button:hover {
         background-color: #32302d !important;
         border-color: #625f5c !important;
         color: #d1d5db !important;
     }
-
     [data-testid="stSegmentedControl"] button[data-selected="true"] {
         background-color: #f3f4f6 !important; 
         border-color: #f3f4f6 !important;
         color: #1c1b1a !important; 
     }
-
     [data-testid="stSegmentedControl"] button[data-selected="true"] p {
         color: #1c1b1a !important; 
     }
-
     h1, h1 *, h2, h3, h4 {
         color: #f3f4f6 !important;
     }
@@ -302,8 +288,6 @@ div[data-baseweb="tab-list"] button[aria-selected="true"] p {
     div[data-baseweb="tab-list"] button[aria-selected="true"] p {
         color: #f3f4f6 !important;
     }
-    
-    /* Dark mode for st.table */
     [data-testid="stTable"] {
         border-color: #4a4744 !important;
     }
