@@ -8,8 +8,10 @@
 
 /* Tvinger sidebaren længere ned, så den flugter perfekt med overskriften */
 [data-testid="stSidebar"] .block-container {
-    padding-top: 3.2rem !important; 
+    padding-top: 0.5rem !important; 
 }
+
+
 
 /* Fjerner det usynlige logo-område i toppen af sidebaren */
 [data-testid="stSidebarHeader"] {
@@ -72,7 +74,9 @@ h4 { font-size: 18px !important; font-weight: 600 !important; color: #2c2925 !im
     background-color: #f3eee7 !important;
     border-right: 1px solid #e5e0d8 !important;
 }
-
+[data-testid="stSidebar"] h2 {
+    padding-top: 2rem !important;
+}
 [data-testid="stSidebar"] p, 
 [data-testid="stSidebar"] label, 
 [data-testid="stSidebar"] div,
