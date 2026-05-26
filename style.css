@@ -6,23 +6,45 @@
     padding-top: 0.5rem !important; 
 }
 
-/* Tvinger sidebaren længere ned, så den flugter perfekt med overskriften */
+/* Tvinger sidebaren tilbage til baseline */
 [data-testid="stSidebar"] .block-container {
-    padding-top: 0.5rem !important; 
+    padding-top: 0.5rem !important;
 }
 
-
-
-/* Fjerner det usynlige logo-område i toppen af sidebaren */
-[data-testid="stSidebarHeader"] {
-    padding: 0 !important;
-    height: 0 !important;
-    min-height: 0 !important;
-    display: none !important;
+/* Din præcise justering fra browserens inspector til "Globale Antagelser" */
+[data-testid="stSidebar"] h2 {
+    padding-top: 2rem !important;
 }
 
-header[data-testid="stHeader"] {
-    display: none !important; 
+/* --- RESPONSIV HEADER (Mobil vs. Desktop) --- */
+/* På desktop (over 768px): Skjul top-baren for at holde layoutet stramt */
+@media (min-width: 769px) {
+    header[data-testid="stHeader"] {
+        display: none !important; 
+    }
+    [data-testid="stSidebarHeader"] {
+        padding: 0 !important;
+        height: 0 !important;
+        min-height: 0 !important;
+        display: none !important;
+    }
+}
+
+/* På mobil (under 768px): Vis top-baren og sidebar-headeren (hamburger-menu) */
+@media (max-width: 768px) {
+    header[data-testid="stHeader"] {
+        display: block !important;
+        background-color: transparent !important;
+    }
+    [data-testid="stSidebarHeader"] {
+        display: block !important;
+        height: auto !important;
+        padding-top: 1rem !important;
+    }
+    /* Skubber hovedoverskriften lidt ned på mobil, så den ikke overlapper med ikonet */
+    .block-container {
+        padding-top: 3rem !important;
+    }
 }
 
 /* --- SIKKER FONT-TILDELING --- */
@@ -74,9 +96,7 @@ h4 { font-size: 18px !important; font-weight: 600 !important; color: #2c2925 !im
     background-color: #f3eee7 !important;
     border-right: 1px solid #e5e0d8 !important;
 }
-[data-testid="stSidebar"] h2 {
-    padding-top: 2rem !important;
-}
+
 [data-testid="stSidebar"] p, 
 [data-testid="stSidebar"] label, 
 [data-testid="stSidebar"] div,
