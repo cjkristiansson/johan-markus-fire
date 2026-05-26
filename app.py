@@ -96,7 +96,7 @@ def get_emoji_status(barista_hours):
     elif 15 < barista_hours <= 25: return f"🟠 {barista_hours:.1f}t"
     else: return f"🔴 {barista_hours:.1f}t"
 
-def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_m, realkreditydelse_netto, ejerudgifter_total, bolig_solgt):
+def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_m, ydelse_default, ydelse_key, ejerudgifter_total, bolig_solgt):
     pal_tax, weeks_per_month, age_j, age_m = 0.153, 4.33, 41, 32
     cash_j = st.session_state["cash_j_base"] if bolig_solgt else 0
     cash_m = st.session_state["cash_m_base"] if bolig_solgt else 0
@@ -106,6 +106,32 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
     udbetaling_j_total = udbetaling_j + mangler_m
     faktisk_udbetaling_j = udbetaling_j_total - max(0, udbetaling_j_total - cash_j)
 
+    if max(0, udbetaling_j_total - cash_j) > 0:
+        st.error(f"⚠️ ADVARSEL: Udbetalingen overstiger jeres likviditet.")
+
+    st.write("") 
+
+    # --- TOP-LAYOUT (Side-om-side: Boligtekst og Inputfelt) ---
+    total_udbetaling = faktisk_udbetaling_j + faktisk_udbetaling_m
+    cash_pct = (total_udbetaling / boligpris * 100) if boligpris > 0 else 0
+    loan_pct = 100 - cash_pct
+
+    col_top1, col_top2 = st.columns([0.65, 0.35], vertical_alignment="bottom")
+    
+    with col_top1:
+        st.markdown(
+            f"<p style='font-size: 18px; font-weight: 600; color: #2c2925; margin-bottom: 0.5rem; background-color: transparent;'>"
+            f"Boligfinansiering: I køber {int(cash_pct)}% af boligen kontant ({f'{int(total_udbetaling):,}'.replace(',', '.')} kr.) "
+            f"og låner de resterende {int(loan_pct)}%.</p>", 
+            unsafe_allow_html=True
+        )
+    
+    with col_top2:
+        realkreditydelse_netto = st.number_input(f"Realkreditydelse (kr./md)", value=ydelse_default, step=100, key=ydelse_key)
+
+    st.write("")
+
+    # --- FIRE BEREGNINGER ---
     depot_free_j = st.session_state["basis_frie_j"] + (cash_j - faktisk_udbetaling_j)
     depot_free_m = st.session_state["basis_frie_m"] + (cash_m - faktisk_udbetaling_m)
     depot_ask_j, depot_ask_m = st.session_state["basis_ask_j"], st.session_state["basis_ask_m"]
@@ -116,23 +142,7 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
     start_fire_j = sum(v for k, v in st.session_state["budget_j"].items() if k not in ["A_kasse_Fagforening", "Loensikring"]) + bolig_faelles
     start_fire_m = sum(v for k, v in st.session_state["budget_m"].items() if k not in ["A_kasse_Fagforening", "Loensikring", "Studielaan"]) + bolig_faelles
 
-    if max(0, udbetaling_j_total - cash_j) > 0:
-        st.error(f"⚠️ ADVARSEL: Udbetalingen overstiger jeres likviditet.")
-
-    st.write("") 
-
-    # --- TILFØJET: Boligfinansieringstekst (Uden baggrund) ---
-    total_udbetaling = faktisk_udbetaling_j + faktisk_udbetaling_m
-    cash_pct = (total_udbetaling / boligpris * 100) if boligpris > 0 else 0
-    loan_pct = 100 - cash_pct
-
-    st.markdown(
-        f"<p style='font-size: 14px; color: #8c857b; margin-bottom: 1rem; background-color: transparent; padding: 0;'>"
-        f"Boligfinansiering: I køber {int(cash_pct)}% af boligen kontant ({f'{int(total_udbetaling):,}'.replace(',', '.')} kr.) "
-        f"og låner de resterende {int(loan_pct)}%.</p>", 
-        unsafe_allow_html=True
-    )
-
+    # --- RESULTAT-KOLONNER ---
     col1, col2 = st.columns(2)
     with col1:
         st.subheader(f"JOHAN")
@@ -196,11 +206,34 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
     if m_reached:
         st.markdown(f"<div class='success-box'>✅ <b>Markus brofinansiering er sikret ved alder {m_fire_age}.</b><br>Pension forventes ca. {pension_at_target_m / 1_000_000:.2f}M kr.</div>", unsafe_allow_html=True)
 
-def simulate_solo_fire_plan(scenario_name, boligpris, udbetaling_j, realkreditydelse_netto, ejerudgifter_total):
+
+def simulate_solo_fire_plan(scenario_name, boligpris, udbetaling_j, ydelse_default, ydelse_key, ejerudgifter_total):
     pal_tax, weeks_per_month, age_j = 0.153, 4.33, 41
     cash_j = st.session_state["cash_j_base"]
     faktisk_udbetaling_j = min(udbetaling_j, cash_j)
     
+    st.subheader(f"JOHAN (SOLO: {scenario_name})")
+    
+    # --- TOP-LAYOUT (Side-om-side) ---
+    cash_pct = (faktisk_udbetaling_j / boligpris * 100) if boligpris > 0 else 0
+    loan_pct = 100 - cash_pct
+
+    col_top1, col_top2 = st.columns([0.65, 0.35], vertical_alignment="bottom")
+    
+    with col_top1:
+        st.markdown(
+            f"<p style='font-size: 18px; font-weight: 600; color: #2c2925; margin-bottom: 0.5rem; background-color: transparent;'>"
+            f"Boligfinansiering: Du køber {int(cash_pct)}% af boligen kontant ({f'{int(faktisk_udbetaling_j):,}'.replace(',', '.')} kr.) "
+            f"og låner de resterende {int(loan_pct)}%.</p>", 
+            unsafe_allow_html=True
+        )
+    
+    with col_top2:
+        realkreditydelse_netto = st.number_input("Månedlig nettoydelse (kr./md)", value=ydelse_default, step=100, key=ydelse_key)
+    
+    st.write("")
+    
+    # --- FIRE BEREGNINGER ---
     depot_free_j = st.session_state["basis_frie_j"] + (cash_j - faktisk_udbetaling_j)
     depot_ask_j = st.session_state["basis_ask_j"]
 
@@ -210,19 +243,6 @@ def simulate_solo_fire_plan(scenario_name, boligpris, udbetaling_j, realkredityd
     bolig_total = realkreditydelse_netto + ejerudgifter_total
     start_inv_md_j = st.session_state["inkomst_j"] - (sum(solo_budget_j.values()) + bolig_total)
     start_fire_j = sum(v for k, v in solo_budget_j.items() if k not in ["A_kasse_Fagforening", "Loensikring"]) + bolig_total
-
-    st.subheader(f"JOHAN (SOLO: {scenario_name})")
-    
-    # --- TILFØJET: Boligfinansieringstekst (Uden baggrund) ---
-    cash_pct = (faktisk_udbetaling_j / boligpris * 100) if boligpris > 0 else 0
-    loan_pct = 100 - cash_pct
-
-    st.markdown(
-        f"<p style='font-size: 14px; color: #8c857b; margin-bottom: 1rem; background-color: transparent; padding: 0;'>"
-        f"Boligfinansiering: Du køber {int(cash_pct)}% af boligen kontant ({f'{int(faktisk_udbetaling_j):,}'.replace(',', '.')} kr.) "
-        f"og låner de resterende {int(loan_pct)}%.</p>", 
-        unsafe_allow_html=True
-    )
 
     st.markdown(f"""
     **Boligpris:** {f'{int(boligpris):,}'.replace(',', '.')} kr.  
@@ -309,31 +329,22 @@ else:
     tabs = st.tabs(tab_names)
 
     with tabs[0]:
-        yd_35 = st.number_input("Realkreditydelse efter skat (3.5M)", value=8516, step=100, key="yd35")
-        simulate_joint_fire_plan("3.5M Bolig", 3500000, 966000, 434000, yd_35, 4564, bolig_solgt=True)
+        simulate_joint_fire_plan("3.5M Bolig", 3500000, 966000, 434000, 8516, "yd35", 4564, bolig_solgt=True)
     with tabs[1]:
-        yd_40 = st.number_input("Realkreditydelse efter skat (4.0M)", value=4075, step=100, key="yd40")
-        simulate_joint_fire_plan("4.0M Bolig", 4000000, 1846222, 1153888, yd_40, 4564, bolig_solgt=True)
+        simulate_joint_fire_plan("4.0M Bolig", 4000000, 1846222, 1153888, 4075, "yd40", 4564, bolig_solgt=True)
     with tabs[2]:
-        yd_45 = st.number_input("Realkreditydelse efter skat (4.5M)", value=4576, step=100, key="yd45")
-        simulate_joint_fire_plan("4.5M Bolig", 4500000, 2250000, 1125000, yd_45, 4564, bolig_solgt=True)
+        simulate_joint_fire_plan("4.5M Bolig", 4500000, 2250000, 1125000, 4576, "yd45", 4564, bolig_solgt=True)
     with tabs[3]:
-        yd_50 = st.number_input("Realkreditydelse efter skat (5.0M)", value=6519, step=100, key="yd50")
-        simulate_joint_fire_plan("5.0M Bolig", 5000000, 2408888, 983888, yd_50, 4564, bolig_solgt=True)
+        simulate_joint_fire_plan("5.0M Bolig", 5000000, 2408888, 983888, 6519, "yd50", 4564, bolig_solgt=True)
     with tabs[4]:
-        yd_55 = st.number_input("Realkreditydelse efter skat (5.5M)", value=13659, step=100, key="yd55")
-        simulate_joint_fire_plan("5.5M Bolig", 5500000, 1515000, 685000, yd_55, 4564, bolig_solgt=True)
+        simulate_joint_fire_plan("5.5M Bolig", 5500000, 1515000, 685000, 13659, "yd55", 4564, bolig_solgt=True)
     with tabs[5]:
-        yd_vb = st.number_input("Realkreditydelse efter skat (Valby)", value=15230, step=100, key="ydvb")
-        simulate_joint_fire_plan("Valby", 6700000, 0, 0, yd_vb, 4564, bolig_solgt=False)
+        simulate_joint_fire_plan("Valby", 6700000, 0, 0, 15230, "ydvb", 4564, bolig_solgt=False)
 
     if is_solo_mode:
         with tabs[6]:
-            yd_s30 = st.number_input("Månedlig nettoydelse (Solo 3.0M)", value=7308, step=100, key="yds30")
-            simulate_solo_fire_plan("3.0M Solo", 3000000, 1200000, yd_s30, 3500)
+            simulate_solo_fire_plan("3.0M Solo", 3000000, 1200000, 7308, "yds30", 3500)
         with tabs[7]:
-            yd_s35 = st.number_input("Månedlig nettoydelse (Solo 3.5M)", value=8516, step=100, key="yds35")
-            simulate_solo_fire_plan("3.5M Solo", 3500000, 1400000, yd_s35, 4000)
+            simulate_solo_fire_plan("3.5M Solo", 3500000, 1400000, 8516, "yds35", 4000)
         with tabs[8]:
-            yd_s40 = st.number_input("Månedlig nettoydelse (Solo 4.0M)", value=9724, step=100, key="yds40")
-            simulate_solo_fire_plan("4.0M Solo", 4000000, 1600000, yd_s40, 4500)
+            simulate_solo_fire_plan("4.0M Solo", 4000000, 1600000, 9724, "yds40", 4500)
