@@ -58,7 +58,9 @@ h1, h1 * {
     font-weight: 600 !important;
     font-size: 38px !important;
     letter-spacing: -0.02em;
-    margin-bottom: 0.5em !important;
+    margin-top: 0 !important;
+    padding-top: 0 !important;
+    margin-bottom: 0 !important;
 }
 
 h2 { font-size: 26px !important; font-weight: 600 !important; color: #2c2925 !important; }
