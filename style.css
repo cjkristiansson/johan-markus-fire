@@ -99,7 +99,12 @@ h4 { font-size: 18px !important; font-weight: 600 !important; color: #2c2925 !im
 
 [data-testid="stSidebar"] p, 
 [data-testid="stSidebar"] label, 
-[data-testid="stSidebar"] div,
+[data-testid="stSidebar"] div {
+    font-size: 16px !important;
+    color: #4a4742 !important;
+}
+
+/* Holder input-teksten mørk i light mode */
 [data-testid="stSidebar"] input {
     font-size: 16px !important;
     color: #4a4742 !important;
@@ -264,18 +269,25 @@ div[data-baseweb="tab-list"] button[aria-selected="true"] p {
         color: #e5e7eb !important;
     }
     
-    /* Tvinger teksten inde i sidebarens input-felter til at blive lys grå/hvid (matcher realkreditfeltet) */
+    /* --- AGGRESSIV DARK MODE FIX FOR INPUT & IKONER --- */
+    
+    /* Tvinger teksten inde i sidebarens input-felter til at blive lys i dark mode */
     [data-testid="stSidebar"] input {
         color: #f3f4f6 !important;
+        -webkit-text-fill-color: #f3f4f6 !important; /* Streamlit specifik overskrivning */
     }
     
     /* Gør mobile hamburger/pullout chevron og desktop luk-chevron lys i dark mode */
     [data-testid="collapsedControl"] svg,
-    button[data-testid="stSidebarCollapseButton"] svg {
-        fill: #e5e7eb !important;
-        color: #e5e7eb !important;
+    [data-testid="stSidebarCollapseButton"] svg,
+    header[data-testid="stHeader"] svg,
+    button[kind="header"] svg {
+        fill: #f3f4f6 !important;
+        color: #f3f4f6 !important;
     }
     
+    /* ------------------------------------------------ */
+
     [data-testid="stSidebar"] button {
         background-color: #2a2826 !important;
         border: 1px solid #4a4744 !important;
