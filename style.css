@@ -6,9 +6,9 @@
     padding-top: 0.5rem !important; 
 }
 
-/* Tvinger også sidebaren op */
+/* Tvinger sidebaren en lille smule ned, så den flugter med hovedoverskriften */
 [data-testid="stSidebar"] .block-container {
-    padding-top: 0.5rem !important;
+    padding-top: 1.75rem !important;
 }
 
 /* Fjerner det usynlige logo-område i toppen af sidebaren */
