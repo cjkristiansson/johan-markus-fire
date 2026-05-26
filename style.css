@@ -11,6 +11,7 @@
     padding-top: 0.5rem !important;
 }
 
+
 /* Din præcise justering fra browserens inspector til "Globale Antagelser" */
 [data-testid="stSidebar"] h2 {
     padding-top: 2rem !important;
@@ -268,7 +269,10 @@ div[data-baseweb="tab-list"] button[aria-selected="true"] p {
     [data-testid="stSidebar"] div {
         color: #e5e7eb !important;
     }
-    
+   
+    [data-testid="stIconMaterial"]
+color: rgba(252, 253, 255, 0.6);
+}
     /* --- AGGRESSIV DARK MODE FIX FOR INPUT & IKONER --- */
     
     /* Tvinger teksten inde i sidebarens input-felter til at blive lys i dark mode */
