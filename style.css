@@ -260,10 +260,22 @@ div[data-baseweb="tab-list"] button[aria-selected="true"] p {
     }
     [data-testid="stSidebar"] p, 
     [data-testid="stSidebar"] label, 
-    [data-testid="stSidebar"] div,
-    [data-testid="stSidebar"] input {
+    [data-testid="stSidebar"] div {
         color: #e5e7eb !important;
     }
+    
+    /* Tvinger teksten inde i sidebarens input-felter til at blive lys grå/hvid (matcher realkreditfeltet) */
+    [data-testid="stSidebar"] input {
+        color: #f3f4f6 !important;
+    }
+    
+    /* Gør mobile hamburger/pullout chevron og desktop luk-chevron lys i dark mode */
+    [data-testid="collapsedControl"] svg,
+    button[data-testid="stSidebarCollapseButton"] svg {
+        fill: #e5e7eb !important;
+        color: #e5e7eb !important;
+    }
+    
     [data-testid="stSidebar"] button {
         background-color: #2a2826 !important;
         border: 1px solid #4a4744 !important;
