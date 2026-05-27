@@ -6,46 +6,23 @@
     padding-top: 0.5rem !important; 
 }
 
-/* Tvinger sidebaren tilbage til baseline */
+/* Tvinger sidebaren længere ned, så den flugter perfekt med overskriften */
 [data-testid="stSidebar"] .block-container {
-    padding-top: 0.5rem !important;
+    padding-top: 0.5rem !important; 
 }
 
 
-/* Din præcise justering fra browserens inspector til "Globale Antagelser" */
-[data-testid="stSidebar"] h2 {
-    padding-top: 2rem !important;
+
+/* Fjerner det usynlige logo-område i toppen af sidebaren */
+[data-testid="stSidebarHeader"] {
+    padding: 0 !important;
+    height: 0 !important;
+    min-height: 0 !important;
+    display: none !important;
 }
 
-/* --- RESPONSIV HEADER (Mobil vs. Desktop) --- */
-/* På desktop (over 768px): Skjul top-baren for at holde layoutet stramt */
-@media (min-width: 769px) {
-    header[data-testid="stHeader"] {
-        display: none !important; 
-    }
-    [data-testid="stSidebarHeader"] {
-        padding: 0 !important;
-        height: 0 !important;
-        min-height: 0 !important;
-        display: none !important;
-    }
-}
-
-/* På mobil (under 768px): Vis top-baren og sidebar-headeren (hamburger-menu) */
-@media (max-width: 768px) {
-    header[data-testid="stHeader"] {
-        display: block !important;
-        background-color: transparent !important;
-    }
-    [data-testid="stSidebarHeader"] {
-        display: block !important;
-        height: auto !important;
-        padding-top: 1rem !important;
-    }
-    /* Skubber hovedoverskriften lidt ned på mobil, så den ikke overlapper med ikonet */
-    .block-container {
-        padding-top: 3rem !important;
-    }
+header[data-testid="stHeader"] {
+    display: none !important; 
 }
 
 /* --- SIKKER FONT-TILDELING --- */
@@ -97,15 +74,12 @@ h4 { font-size: 18px !important; font-weight: 600 !important; color: #2c2925 !im
     background-color: #f3eee7 !important;
     border-right: 1px solid #e5e0d8 !important;
 }
-
+[data-testid="stSidebar"] h2 {
+    padding-top: 2rem !important;
+}
 [data-testid="stSidebar"] p, 
 [data-testid="stSidebar"] label, 
-[data-testid="stSidebar"] div {
-    font-size: 16px !important;
-    color: #4a4742 !important;
-}
-
-/* Holder input-teksten mørk i light mode */
+[data-testid="stSidebar"] div,
 [data-testid="stSidebar"] input {
     font-size: 16px !important;
     color: #4a4742 !important;
@@ -266,32 +240,10 @@ div[data-baseweb="tab-list"] button[aria-selected="true"] p {
     }
     [data-testid="stSidebar"] p, 
     [data-testid="stSidebar"] label, 
-    [data-testid="stSidebar"] div {
+    [data-testid="stSidebar"] div,
+    [data-testid="stSidebar"] input {
         color: #e5e7eb !important;
     }
-   
-    [data-testid="stIconMaterial"]
-color: #3a3835 !important;
-}
-    /* --- AGGRESSIV DARK MODE FIX FOR INPUT & IKONER --- */
-    
-    /* Tvinger teksten inde i sidebarens input-felter til at blive lys i dark mode */
-    [data-testid="stSidebar"] input {
-        color: #f3f4f6 !important;
-        -webkit-text-fill-color: #f3f4f6 !important; /* Streamlit specifik overskrivning */
-    }
-    
-    /* Gør mobile hamburger/pullout chevron og desktop luk-chevron lys i dark mode */
-    [data-testid="collapsedControl"] svg,
-    [data-testid="stSidebarCollapseButton"] svg,
-    header[data-testid="stHeader"] svg,
-    button[kind="header"] svg {
-        fill: #f3f4f6 !important;
-        color: #f3f4f6 !important;
-    }
-    
-    /* ------------------------------------------------ */
-
     [data-testid="stSidebar"] button {
         background-color: #2a2826 !important;
         border: 1px solid #4a4744 !important;
