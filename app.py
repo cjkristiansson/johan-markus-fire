@@ -113,18 +113,15 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
     cash_j = st.session_state["cash_j_base"] if bolig_solgt else 0
     cash_m = st.session_state["cash_m_base"] if bolig_solgt else 0
     
-    # Hvis BSU bruges, og det er et købs-scenarie (bolig_solgt=True), flyttes udbetalingen
+    # Juster udbetalinger og passiv indkomst baseret på BSU-toggle
     if use_bsu and bolig_solgt:
         cash_m += bsu_amount
-        udbetaling_j -= bsu_amount
-        udbetaling_m += bsu_amount
+        udbetaling_j -= (bsu_amount / 2) # Vi antager udbetalingen deles ligeligt
+        udbetaling_m += (bsu_amount / 2)
         bsu_passive = 0
-        bsu_line = ""
     else:
-        # Hvis den ikke bruges (eller I bliver i Valby), giver den passiv indkomst
         bsu_passive = 983
-        bsu_line = "**BSU Afkast:** 983 kr./md.  \n"
-
+        
     mangler_m = max(0, udbetaling_m - cash_m)
     faktisk_udbetaling_m = udbetaling_m - mangler_m
     udbetaling_j_total = udbetaling_j + mangler_m
@@ -155,8 +152,11 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
     depot_ask_j, depot_ask_m = st.session_state["basis_ask_j"], st.session_state["basis_ask_m"]
 
     bolig_faelles = (realkreditydelse_netto + ejerudgifter_total) / 2
+    
+    # Markus' opsparingsevne reduceres, hvis BSU-renten forsvinder
     start_inv_md_j = st.session_state["inkomst_j"] - (sum(st.session_state["budget_j"].values()) + bolig_faelles)
-    start_inv_md_m = st.session_state["inkomst_m"] - (sum(st.session_state["budget_m"].values()) + bolig_faelles)
+    start_inv_md_m = st.session_state["inkomst_m"] - (sum(st.session_state["budget_m"].values()) + bolig_faelles) + bsu_passive
+    
     start_fire_j = sum(v for k, v in st.session_state["budget_j"].items() if k not in ["A_kasse_Fagforening", "Loensikring"]) + bolig_faelles
     start_fire_m = sum(v for k, v in st.session_state["budget_m"].items() if k not in ["A_kasse_Fagforening", "Loensikring", "Studielaan"]) + bolig_faelles
 
@@ -178,8 +178,7 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
         **Realkreditydelse (egen andel):** {f'{int(realkreditydelse_netto / 2):,}'.replace(',', '.')} kr./md.  
         **Startdepot (Efter boligkøb):** {f'{int(depot_free_m + depot_ask_m):,}'.replace(',', '.')} kr.  
         **Mdl. opsparing:** {f'{int(start_inv_md_m):,}'.replace(',', '.')} kr.  
-        **Mdl. Udgifter:** {f'{int(start_fire_m):,}'.replace(',', '.')} kr./md.  
-        {bsu_line}
+        **Mdl. Udgifter:** {f'{int(start_fire_m):,}'.replace(',', '.')} kr./md.
         """)
 
     st.write("")
@@ -198,7 +197,6 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
             depot_ask_j *= (1 + global_return_rate_gross * 0.83); depot_free_j *= (1 + global_return_rate_gross * 0.73)
             depot_ask_m *= (1 + global_return_rate_gross * 0.83); depot_free_m *= (1 + global_return_rate_gross * 0.73)
 
-        # Beregn passiv indkomst + læg evt. BSU afkast oveni for Markus
         p_j = calculate_drawdown_monthly_income(depot_ask_j + depot_free_j, c_age_j, pensionsalder_j, global_return_rate_net_drawdown)
         p_m_drawdown = calculate_drawdown_monthly_income(depot_ask_m + depot_free_m, c_age_m, pensionsalder_m, global_return_rate_net_drawdown)
         p_m_total = p_m_drawdown + bsu_passive
