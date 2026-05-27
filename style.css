@@ -26,6 +26,11 @@ header[data-testid="stHeader"] {
     box-shadow: none !important;
 }
 
+/* Hide all header toolbar buttons except the last one (...) */
+[data-testid="stToolbarActions"] [data-testid="stToolbarActionButton"]:not(:last-child) {
+    display: none !important;
+}
+
 /* --- SIKKER FONT-TILDELING --- */
 html, body, .stApp, p, div, span, label, input, button, li, a, th, td, h2, h3, h4, h5, h6 {
     font-family: 'Belleza', sans-serif !important;
