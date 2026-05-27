@@ -26,8 +26,13 @@ header[data-testid="stHeader"] {
     box-shadow: none !important;
 }
 
-/* Hide all header toolbar buttons except the last one (...) */
+/* Skjul alle header-ikoner undtagen ... menuen */
 [data-testid="stToolbarActions"] [data-testid="stToolbarActionButton"]:not(:last-child) {
+    display: none !important;
+}
+
+/* Skjul GitHub-ikonet specifikt */
+[data-testid="stBaseButton-header"] {
     display: none !important;
 }
 
