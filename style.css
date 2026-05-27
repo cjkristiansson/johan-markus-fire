@@ -1,54 +1,52 @@
 /* Import Spectral (overskrift) og Belleza (brødtekst) */
 @import url('https://fonts.googleapis.com/css2?family=Belleza&family=Spectral:ital,wght@0,400;0,600;0,700;1,400&display=swap');
 
-/* --- LAYOUT JUSTERING (Trækker alt op - reduceret padding) --- */
-.block-container {
-    padding-top: 0.5rem !important; 
-}
+/* --- RESPONSIV HEADER & LAYOUT (Fikser mobil-chevron) --- */
 
-/* Tvinger sidebaren længere ned, så den flugter perfekt med overskriften */
-[data-testid="stSidebar"] .block-container {
-    padding-top: 0.5rem !important; 
-}
-
-/* --- RESPONSIV HEADER (Fix til mobil-chevron) --- */
+/* STANDARD FOR DESKTOP (Skærme over 768px) */
 @media (min-width: 769px) {
-    /* På desktop skjuler vi header helt for et stramt look uden spildplads */
+    /* Skjul hele headeren for et stramt design uden spildplads */
     header[data-testid="stHeader"] {
         display: none !important; 
     }
     [data-testid="stSidebarHeader"] {
         display: none !important;
     }
+    .block-container {
+        padding-top: 0.5rem !important; 
+    }
+    [data-testid="stSidebar"] .block-container {
+        padding-top: 0.5rem !important;
+    }
 }
 
+/* STANDARD FOR MOBIL (Skærme under 768px) */
 @media (max-width: 768px) {
-    /* På mobil SKAL headeren have højde, ellers klippes chevronen af */
+    /* Vis headeren, ellers forsvinder menu-knappen */
     header[data-testid="stHeader"] {
         display: block !important;
-        background-color: transparent !important;
-        height: 3.5rem !important; 
-        min-height: 3.5rem !important;
+        background: transparent !important;
     }
-    /* Skjul alt til højre i top-baren (som Deploy/Github) */
-    header[data-testid="stHeader"] > div:last-child {
-        display: none !important; 
+    /* Skjul "Deploy" og de tre prikker i højre side */
+    [data-testid="stToolbar"] {
+        display: none !important;
     }
-    /* Sørg for at selve chevronen er synlig og klikbar */
-    [data-testid="collapsedControl"] {
-        display: flex !important;
+    /* Tving chevron-ikonet til at være synligt og mørkt i light mode */
+    [data-testid="collapsedControl"] svg {
         visibility: visible !important;
-        z-index: 999999 !important;
+        color: #2c2925 !important;
+        fill: #2c2925 !important;
     }
-    [data-testid="stSidebarHeader"] {
-        display: block !important;
-        height: auto !important;
-        padding-top: 1rem !important;
-    }
-    /* Skub hovedindholdet ned under den nu synlige mobil-header */
+    /* Skub indholdet ned, så det ikke ligger inde under ikonet */
     .block-container {
         padding-top: 3.5rem !important; 
     }
+}
+
+/* --- SIDEBAR GLOBALE ANTAGELSER JUSTERING --- */
+/* Din præcise justering fra inspector for at få overskriften til at flugte */
+[data-testid="stSidebar"] h2 {
+    padding-top: 2rem !important;
 }
 
 /* --- SIKKER FONT-TILDELING --- */
@@ -99,9 +97,6 @@ h4 { font-size: 18px !important; font-weight: 600 !important; color: #2c2925 !im
 [data-testid="stSidebar"] {
     background-color: #f3eee7 !important;
     border-right: 1px solid #e5e0d8 !important;
-}
-[data-testid="stSidebar"] h2 {
-    padding-top: 2rem !important;
 }
 [data-testid="stSidebar"] p, 
 [data-testid="stSidebar"] label, 
@@ -165,6 +160,10 @@ h4 { font-size: 18px !important; font-weight: 600 !important; color: #2c2925 !im
 [data-testid="stBaseButton-pillsActive"] p,
 [data-testid="stBaseButton-pillsActive"] span {
     color: #2c2925 !important;
+}
+
+[data-testid="st-emotion-cache-1uvhpyl"] {
+    margin-right: 16px !important;
 }
 
 /* --- BROFINANSIERINGSKASSER --- */
@@ -262,10 +261,25 @@ div[data-baseweb="tab-list"] button[aria-selected="true"] p {
     }
     [data-testid="stSidebar"] p, 
     [data-testid="stSidebar"] label, 
-    [data-testid="stSidebar"] div,
-    [data-testid="stSidebar"] input {
+    [data-testid="stSidebar"] div {
         color: #e5e7eb !important;
     }
+    
+    /* Tvinger input-felter lyse */
+    [data-testid="stSidebar"] input {
+        color: #f3f4f6 !important;
+        -webkit-text-fill-color: #f3f4f6 !important;
+    }
+    
+    /* Tvinger chevron/ikoner lyse i dark mode, ellers forsvinder de på sort baggrund */
+    [data-testid="collapsedControl"] svg,
+    [data-testid="stSidebarCollapseButton"] svg,
+    header[data-testid="stHeader"] svg,
+    button[kind="header"] svg {
+        fill: #f3f4f6 !important;
+        color: #f3f4f6 !important;
+    }
+
     [data-testid="stSidebar"] button {
         background-color: #2a2826 !important;
         border: 1px solid #4a4744 !important;
