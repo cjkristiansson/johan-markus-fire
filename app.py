@@ -27,6 +27,9 @@ if "basis_frie_j" not in st.session_state: st.session_state["basis_frie_j"] = 65
 if "basis_ask_m" not in st.session_state: st.session_state["basis_ask_m"] = 170000
 if "basis_frie_m" not in st.session_state: st.session_state["basis_frie_m"] = 0
 
+# BSU Toggle
+if "use_bsu_m" not in st.session_state: st.session_state["use_bsu_m"] = False
+
 # Personlige budgetter
 if "budget_j" not in st.session_state:
     st.session_state["budget_j"] = {"Studielaan": 0, "Mad": 6000, "Ferie": 1500, "Renovering": 1000, "A_kasse_Fagforening": 672, "Loensikring": 1674, "Puregym": 279, "Transport": 730, "Telefon": 100, "Spotify_Cloud": 100, "Charity": 100, "Frisoer": 450, "Toej": 1200, "Oevrig": 3000}
@@ -102,8 +105,17 @@ def get_emoji_status(barista_hours):
 
 def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_m, ydelse_default, ydelse_key, ejerudgifter_total, bolig_solgt):
     pal_tax, weeks_per_month, age_j, age_m = 0.153, 4.33, 41, 32
+    
+    # BSU Logik
+    use_bsu = st.session_state.get("use_bsu_m", False)
+    bsu_amount = 292060
+    bsu_passive = 0 if use_bsu else 983
+    
     cash_j = st.session_state["cash_j_base"] if bolig_solgt else 0
     cash_m = st.session_state["cash_m_base"] if bolig_solgt else 0
+    
+    if use_bsu:
+        cash_m += bsu_amount
 
     mangler_m = max(0, udbetaling_m - cash_m)
     faktisk_udbetaling_m = udbetaling_m - mangler_m
@@ -122,7 +134,6 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
     col_j, col_m, col_inp = st.columns([0.41, 0.41, 0.18], vertical_alignment="bottom")
 
     with col_inp:
-        # margin-bottom sat til 105px for at skubbe teksten op til linje 1. Juster dette tal hvis nødvendigt.
         st.markdown(
             f"<p style='margin-bottom: 60px; margin-top: 0; line-height: 1.3;'>"
             f"{int(cash_pct)}% kontantudbetaling ({f'{int(total_udbetaling):,}'.replace(',', '.')} kr.) | {int(loan_pct)}% lån</p>", 
@@ -140,6 +151,9 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
     start_inv_md_m = st.session_state["inkomst_m"] - (sum(st.session_state["budget_m"].values()) + bolig_faelles)
     start_fire_j = sum(v for k, v in st.session_state["budget_j"].items() if k not in ["A_kasse_Fagforening", "Loensikring"]) + bolig_faelles
     start_fire_m = sum(v for k, v in st.session_state["budget_m"].items() if k not in ["A_kasse_Fagforening", "Loensikring", "Studielaan"]) + bolig_faelles
+
+    # Dynamisk tekst til BSU
+    bsu_line = "" if use_bsu else f"**BSU Afkast:** 983 kr./md.  \n"
 
     # --- UDSKRIFT AF DATA ---
     with col_j:
@@ -159,7 +173,8 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
         **Realkreditydelse (egen andel):** {f'{int(realkreditydelse_netto / 2):,}'.replace(',', '.')} kr./md.  
         **Startdepot (Efter boligkøb):** {f'{int(depot_free_m + depot_ask_m):,}'.replace(',', '.')} kr.  
         **Mdl. opsparing:** {f'{int(start_inv_md_m):,}'.replace(',', '.')} kr.  
-        **Mdl. Udgifter:** {f'{int(start_fire_m):,}'.replace(',', '.')} kr./md.
+        **Mdl. Udgifter:** {f'{int(start_fire_m):,}'.replace(',', '.')} kr./md.  
+        {bsu_line}
         """)
 
     st.write("")
@@ -178,12 +193,15 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
             depot_ask_j *= (1 + global_return_rate_gross * 0.83); depot_free_j *= (1 + global_return_rate_gross * 0.73)
             depot_ask_m *= (1 + global_return_rate_gross * 0.83); depot_free_m *= (1 + global_return_rate_gross * 0.73)
 
+        # Beregn passiv indkomst + læg evt. BSU afkast oveni for Markus
         p_j = calculate_drawdown_monthly_income(depot_ask_j + depot_free_j, c_age_j, pensionsalder_j, global_return_rate_net_drawdown)
-        h_j = max(0, start_fire_j - p_j) / (global_barista_wage_net * ((1+global_inflation_rate)**year) * weeks_per_month)
-        p_m = calculate_drawdown_monthly_income(depot_ask_m + depot_free_m, c_age_m, pensionsalder_m, global_return_rate_net_drawdown)
-        h_m = max(0, start_fire_m - p_m) / (global_barista_wage_net * ((1+global_inflation_rate)**year) * weeks_per_month)
+        p_m_drawdown = calculate_drawdown_monthly_income(depot_ask_m + depot_free_m, c_age_m, pensionsalder_m, global_return_rate_net_drawdown)
+        p_m_total = p_m_drawdown + bsu_passive
 
-        table_data.append({"År": year, "J.alder": c_age_j, "J.depot (M)": f"{(depot_ask_j + depot_free_j)/1e6:.2f}", "J.Passiv (kr)": f"{int(p_j):,}".replace(',', '.'), "J.Arbtid": get_emoji_status(h_j), "M.alder": c_age_m, "M.depot (M)": f"{(depot_ask_m + depot_free_m)/1e6:.2f}", "M.Passiv (kr)": f"{int(p_m):,}".replace(',', '.'), "M.Arbtid": get_emoji_status(h_m)})
+        h_j = max(0, start_fire_j - p_j) / (global_barista_wage_net * ((1+global_inflation_rate)**year) * weeks_per_month)
+        h_m = max(0, start_fire_m - p_m_total) / (global_barista_wage_net * ((1+global_inflation_rate)**year) * weeks_per_month)
+
+        table_data.append({"År": year, "J.alder": c_age_j, "J.depot (M)": f"{(depot_ask_j + depot_free_j)/1e6:.2f}", "J.Passiv (kr)": f"{int(p_j):,}".replace(',', '.'), "J.Arbtid": get_emoji_status(h_j), "M.alder": c_age_m, "M.depot (M)": f"{(depot_ask_m + depot_free_m)/1e6:.2f}", "M.Passiv (kr)": f"{int(p_m_total):,}".replace(',', '.'), "M.Arbtid": get_emoji_status(h_m)})
         
         if h_j <= 0 and not j_reached:
             j_reached = True
@@ -216,7 +234,6 @@ def simulate_solo_fire_plan(scenario_name, boligpris, udbetaling_j, ydelse_defau
     col_j, col_m, col_inp = st.columns([0.41, 0.41, 0.18], vertical_alignment="bottom")
 
     with col_inp:
-        # Margin-bottom sat til 105px her også
         st.markdown(
             f"<p style='margin-bottom: 105px; margin-top: 0; line-height: 1.3;'>"
             f"{int(cash_pct)}% kontantudbetaling ({f'{int(faktisk_udbetaling_j):,}'.replace(',', '.')} kr.) | {int(loan_pct)}% lån</p>", 
@@ -298,6 +315,9 @@ if view_selection == "⚙️ Basisdata & Opsætning":
         st.session_state["basis_frie_m"] = st.number_input("Frie midler / Aktier (kr.)", value=st.session_state["basis_frie_m"], key="fr_m")
         df_m = st.data_editor(pd.DataFrame(list(st.session_state["budget_m"].items()), columns=["Kategori", "Beløb"]), hide_index=True, use_container_width=True, key="ed_m")
         st.session_state["budget_m"] = dict(df_m.values)
+        st.write("")
+        # Toggle til Norsk BSU
+        st.session_state["use_bsu_m"] = st.toggle("Inddrag Norsk BSU konto (292.060 kr.)", value=st.session_state.get("use_bsu_m", False), help="Hvis tændt: Bruges til boligkøb. Hvis slukket: Giver 983 kr./md. i passiv indkomst.")
 
 # --- VISNING 2: SCENARIER ---
 else:
