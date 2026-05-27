@@ -124,7 +124,7 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
     with col_inp:
         # margin-bottom sat til 105px for at skubbe teksten op til linje 1. Juster dette tal hvis nødvendigt.
         st.markdown(
-            f"<p style='margin-bottom: 23px; margin-top: 0; line-height: 1.3;'>"
+            f"<p style='margin-bottom: 60px; margin-top: 0; line-height: 1.3;'>"
             f"{int(cash_pct)}% kontantudbetaling ({f'{int(total_udbetaling):,}'.replace(',', '.')} kr.) | {int(loan_pct)}% lån</p>", 
             unsafe_allow_html=True
         )
