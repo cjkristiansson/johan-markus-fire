@@ -1,7 +1,22 @@
 /* Import Spectral (overskrift) og Belleza (brødtekst) */
 @import url('https://fonts.googleapis.com/css2?family=Belleza&family=Spectral:ital,wght@0,400;0,600;0,700;1,400&display=swap');
 
-/* --- RESPONSIV HEADER & LAYOUT (Fikser mobil-chevron) --- */
+/* --- LAYOUT JUSTERING (Trækker alt op - reduceret padding) --- */
+.block-container {
+    padding-top: 0.5rem !important; 
+}
+
+/* Tvinger sidebaren tilbage til baseline */
+[data-testid="stSidebar"] .block-container {
+    padding-top: 0.5rem !important;
+}
+
+/* Din præcise justering fra browserens inspector til "Globale Antagelser" */
+[data-testid="stSidebar"] h2 {
+    padding-top: 2rem !important;
+}
+
+/* --- RESPONSIV HEADER (Den rene løsning) --- */
 
 /* STANDARD FOR DESKTOP (Skærme over 768px) */
 @media (min-width: 769px) {
@@ -12,41 +27,26 @@
     [data-testid="stSidebarHeader"] {
         display: none !important;
     }
-    .block-container {
-        padding-top: 0.5rem !important; 
-    }
-    [data-testid="stSidebar"] .block-container {
-        padding-top: 0.5rem !important;
-    }
 }
 
 /* STANDARD FOR MOBIL (Skærme under 768px) */
 @media (max-width: 768px) {
-    /* Vis headeren, ellers forsvinder menu-knappen */
+    /* Lad Streamlits native header leve, men fjern dens baggrund */
     header[data-testid="stHeader"] {
-        display: block !important;
-        background: transparent !important;
+        background-color: transparent !important;
     }
-    /* Skjul "Deploy" og de tre prikker i højre side */
+    /* Skjul KUN højre side af topbaren ("Deploy" knap, GitHub ikoner osv.) */
     [data-testid="stToolbar"] {
         display: none !important;
     }
-    /* Tving chevron-ikonet til at være synligt og mørkt i light mode */
-    [data-testid="collapsedControl"] svg {
-        visibility: visible !important;
-        color: #2c2925 !important;
-        fill: #2c2925 !important;
-    }
-    /* Skub indholdet ned, så det ikke ligger inde under ikonet */
+    /* Skub indholdet lidt ned, så overskriften ikke ligger oppe i chevron-ikonet */
     .block-container {
         padding-top: 3.5rem !important; 
     }
-}
-
-/* --- SIDEBAR GLOBALE ANTAGELSER JUSTERING --- */
-/* Din præcise justering fra inspector for at få overskriften til at flugte */
-[data-testid="stSidebar"] h2 {
-    padding-top: 2rem !important;
+    /* Gør plads til luk-knappen inde i sidebaren */
+    [data-testid="stSidebarHeader"] {
+        padding-top: 1rem !important;
+    }
 }
 
 /* --- SIKKER FONT-TILDELING --- */
@@ -100,7 +100,11 @@ h4 { font-size: 18px !important; font-weight: 600 !important; color: #2c2925 !im
 }
 [data-testid="stSidebar"] p, 
 [data-testid="stSidebar"] label, 
-[data-testid="stSidebar"] div,
+[data-testid="stSidebar"] div {
+    font-size: 16px !important;
+    color: #4a4742 !important;
+}
+/* Input-felter tekst (Light mode) */
 [data-testid="stSidebar"] input {
     font-size: 16px !important;
     color: #4a4742 !important;
@@ -265,19 +269,10 @@ div[data-baseweb="tab-list"] button[aria-selected="true"] p {
         color: #e5e7eb !important;
     }
     
-    /* Tvinger input-felter lyse */
+    /* Aggressiv fix til at holde inputtekst i sidebaren synlig i dark mode */
     [data-testid="stSidebar"] input {
         color: #f3f4f6 !important;
         -webkit-text-fill-color: #f3f4f6 !important;
-    }
-    
-    /* Tvinger chevron/ikoner lyse i dark mode, ellers forsvinder de på sort baggrund */
-    [data-testid="collapsedControl"] svg,
-    [data-testid="stSidebarCollapseButton"] svg,
-    header[data-testid="stHeader"] svg,
-    button[kind="header"] svg {
-        fill: #f3f4f6 !important;
-        color: #f3f4f6 !important;
     }
 
     [data-testid="stSidebar"] button {
