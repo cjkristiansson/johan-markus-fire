@@ -6,47 +6,24 @@
     padding-top: 0.5rem !important; 
 }
 
-/* Tvinger sidebaren tilbage til baseline */
+/* Tvinger sidebaren længere ned, så den flugter perfekt med overskriften */
 [data-testid="stSidebar"] .block-container {
-    padding-top: 0.5rem !important;
+    padding-top: 0.5rem !important; 
 }
 
-/* Din præcise justering fra browserens inspector til "Globale Antagelser" */
-[data-testid="stSidebar"] h2 {
-    padding-top: 2rem !important;
+/* Fjerner det usynlige logo-område i toppen af sidebaren */
+[data-testid="stSidebarHeader"] {
+    padding: 0 !important;
+    height: 0 !important;
+    min-height: 0 !important;
+    display: none !important;
 }
 
-/* --- RESPONSIV HEADER (Den rene løsning) --- */
-
-/* STANDARD FOR DESKTOP (Skærme over 768px) */
-@media (min-width: 769px) {
-    /* Skjul hele headeren for et stramt design uden spildplads */
-    header[data-testid="stHeader"] {
-        display: none !important; 
-    }
-    [data-testid="stSidebarHeader"] {
-        display: none !important;
-    }
-}
-
-/* STANDARD FOR MOBIL (Skærme under 768px) */
-@media (max-width: 768px) {
-    /* Lad Streamlits native header leve, men fjern dens baggrund */
-    header[data-testid="stHeader"] {
-        background-color: transparent !important;
-    }
-    /* Skjul KUN højre side af topbaren ("Deploy" knap, GitHub ikoner osv.) */
-    [data-testid="stToolbar"] {
-        display: none !important;
-    }
-    /* Skub indholdet lidt ned, så overskriften ikke ligger oppe i chevron-ikonet */
-    .block-container {
-        padding-top: 3.5rem !important; 
-    }
-    /* Gør plads til luk-knappen inde i sidebaren */
-    [data-testid="stSidebarHeader"] {
-        padding-top: 1rem !important;
-    }
+/* Gør headeren usynlig men behold den i DOM så sidebar-toggle virker */
+header[data-testid="stHeader"] {
+    background: transparent !important;
+    border-bottom: none !important;
+    box-shadow: none !important;
 }
 
 /* --- SIKKER FONT-TILDELING --- */
@@ -98,13 +75,12 @@ h4 { font-size: 18px !important; font-weight: 600 !important; color: #2c2925 !im
     background-color: #f3eee7 !important;
     border-right: 1px solid #e5e0d8 !important;
 }
+[data-testid="stSidebar"] h2 {
+    padding-top: 2rem !important;
+}
 [data-testid="stSidebar"] p, 
 [data-testid="stSidebar"] label, 
-[data-testid="stSidebar"] div {
-    font-size: 16px !important;
-    color: #4a4742 !important;
-}
-/* Input-felter tekst (Light mode) */
+[data-testid="stSidebar"] div,
 [data-testid="stSidebar"] input {
     font-size: 16px !important;
     color: #4a4742 !important;
@@ -150,7 +126,6 @@ h4 { font-size: 18px !important; font-weight: 600 !important; color: #2c2925 !im
     border-color: #b5ae9f !important;
     color: #4a4742 !important;
     background-color: #f5f1ea !important;
-    margin-right: 16px !important;
 }
 
 [data-testid="stBaseButton-pillsActive"] {
@@ -164,10 +139,6 @@ h4 { font-size: 18px !important; font-weight: 600 !important; color: #2c2925 !im
 [data-testid="stBaseButton-pillsActive"] p,
 [data-testid="stBaseButton-pillsActive"] span {
     color: #2c2925 !important;
-}
-
-[data-testid="st-emotion-cache-1uvhpyl"] {
-    margin-right: 16px !important;
 }
 
 /* --- BROFINANSIERINGSKASSER --- */
@@ -265,16 +236,10 @@ div[data-baseweb="tab-list"] button[aria-selected="true"] p {
     }
     [data-testid="stSidebar"] p, 
     [data-testid="stSidebar"] label, 
-    [data-testid="stSidebar"] div {
+    [data-testid="stSidebar"] div,
+    [data-testid="stSidebar"] input {
         color: #e5e7eb !important;
     }
-    
-    /* Aggressiv fix til at holde inputtekst i sidebaren synlig i dark mode */
-    [data-testid="stSidebar"] input {
-        color: #f3f4f6 !important;
-        -webkit-text-fill-color: #f3f4f6 !important;
-    }
-
     [data-testid="stSidebar"] button {
         background-color: #2a2826 !important;
         border: 1px solid #4a4744 !important;
