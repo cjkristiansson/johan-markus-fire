@@ -109,13 +109,21 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
     # BSU Logik
     use_bsu = st.session_state.get("use_bsu_m", False)
     bsu_amount = 292060
-    bsu_passive = 0 if use_bsu else 983
     
     cash_j = st.session_state["cash_j_base"] if bolig_solgt else 0
     cash_m = st.session_state["cash_m_base"] if bolig_solgt else 0
     
-    if use_bsu:
+    # Hvis BSU bruges, og det er et købs-scenarie (bolig_solgt=True), flyttes udbetalingen
+    if use_bsu and bolig_solgt:
         cash_m += bsu_amount
+        udbetaling_j -= bsu_amount
+        udbetaling_m += bsu_amount
+        bsu_passive = 0
+        bsu_line = ""
+    else:
+        # Hvis den ikke bruges (eller I bliver i Valby), giver den passiv indkomst
+        bsu_passive = 983
+        bsu_line = "**BSU Afkast:** 983 kr./md.  \n"
 
     mangler_m = max(0, udbetaling_m - cash_m)
     faktisk_udbetaling_m = udbetaling_m - mangler_m
@@ -151,9 +159,6 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
     start_inv_md_m = st.session_state["inkomst_m"] - (sum(st.session_state["budget_m"].values()) + bolig_faelles)
     start_fire_j = sum(v for k, v in st.session_state["budget_j"].items() if k not in ["A_kasse_Fagforening", "Loensikring"]) + bolig_faelles
     start_fire_m = sum(v for k, v in st.session_state["budget_m"].items() if k not in ["A_kasse_Fagforening", "Loensikring", "Studielaan"]) + bolig_faelles
-
-    # Dynamisk tekst til BSU
-    bsu_line = "" if use_bsu else f"**BSU Afkast:** 983 kr./md.  \n"
 
     # --- UDSKRIFT AF DATA ---
     with col_j:
