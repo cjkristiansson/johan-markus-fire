@@ -1,7 +1,7 @@
 /* Import Spectral (overskrift) og Belleza (brødtekst) */
 @import url('https://fonts.googleapis.com/css2?family=Belleza&family=Spectral:ital,wght@0,400;0,600;0,700;1,400&display=swap');
 
-/* --- LAYOUT JUSTERING (Trækker alt op - reduceret padding) --- */
+/* --- LAYOUT JUSTERING (Trækker alt op, reduceret padding) --- */
 .block-container {
     padding-top: 0.5rem !important; 
 }
@@ -31,7 +31,7 @@
 }
 
 /* --- STREAMLIT CLOUD UI FIX --- */
-/* Skjul "Share", "Star", "Edit" og "GitHub" ikoner fra Streamlit Cloud, men behold "..." menuen og sidebar-toggle */
+/* Skjul "Share", "Star", "Edit" og "GitHub" ikoner fra Streamlit Cloud, men behold "..." menuen */
 [data-testid="stToolbarActions"],
 .stAppDeployButton,
 .stDeployButton {
