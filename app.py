@@ -28,7 +28,7 @@ if "basis_frie_j" not in st.session_state: st.session_state["basis_frie_j"] = 65
 if "basis_ask_m" not in st.session_state: st.session_state["basis_ask_m"] = 170000
 if "basis_frie_m" not in st.session_state: st.session_state["basis_frie_m"] = 0
 
-# Toggles (Sikrer default-værdier i session state)
+# Toggles
 if "use_bsu_m" not in st.session_state: st.session_state["use_bsu_m"] = False
 if "use_loensikring_j" not in st.session_state: st.session_state["use_loensikring_j"] = True
 if "use_loensikring_m" not in st.session_state: st.session_state["use_loensikring_m"] = True
@@ -109,7 +109,6 @@ def get_emoji_status(barista_hours):
 def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_m, ydelse_default, ydelse_key, ejerudgifter_total, bolig_solgt, boligskat_md):
     pal_tax, weeks_per_month, age_j, age_m = 0.153, 4.33, 41, 32
     
-    # BSU Logik
     use_bsu = st.session_state.get("use_bsu_m", False)
     bsu_amount = 292060
     
@@ -198,11 +197,7 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
     st.write("")
 
     table_data = []
-    
-    # Datastrukturer til grafer (divideret med 1000 for at fjerne lange tal)
     chart_data_hours = []
-    chart_data_cross_j = []
-    chart_data_cross_m = []
     chart_data_cf_j = []
     chart_data_cf_m = []
 
@@ -226,17 +221,11 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
         h_j = max(0, start_fire_j - p_j) / (global_barista_wage_net * ((1+global_inflation_rate)**year) * weeks_per_month)
         h_m = max(0, start_fire_m - p_m_total) / (global_barista_wage_net * ((1+global_inflation_rate)**year) * weeks_per_month)
 
-        # 1. Standard Tabel-data
         table_data.append({"År": year, "J.alder": c_age_j, "J.depot (M)": f"{(depot_ask_j + depot_free_j)/1e6:.2f}", "J.Passiv (kr)": f"{int(p_j):,}".replace(',', '.'), "J.Arbtid": get_emoji_status(h_j), "M.alder": c_age_m, "M.depot (M)": f"{(depot_ask_m + depot_free_m)/1e6:.2f}", "M.Passiv (kr)": f"{int(p_m_total):,}".replace(',', '.'), "M.Arbtid": get_emoji_status(h_m)})
         
-        # 2. Graf-data
         chart_data_hours.append({"År": year, "Johan (Timer)": max(0, h_j), "Markus (Timer)": max(0, h_m)})
-        
-        chart_data_cross_j.append({"År": year, "Passiv Indkomst": p_j / 1000, "FIRE Udgifter": start_fire_j / 1000})
-        chart_data_cross_m.append({"År": year, "Passiv Indkomst": p_m_total / 1000, "FIRE Udgifter": start_fire_m / 1000})
-        
-        chart_data_cf_j.append({"År": year, "Passiv Indkomst": p_j / 1000, "Barista Behov": max(0, start_fire_j - p_j) / 1000})
-        chart_data_cf_m.append({"År": year, "Passiv Indkomst": p_m_total / 1000, "Barista Behov": max(0, start_fire_m - p_m_total) / 1000})
+        chart_data_cf_j.append({"År": year, "Passiv Indkomst": int(p_j), "Barista Behov": int(max(0, start_fire_j - p_j))})
+        chart_data_cf_m.append({"År": year, "Passiv Indkomst": int(p_m_total), "Barista Behov": int(max(0, start_fire_m - p_m_total))})
         
         if h_j <= 0 and not j_reached:
             j_reached = True
@@ -255,32 +244,17 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
     # VIS GRAFER 
     st.divider()
     
-    # Graf 1: Timer (Fuld bredde)
     st.markdown("### ⏳ 1. Flugtplanen (Nødvendig arbejdstid pr. uge)")
     st.line_chart(pd.DataFrame(chart_data_hours).set_index("År"))
 
     st.divider()
-
-    # Layout til Graf 2 & 3
-    col_chart_j, col_chart_m = st.columns(2)
     
-    with col_chart_j:
-        st.markdown("### ⚔️ 2. Krydsfeltet (Johan)")
-        st.caption("Viser hvornår Passiv Indkomst overstiger FIRE Udgifter (t.kr./md.)")
-        st.line_chart(pd.DataFrame(chart_data_cross_j).set_index("År"))
-        
-        st.markdown("### ☕ 3. Barista-Gap (Johan)")
-        st.caption("Barista-løn minimeres over tid (t.kr./md.)")
-        st.bar_chart(pd.DataFrame(chart_data_cf_j).set_index("År"))
+    # Grafer i fuld bredde for bedre plads til fulde tal på y-aksen
+    st.markdown("### ☕ 2. Barista-Gap: Johan (Månedligt Cash Flow)")
+    st.bar_chart(pd.DataFrame(chart_data_cf_j).set_index("År"))
 
-    with col_chart_m:
-        st.markdown("### ⚔️ 2. Krydsfeltet (Markus)")
-        st.caption("Viser hvornår Passiv Indkomst overstiger FIRE Udgifter (t.kr./md.)")
-        st.line_chart(pd.DataFrame(chart_data_cross_m).set_index("År"))
-        
-        st.markdown("### ☕ 3. Barista-Gap (Markus)")
-        st.caption("Barista-løn minimeres over tid (t.kr./md.)")
-        st.bar_chart(pd.DataFrame(chart_data_cf_m).set_index("År"))
+    st.markdown("### ☕ 3. Barista-Gap: Markus (Månedligt Cash Flow)")
+    st.bar_chart(pd.DataFrame(chart_data_cf_m).set_index("År"))
 
     # Success Boxes i bunden
     if j_reached:
@@ -340,7 +314,6 @@ def simulate_solo_fire_plan(scenario_name, boligpris, udbetaling_j, ydelse_defau
 
     table_data = []
     chart_data_hours = []
-    chart_data_cross_j = []
     chart_data_cf_j = []
 
     j_reached = False
@@ -359,10 +332,8 @@ def simulate_solo_fire_plan(scenario_name, boligpris, udbetaling_j, ydelse_defau
 
         table_data.append({"År": year, "Alder": c_age_j, "Depot (M)": f"{(depot_ask_j + depot_free_j)/1e6:.2f}", "Passiv Indkomst (kr)": f"{int(p_j):,}".replace(',', '.'), "Arbejdstid (Barista)": get_emoji_status(h_j)})
         
-        # Graf-data
         chart_data_hours.append({"År": year, "Johan (Timer)": max(0, h_j)})
-        chart_data_cross_j.append({"År": year, "Passiv Indkomst": p_j / 1000, "FIRE Udgifter": start_fire_j / 1000})
-        chart_data_cf_j.append({"År": year, "Passiv Indkomst": p_j / 1000, "Barista Behov": max(0, start_fire_j - p_j) / 1000})
+        chart_data_cf_j.append({"År": year, "Passiv Indkomst": int(p_j), "Barista Behov": int(max(0, start_fire_j - p_j))})
         
         if h_j <= 0 and not j_reached:
             j_reached = True
@@ -376,16 +347,8 @@ def simulate_solo_fire_plan(scenario_name, boligpris, udbetaling_j, ydelse_defau
     st.markdown("### ⏳ 1. Flugtplanen (Nødvendig arbejdstid pr. uge)")
     st.line_chart(pd.DataFrame(chart_data_hours).set_index("År"))
 
-    col_chart_1, col_chart_2 = st.columns(2)
-    with col_chart_1:
-        st.markdown("### ⚔️ 2. Krydsfeltet (Johan)")
-        st.caption("Viser hvornår Passiv Indkomst overstiger FIRE Udgifter (t.kr./md.)")
-        st.line_chart(pd.DataFrame(chart_data_cross_j).set_index("År"))
-        
-    with col_chart_2:
-        st.markdown("### ☕ 3. Barista-Gap (Johan)")
-        st.caption("Barista-løn minimeres over tid (t.kr./md.)")
-        st.bar_chart(pd.DataFrame(chart_data_cf_j).set_index("År"))
+    st.markdown("### ☕ 2. Barista-Gap: Johan (Månedligt Cash Flow)")
+    st.bar_chart(pd.DataFrame(chart_data_cf_j).set_index("År"))
 
     if j_reached:
         st.markdown(f"<div class='success-box'>✅ <b>Johans brofinansiering er sikret ved alder {j_fire_age}.</b><br>Pension forventes ca. {pension_at_target_j / 1_000_000:.2f}M kr.</div>", unsafe_allow_html=True)
