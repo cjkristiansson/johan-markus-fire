@@ -16,18 +16,7 @@
     padding-top: 2rem !important;
 }
 
-/* --- RESPONSIV HEADER (Den rene løsning) --- */
-
-/* STANDARD FOR DESKTOP (Skærme over 768px) */
-@media (min-width: 769px) {
-    /* Skjul hele headeren for et stramt design uden spildplads */
-    header[data-testid="stHeader"] {
-        display: none !important; 
-    }
-    [data-testid="stSidebarHeader"] {
-        display: none !important;
-    }
-}
+/* --- RESPONSIV HEADER --- */
 
 /* STANDARD FOR MOBIL (Skærme under 768px) */
 @media (max-width: 768px) {
@@ -42,14 +31,14 @@
 }
 
 /* --- STREAMLIT CLOUD UI FIX --- */
-/* Skjul "Share", "Star", "Edit" og "GitHub" ikoner fra Streamlit Cloud, men behold "..." menuen */
+/* Skjul "Share", "Star", "Edit" og "GitHub" ikoner fra Streamlit Cloud, men behold "..." menuen og sidebar-toggle */
 [data-testid="stToolbarActions"],
 .stAppDeployButton,
 .stDeployButton {
     display: none !important;
 }
 
-/* Farv Streamlits topbar så den blender usynligt ind i den beige baggrund */
+/* Farv Streamlits topbar så den blender usynligt ind i den beige/mørke baggrund */
 header[data-testid="stHeader"] {
     background-color: #fcfaf7 !important;
 }
