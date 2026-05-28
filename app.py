@@ -243,15 +243,15 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
 
     # VIS GRAFER I FULD BREDDE FOR BEDRE LÆSBARHED
     st.divider()
-    st.markdown("### ⏳ 1. Flugtplanen (Nødvendig arbejdstid pr. uge)")
+    st.markdown("### ⏳ Nødvendig arbejdstid pr. uge")
     st.line_chart(pd.DataFrame(chart_data_hours).set_index("År"))
 
     st.divider()
-    st.markdown("### ☕ 2. Barista-Gap: Johan (Månedligt Cash Flow)")
+    st.markdown("### ☕ Barista-Gap: Johan")
     st.bar_chart(pd.DataFrame(chart_data_cf_j).set_index("År"))
 
     st.divider()
-    st.markdown("### ☕ 3. Barista-Gap: Markus (Månedligt Cash Flow)")
+    st.markdown("### ☕ Barista-Gap: Johan")
     st.bar_chart(pd.DataFrame(chart_data_cf_m).set_index("År"))
 
     # Success Boxes i bunden
