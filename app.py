@@ -109,6 +109,7 @@ def get_emoji_status(barista_hours):
 def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_m, ydelse_default, ydelse_key, ejerudgifter_total, bolig_solgt, boligskat_md):
     pal_tax, weeks_per_month, age_j, age_m = 0.153, 4.33, 41, 32
     
+    # BSU Logik
     use_bsu = st.session_state.get("use_bsu_m", False)
     bsu_amount = 292060
     
@@ -154,11 +155,13 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
 
     bolig_faelles = (realkreditydelse_netto + ejerudgifter_total + boligskat_md) / 2
     
+    # Håndter Johans lønsikring i det aktuelle budget baseret på toggle
     use_loensikring_j = st.session_state.get("use_loensikring_j", True)
     budget_j_total = sum(st.session_state["budget_j"].values())
     if not use_loensikring_j:
         budget_j_total -= st.session_state["budget_j"].get("Loensikring", 0)
 
+    # Håndter Markus' lønsikring i det aktuelle budget baseret på toggle
     use_loensikring_m = st.session_state.get("use_loensikring_m", True)
     budget_m_total = sum(st.session_state["budget_m"].values())
     if not use_loensikring_m:
@@ -197,7 +200,7 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
     st.write("")
 
     table_data = []
-    chart_data_depot = []
+    chart_data_hours = []
     chart_data_cf_j = []
     chart_data_cf_m = []
 
@@ -222,7 +225,9 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
         h_m = max(0, start_fire_m - p_m_total) / (global_barista_wage_net * ((1+global_inflation_rate)**year) * weeks_per_month)
 
         table_data.append({"År": year, "J.alder": c_age_j, "J.depot (M)": f"{(depot_ask_j + depot_free_j)/1e6:.2f}", "J.Passiv (kr)": f"{int(p_j):,}".replace(',', '.'), "J.Arbtid": get_emoji_status(h_j), "M.alder": c_age_m, "M.depot (M)": f"{(depot_ask_m + depot_free_m)/1e6:.2f}", "M.Passiv (kr)": f"{int(p_m_total):,}".replace(',', '.'), "M.Arbtid": get_emoji_status(h_m)})
-        chart_data_depot.append({"År": year, "Johan (M)": (depot_ask_j + depot_free_j)/1e6, "Markus (M)": (depot_ask_m + depot_free_m)/1e6})
+        
+        # Samler data til grafer
+        chart_data_hours.append({"År": year, "Johan (Timer)": max(0, h_j), "Markus (Timer)": max(0, h_m)})
         chart_data_cf_j.append({"År": year, "Passiv Indkomst": p_j, "Barista Behov": max(0, start_fire_j - p_j)})
         chart_data_cf_m.append({"År": year, "Passiv Indkomst": p_m_total, "Barista Behov": max(0, start_fire_m - p_m_total)})
         
@@ -242,8 +247,8 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
 
     # Vis Grafer
     st.divider()
-    st.markdown("### 📈 1. Race to FIRE (Formueudvikling)")
-    st.line_chart(pd.DataFrame(chart_data_depot).set_index("År"))
+    st.markdown("### ⏳ 1. Flugtplanen (Nødvendig arbejdstid pr. uge)")
+    st.line_chart(pd.DataFrame(chart_data_hours).set_index("År"))
 
     st.markdown("### ☕ 2. Barista-Gap (Månedligt Cash Flow)")
     col_chart_j, col_chart_m = st.columns(2)
@@ -287,6 +292,7 @@ def simulate_solo_fire_plan(scenario_name, boligpris, udbetaling_j, ydelse_defau
 
     bolig_total = realkreditydelse_netto + ejerudgifter_total + boligskat_md
     
+    # Håndter Johans lønsikring for soloscenariet
     use_loensikring_j = st.session_state.get("use_loensikring_j", True)
     budget_j_total = sum(solo_budget_j.values())
     if not use_loensikring_j:
@@ -310,7 +316,7 @@ def simulate_solo_fire_plan(scenario_name, boligpris, udbetaling_j, ydelse_defau
     st.write("")
 
     table_data = []
-    chart_data_depot = []
+    chart_data_hours = []
     chart_data_cf_j = []
 
     j_reached = False
@@ -328,7 +334,9 @@ def simulate_solo_fire_plan(scenario_name, boligpris, udbetaling_j, ydelse_defau
         h_j = max(0, start_fire_j - p_j) / (global_barista_wage_net * ((1+global_inflation_rate)**year) * weeks_per_month)
 
         table_data.append({"År": year, "Alder": c_age_j, "Depot (M)": f"{(depot_ask_j + depot_free_j)/1e6:.2f}", "Passiv Indkomst (kr)": f"{int(p_j):,}".replace(',', '.'), "Arbejdstid (Barista)": get_emoji_status(h_j)})
-        chart_data_depot.append({"År": year, "Johan (M)": (depot_ask_j + depot_free_j)/1e6})
+        
+        # Samler data til grafer
+        chart_data_hours.append({"År": year, "Johan (Timer)": max(0, h_j)})
         chart_data_cf_j.append({"År": year, "Passiv Indkomst": p_j, "Barista Behov": max(0, start_fire_j - p_j)})
         
         if h_j <= 0 and not j_reached:
@@ -338,9 +346,10 @@ def simulate_solo_fire_plan(scenario_name, boligpris, udbetaling_j, ydelse_defau
 
     st.table(pd.DataFrame(table_data).set_index("År"))
     
+    # Vis Grafer
     st.divider()
-    st.markdown("### 📈 1. Race to FIRE (Formueudvikling)")
-    st.line_chart(pd.DataFrame(chart_data_depot).set_index("År"))
+    st.markdown("### ⏳ 1. Flugtplanen (Nødvendig arbejdstid pr. uge)")
+    st.line_chart(pd.DataFrame(chart_data_hours).set_index("År"))
 
     st.markdown("### ☕ 2. Barista-Gap (Månedligt Cash Flow)")
     st.markdown("**Johan (kr./md.)**")
