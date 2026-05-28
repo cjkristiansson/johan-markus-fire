@@ -27,7 +27,7 @@ if "basis_frie_j" not in st.session_state: st.session_state["basis_frie_j"] = 65
 if "basis_ask_m" not in st.session_state: st.session_state["basis_ask_m"] = 170000
 if "basis_frie_m" not in st.session_state: st.session_state["basis_frie_m"] = 0
 
-# Toggles
+# Toggles (Sikrer default-værdier i session state)
 if "use_bsu_m" not in st.session_state: st.session_state["use_bsu_m"] = False
 if "use_loensikring_j" not in st.session_state: st.session_state["use_loensikring_j"] = True
 if "use_loensikring_m" not in st.session_state: st.session_state["use_loensikring_m"] = True
@@ -115,10 +115,9 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
     cash_j = st.session_state["cash_j_base"] if bolig_solgt else 0
     cash_m = st.session_state["cash_m_base"] if bolig_solgt else 0
     
-    # Juster udbetalinger og passiv indkomst baseret på BSU-toggle
     if use_bsu and bolig_solgt:
         cash_m += bsu_amount
-        udbetaling_j -= (bsu_amount / 2) # Vi antager udbetalingen deles ligeligt
+        udbetaling_j -= (bsu_amount / 2) 
         udbetaling_m += (bsu_amount / 2)
         bsu_passive = 0
     else:
@@ -170,7 +169,6 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
     start_inv_md_j = st.session_state["inkomst_j"] - (budget_j_total + bolig_faelles)
     start_inv_md_m = st.session_state["inkomst_m"] - (budget_m_total + bolig_faelles) + bsu_passive
     
-    # Lønsikring ekskluderes automatisk fra FIRE udgifter uanset toggle
     start_fire_j = sum(v for k, v in st.session_state["budget_j"].items() if k not in ["A_kasse_Fagforening", "Loensikring"]) + bolig_faelles
     start_fire_m = sum(v for k, v in st.session_state["budget_m"].items() if k not in ["A_kasse_Fagforening", "Loensikring", "Studielaan"]) + bolig_faelles
 
@@ -325,6 +323,8 @@ def simulate_solo_fire_plan(scenario_name, boligpris, udbetaling_j, ydelse_defau
 if view_selection == "⚙️ Basisdata & Opsætning":
     st.subheader("Konfiguration af personlig økonomi")
     col_setup_j, col_setup_m = st.columns(2)
+    
+    # JOHAN SETUP
     with col_setup_j:
         st.markdown("### 👤 JOHAN DATA")
         st.session_state["inkomst_j"] = st.number_input("Månedsløn (Netto kr.)", value=st.session_state["inkomst_j"], step=500, key="inp_j")
@@ -335,8 +335,9 @@ if view_selection == "⚙️ Basisdata & Opsætning":
         df_j = st.data_editor(pd.DataFrame(list(st.session_state["budget_j"].items()), columns=["Kategori", "Beløb"]), hide_index=True, use_container_width=True, key="ed_j")
         st.session_state["budget_j"] = dict(df_j.values)
         st.write("")
-        st.session_state["use_loensikring_j"] = st.toggle("Inddrag Lønsikring (1.836 kr.)", value=st.session_state.get("use_loensikring_j", True), help="Hvis tændt: Medregnes som fast udgift under den nuværende opsparingsfase.")
+        st.toggle("Inddrag Lønsikring (1.836 kr.)", key="use_loensikring_j", help="Hvis tændt: Medregnes som fast udgift under den nuværende opsparingsfase.")
         
+    # MARKUS SETUP
     with col_setup_m:
         st.markdown("### 👤 MARKUS DATA")
         st.session_state["inkomst_m"] = st.number_input("Månedsløn (Netto kr.)", value=st.session_state["inkomst_m"], step=500, key="inp_m")
@@ -347,8 +348,8 @@ if view_selection == "⚙️ Basisdata & Opsætning":
         df_m = st.data_editor(pd.DataFrame(list(st.session_state["budget_m"].items()), columns=["Kategori", "Beløb"]), hide_index=True, use_container_width=True, key="ed_m")
         st.session_state["budget_m"] = dict(df_m.values)
         st.write("")
-        st.session_state["use_loensikring_m"] = st.toggle("Inddrag Lønsikring (720 kr.)", value=st.session_state.get("use_loensikring_m", True), help="Hvis tændt: Medregnes som fast udgift under den nuværende opsparingsfase.")
-        st.session_state["use_bsu_m"] = st.toggle("Inddrag Norsk BSU konto (292.060 kr.)", value=st.session_state.get("use_bsu_m", False), help="Hvis tændt: Bruges til boligkøb. Hvis slukket: Giver 983 kr./md. i passiv indkomst.")
+        st.toggle("Inddrag Lønsikring (720 kr.)", key="use_loensikring_m", help="Hvis tændt: Medregnes som fast udgift under den nuværende opsparingsfase.")
+        st.toggle("Inddrag Norsk BSU konto (292.060 kr.)", key="use_bsu_m", help="Hvis tændt: Bruges til boligkøb. Hvis slukket: Giver 983 kr./md. i passiv indkomst.")
 
 # --- VISNING 2: SCENARIER ---
 else:
