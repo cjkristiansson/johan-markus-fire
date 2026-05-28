@@ -30,6 +30,7 @@ if "basis_frie_m" not in st.session_state: st.session_state["basis_frie_m"] = 0
 # Toggles
 if "use_bsu_m" not in st.session_state: st.session_state["use_bsu_m"] = False
 if "use_loensikring_j" not in st.session_state: st.session_state["use_loensikring_j"] = True
+if "use_loensikring_m" not in st.session_state: st.session_state["use_loensikring_m"] = True
 
 # Personlige budgetter
 if "budget_j" not in st.session_state:
@@ -117,7 +118,7 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
     # Juster udbetalinger og passiv indkomst baseret på BSU-toggle
     if use_bsu and bolig_solgt:
         cash_m += bsu_amount
-        udbetaling_j -= (bsu_amount / 2)
+        udbetaling_j -= (bsu_amount / 2) # Vi antager udbetalingen deles ligeligt
         udbetaling_m += (bsu_amount / 2)
         bsu_passive = 0
     else:
@@ -160,8 +161,14 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
     if not use_loensikring_j:
         budget_j_total -= st.session_state["budget_j"].get("Loensikring", 0)
 
+    # Håndter Markus' lønsikring i det aktuelle budget baseret på toggle
+    use_loensikring_m = st.session_state.get("use_loensikring_m", True)
+    budget_m_total = sum(st.session_state["budget_m"].values())
+    if not use_loensikring_m:
+        budget_m_total -= st.session_state["budget_m"].get("Loensikring", 0)
+
     start_inv_md_j = st.session_state["inkomst_j"] - (budget_j_total + bolig_faelles)
-    start_inv_md_m = st.session_state["inkomst_m"] - (sum(st.session_state["budget_m"].values()) + bolig_faelles) + bsu_passive
+    start_inv_md_m = st.session_state["inkomst_m"] - (budget_m_total + bolig_faelles) + bsu_passive
     
     # Lønsikring ekskluderes automatisk fra FIRE udgifter uanset toggle
     start_fire_j = sum(v for k, v in st.session_state["budget_j"].items() if k not in ["A_kasse_Fagforening", "Loensikring"]) + bolig_faelles
@@ -340,6 +347,7 @@ if view_selection == "⚙️ Basisdata & Opsætning":
         df_m = st.data_editor(pd.DataFrame(list(st.session_state["budget_m"].items()), columns=["Kategori", "Beløb"]), hide_index=True, use_container_width=True, key="ed_m")
         st.session_state["budget_m"] = dict(df_m.values)
         st.write("")
+        st.session_state["use_loensikring_m"] = st.toggle("Inddrag Lønsikring (720 kr.)", value=st.session_state.get("use_loensikring_m", True), help="Hvis tændt: Medregnes som fast udgift under den nuværende opsparingsfase.")
         st.session_state["use_bsu_m"] = st.toggle("Inddrag Norsk BSU konto (292.060 kr.)", value=st.session_state.get("use_bsu_m", False), help="Hvis tændt: Bruges til boligkøb. Hvis slukket: Giver 983 kr./md. i passiv indkomst.")
 
 # --- VISNING 2: SCENARIER ---
