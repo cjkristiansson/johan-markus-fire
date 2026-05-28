@@ -1,7 +1,8 @@
 import streamlit as st
 import pandas as pd
 
-st.set_page_config(page_title="FIRE Dashboard", layout="wide")
+# Her tvinges sidebaren ud på alle desktop-skærme
+st.set_page_config(page_title="FIRE Dashboard", layout="wide", initial_sidebar_state="expanded")
 
 # --- INDLÆS EKSTERN CSS ---
 def load_css(file_name):
@@ -154,13 +155,13 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
 
     bolig_faelles = (realkreditydelse_netto + ejerudgifter_total + boligskat_md) / 2
     
-    # Håndter Johans lønsikring
+    # Håndter Johans lønsikring i det aktuelle budget baseret på toggle
     use_loensikring_j = st.session_state.get("use_loensikring_j", True)
     budget_j_total = sum(st.session_state["budget_j"].values())
     if not use_loensikring_j:
         budget_j_total -= st.session_state["budget_j"].get("Loensikring", 0)
 
-    # Håndter Markus' lønsikring
+    # Håndter Markus' lønsikring i det aktuelle budget baseret på toggle
     use_loensikring_m = st.session_state.get("use_loensikring_m", True)
     budget_m_total = sum(st.session_state["budget_m"].values())
     if not use_loensikring_m:
@@ -335,7 +336,7 @@ if view_selection == "⚙️ Basisdata & Opsætning":
         df_j = st.data_editor(pd.DataFrame(list(st.session_state["budget_j"].items()), columns=["Kategori", "Beløb"]), hide_index=True, use_container_width=True, key="ed_j")
         st.session_state["budget_j"] = dict(df_j.values)
         st.write("")
-        st.session_state["use_loensikring_j"] = st.toggle("Inddrag Lønsikring (1.836 kr.)", value=st.session_state.get("use_loensikring_j", True), help="Hvis tændt: Medregnes som fast udgift under den nuværende opsparingsfase.")
+        st.session_state["use_loensikring_j"] = st.toggle("Inddrag Lønsikring (1.836 kr.)", value=st.session_state.get("use_loensikring_j", True), key="toggle_loen_j", help="Hvis tændt: Medregnes som fast udgift under den nuværende opsparingsfase.")
         
     # MARKUS SETUP
     with col_setup_m:
@@ -348,8 +349,8 @@ if view_selection == "⚙️ Basisdata & Opsætning":
         df_m = st.data_editor(pd.DataFrame(list(st.session_state["budget_m"].items()), columns=["Kategori", "Beløb"]), hide_index=True, use_container_width=True, key="ed_m")
         st.session_state["budget_m"] = dict(df_m.values)
         st.write("")
-        st.session_state["use_loensikring_m"] = st.toggle("Inddrag Lønsikring (720 kr.)", value=st.session_state.get("use_loensikring_m", True), help="Hvis tændt: Medregnes som fast udgift under den nuværende opsparingsfase.")
-        st.session_state["use_bsu_m"] = st.toggle("Inddrag Norsk BSU konto (292.060 kr.)", value=st.session_state.get("use_bsu_m", False), help="Hvis tændt: Bruges til boligkøb. Hvis slukket: Giver 983 kr./md. i passiv indkomst.")
+        st.session_state["use_loensikring_m"] = st.toggle("Inddrag Lønsikring (720 kr.)", value=st.session_state.get("use_loensikring_m", True), key="toggle_loen_m", help="Hvis tændt: Medregnes som fast udgift under den nuværende opsparingsfase.")
+        st.session_state["use_bsu_m"] = st.toggle("Inddrag Norsk BSU konto (292.060 kr.)", value=st.session_state.get("use_bsu_m", False), key="toggle_bsu_m", help="Hvis tændt: Bruges til boligkøb. Hvis slukket: Giver 983 kr./md. i passiv indkomst.")
 
 # --- VISNING 2: SCENARIER ---
 else:
