@@ -136,7 +136,7 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
     loan_pct = 100 - cash_pct
 
     # EXPANDER TIL SPECIFIKATIONER
-    with st.expander("📊 Specifikationer for scenarie", expanded=False):
+    with st.expander("🏠 Specifikationer for scenarie", expanded=False):
         col_j, col_m, col_inp = st.columns([0.41, 0.41, 0.18], vertical_alignment="bottom")
 
         with col_inp:
