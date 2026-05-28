@@ -1,20 +1,25 @@
 /* Import Spectral (overskrift) og Belleza (brødtekst) */
 @import url('https://fonts.googleapis.com/css2?family=Belleza&family=Spectral:ital,wght@0,400;0,600;0,700;1,400&display=swap');
 
-/* --- LAYOUT JUSTERING --- */
-/* Hovedindhold (Desktop): Skubbes fri af top-bjælken, så titlen kan ses */
+/* --- LAYOUT JUSTERING (Trækkes helt op!) --- */
+/* Hovedindhold (Desktop): Skubbes så højt op som bjælken tillader */
 .stMain .block-container {
-    padding-top: 4rem !important; 
+    padding-top: 3rem !important; 
 }
 
-/* Sidebar: Holdes stramt i toppen */
+/* Sidebar: Al overskydende luft i toppen fjernes fuldstændig */
 [data-testid="stSidebar"] .block-container {
-    padding-top: 1rem !important; 
+    padding-top: 0rem !important; 
+}
+
+/* Fjern unødig padding i toppen af selve sidebar-menuen */
+[data-testid="stSidebarHeader"] {
+    padding: 1rem 1rem 0 1rem !important; 
 }
 
 /* STANDARD FOR MOBIL (Skærme under 768px) */
 @media (max-width: 768px) {
-    /* Skub hovedindholdet lidt ekstra ned (+16px) på mobil */
+    /* Skub hovedindholdet ned under menu-ikonerne på mobil */
     .stMain .block-container {
         padding-top: 4.5rem !important; 
     }
@@ -28,9 +33,13 @@
     display: none !important;
 }
 
-/* Farv Streamlits faste topbar så den blender usynligt ind i den beige baggrund */
+/* Farv Streamlits faste topbar så den blender ind, og lad musen klikke igennem den */
 header[data-testid="stHeader"] {
     background-color: #fcfaf7 !important;
+    pointer-events: none !important; /* Lader dine klik gå igennem bjælken ned til "Regler" knappen */
+}
+header[data-testid="stHeader"] * {
+    pointer-events: auto !important; /* Sikrer at hamburger/chevron ikonet stadig virker */
 }
 
 /* --- SIKKER FONT-TILDELING --- */
@@ -244,9 +253,13 @@ div[data-baseweb="tab-list"] button[aria-selected="true"] p {
         color: #e5e7eb !important;
     }
     
-    /* Gør headeren mørk i dark mode i stedet for hvid */
+    /* Gør headeren mørk i dark mode og bevar klik-gennemgang */
     header[data-testid="stHeader"] {
         background-color: #1c1b1a !important;
+        pointer-events: none !important;
+    }
+    header[data-testid="stHeader"] * {
+        pointer-events: auto !important;
     }
 
     [data-testid="stSidebar"] {
