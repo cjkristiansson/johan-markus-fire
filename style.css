@@ -31,15 +31,7 @@
 
 /* STANDARD FOR MOBIL (Skærme under 768px) */
 @media (max-width: 768px) {
-    /* Lad Streamlits native header leve, men fjern dens baggrund */
-    header[data-testid="stHeader"] {
-        background-color: transparent !important;
-    }
-    /* Skjul KUN højre side af topbaren ("Deploy" knap, GitHub ikoner osv.) */
-    [data-testid="stToolbar"] {
-        display: none !important;
-    }
-    /* Skub indholdet ned, så overskriften ikke ligger oppe i chevron-ikonet (+16px / 1rem lagt til her) */
+    /* Skub indholdet ned, så overskriften ikke ligger oppe i chevron/menu-ikonerne */
     .block-container {
         padding-top: 4.5rem !important; 
     }
