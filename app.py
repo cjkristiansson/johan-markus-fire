@@ -132,72 +132,72 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
     if max(0, udbetaling_j_total - cash_j) > 0:
         st.error(f"⚠️ ADVARSEL: Udbetalingen overstiger jeres likviditet.")
 
-    st.write("") 
-
     total_udbetaling = faktisk_udbetaling_j + faktisk_udbetaling_m
     cash_pct = (total_udbetaling / boligpris * 100) if boligpris > 0 else 0
     loan_pct = 100 - cash_pct
 
-    col_j, col_m, col_inp = st.columns([0.41, 0.41, 0.18], vertical_alignment="bottom")
+    # Placer specifikationerne ind i en expander
+    with st.expander("⚙️ Vis økonomiske detaljer & lån", expanded=False):
+        col_j, col_m, col_inp = st.columns([0.41, 0.41, 0.18], vertical_alignment="bottom")
 
-    with col_inp:
-        st.markdown(
-            f"<p style='margin-bottom: 55px; margin-top: 0; line-height: 1.3;'>"
-            f"{int(cash_pct)}% kontantudbetaling ({f'{int(total_udbetaling):,}'.replace(',', '.')} kr.) | {int(loan_pct)}% lån</p>", 
-            unsafe_allow_html=True
-        )
-        realkreditydelse_netto = st.number_input("Realkreditydelse", value=ydelse_default, step=100, key=ydelse_key)
+        with col_inp:
+            st.markdown(
+                f"<p style='margin-bottom: 60px; margin-top: 0; line-height: 1.3;'>"
+                f"{int(cash_pct)}% kontantudbetaling ({f'{int(total_udbetaling):,}'.replace(',', '.')} kr.) | {int(loan_pct)}% lån</p>", 
+                unsafe_allow_html=True
+            )
+            realkreditydelse_netto = st.number_input("Realkreditydelse", value=ydelse_default, step=100, key=ydelse_key)
 
-    # --- FIRE BEREGNINGER ---
-    depot_free_j = st.session_state["basis_frie_j"] + (cash_j - faktisk_udbetaling_j)
-    depot_free_m = st.session_state["basis_frie_m"] + (cash_m - faktisk_udbetaling_m)
-    depot_ask_j, depot_ask_m = st.session_state["basis_ask_j"], st.session_state["basis_ask_m"]
+        # --- FIRE BEREGNINGER ---
+        depot_free_j = st.session_state["basis_frie_j"] + (cash_j - faktisk_udbetaling_j)
+        depot_free_m = st.session_state["basis_frie_m"] + (cash_m - faktisk_udbetaling_m)
+        depot_ask_j, depot_ask_m = st.session_state["basis_ask_j"], st.session_state["basis_ask_m"]
 
-    bolig_faelles = (realkreditydelse_netto + ejerudgifter_total + boligskat_md) / 2
-    
-    # Håndter Johans lønsikring i det aktuelle budget baseret på toggle
-    use_loensikring_j = st.session_state.get("use_loensikring_j", True)
-    budget_j_total = sum(st.session_state["budget_j"].values())
-    if not use_loensikring_j:
-        budget_j_total -= st.session_state["budget_j"].get("Loensikring", 0)
+        bolig_faelles = (realkreditydelse_netto + ejerudgifter_total + boligskat_md) / 2
+        
+        # Håndter Johans lønsikring i det aktuelle budget baseret på toggle
+        use_loensikring_j = st.session_state.get("use_loensikring_j", True)
+        budget_j_total = sum(st.session_state["budget_j"].values())
+        if not use_loensikring_j:
+            budget_j_total -= st.session_state["budget_j"].get("Loensikring", 0)
 
-    # Håndter Markus' lønsikring i det aktuelle budget baseret på toggle
-    use_loensikring_m = st.session_state.get("use_loensikring_m", True)
-    budget_m_total = sum(st.session_state["budget_m"].values())
-    if not use_loensikring_m:
-        budget_m_total -= st.session_state["budget_m"].get("Loensikring", 0)
+        # Håndter Markus' lønsikring i det aktuelle budget baseret på toggle
+        use_loensikring_m = st.session_state.get("use_loensikring_m", True)
+        budget_m_total = sum(st.session_state["budget_m"].values())
+        if not use_loensikring_m:
+            budget_m_total -= st.session_state["budget_m"].get("Loensikring", 0)
 
-    start_inv_md_j = st.session_state["inkomst_j"] - (budget_j_total + bolig_faelles)
-    start_inv_md_m = st.session_state["inkomst_m"] - (budget_m_total + bolig_faelles) + bsu_passive
-    
-    start_fire_j = sum(v for k, v in st.session_state["budget_j"].items() if k not in ["A_kasse_Fagforening", "Loensikring"]) + bolig_faelles
-    start_fire_m = sum(v for k, v in st.session_state["budget_m"].items() if k not in ["A_kasse_Fagforening", "Loensikring", "Studielaan"]) + bolig_faelles
+        start_inv_md_j = st.session_state["inkomst_j"] - (budget_j_total + bolig_faelles)
+        start_inv_md_m = st.session_state["inkomst_m"] - (budget_m_total + bolig_faelles) + bsu_passive
+        
+        start_fire_j = sum(v for k, v in st.session_state["budget_j"].items() if k not in ["A_kasse_Fagforening", "Loensikring"]) + bolig_faelles
+        start_fire_m = sum(v for k, v in st.session_state["budget_m"].items() if k not in ["A_kasse_Fagforening", "Loensikring", "Studielaan"]) + bolig_faelles
 
-    skat_line_j = f"**Boligskat (egen andel):** {f'{int(boligskat_md / 2):,}'.replace(',', '.')} kr./md.  \n" if boligskat_md > 0 else ""
-    skat_line_m = f"**Boligskat (egen andel):** {f'{int(boligskat_md / 2):,}'.replace(',', '.')} kr./md.  \n" if boligskat_md > 0 else ""
+        skat_line_j = f"**Boligskat (egen andel):** {f'{int(boligskat_md / 2):,}'.replace(',', '.')} kr./md.  \n" if boligskat_md > 0 else ""
+        skat_line_m = f"**Boligskat (egen andel):** {f'{int(boligskat_md / 2):,}'.replace(',', '.')} kr./md.  \n" if boligskat_md > 0 else ""
 
-    # --- UDSKRIFT AF DATA ---
-    with col_j:
-        st.subheader(f"JOHAN")
-        st.markdown(f"""
-        **Udbetaling (betalt af formue):** {f'{int(faktisk_udbetaling_j):,}'.replace(',', '.')} kr.  
-        **Realkreditydelse (egen andel):** {f'{int(realkreditydelse_netto / 2):,}'.replace(',', '.')} kr./md.  
-        {skat_line_j}**Startdepot (Efter boligkøb):** {f'{int(depot_free_j + depot_ask_j):,}'.replace(',', '.')} kr.  
-        **Mdl. opsparing:** {f'{int(start_inv_md_j):,}'.replace(',', '.')} kr.  
-        **Mdl. Udgifter:** {f'{int(start_fire_j):,}'.replace(',', '.')} kr./md.
-        """)
-    
-    with col_m:
-        st.subheader(f"MARKUS")
-        st.markdown(f"""
-        **Udbetaling (betalt af formue):** {f'{int(faktisk_udbetaling_m):,}'.replace(',', '.')} kr.  
-        **Realkreditydelse (egen andel):** {f'{int(realkreditydelse_netto / 2):,}'.replace(',', '.')} kr./md.  
-        {skat_line_m}**Startdepot (Efter boligkøb):** {f'{int(depot_free_m + depot_ask_m):,}'.replace(',', '.')} kr.  
-        **Mdl. opsparing:** {f'{int(start_inv_md_m):,}'.replace(',', '.')} kr.  
-        **Mdl. Udgifter:** {f'{int(start_fire_m):,}'.replace(',', '.')} kr./md.
-        """)
+        # --- UDSKRIFT AF DATA ---
+        with col_j:
+            st.subheader(f"JOHAN")
+            st.markdown(f"""
+            **Udbetaling (betalt af formue):** {f'{int(faktisk_udbetaling_j):,}'.replace(',', '.')} kr.  
+            **Realkreditydelse (egen andel):** {f'{int(realkreditydelse_netto / 2):,}'.replace(',', '.')} kr./md.  
+            {skat_line_j}**Startdepot (Efter boligkøb):** {f'{int(depot_free_j + depot_ask_j):,}'.replace(',', '.')} kr.  
+            **Mdl. opsparing:** {f'{int(start_inv_md_j):,}'.replace(',', '.')} kr.  
+            **Mdl. Udgifter:** {f'{int(start_fire_j):,}'.replace(',', '.')} kr./md.
+            """)
+        
+        with col_m:
+            st.subheader(f"MARKUS")
+            st.markdown(f"""
+            **Udbetaling (betalt af formue):** {f'{int(faktisk_udbetaling_m):,}'.replace(',', '.')} kr.  
+            **Realkreditydelse (egen andel):** {f'{int(realkreditydelse_netto / 2):,}'.replace(',', '.')} kr./md.  
+            {skat_line_m}**Startdepot (Efter boligkøb):** {f'{int(depot_free_m + depot_ask_m):,}'.replace(',', '.')} kr.  
+            **Mdl. opsparing:** {f'{int(start_inv_md_m):,}'.replace(',', '.')} kr.  
+            **Mdl. Udgifter:** {f'{int(start_fire_m):,}'.replace(',', '.')} kr./md.
+            """)
 
-    st.write("")
+    st.write("") # Sikrer lidt luft mellem expanderen og tabellen
 
     table_data = []
     j_reached, m_reached = False, False
@@ -250,46 +250,48 @@ def simulate_solo_fire_plan(scenario_name, boligpris, udbetaling_j, ydelse_defau
     cash_pct = (faktisk_udbetaling_j / boligpris * 100) if boligpris > 0 else 0
     loan_pct = 100 - cash_pct
 
-    col_j, col_m, col_inp = st.columns([0.41, 0.41, 0.18], vertical_alignment="bottom")
+    # Placer specifikationerne ind i en expander for soloscenariet
+    with st.expander("⚙️ Vis økonomiske detaljer & lån", expanded=False):
+        col_j, col_m, col_inp = st.columns([0.41, 0.41, 0.18], vertical_alignment="bottom")
 
-    with col_inp:
-        st.markdown(
-            f"<p style='margin-bottom: 105px; margin-top: 0; line-height: 1.3;'>"
-            f"{int(cash_pct)}% kontantudbetaling ({f'{int(faktisk_udbetaling_j):,}'.replace(',', '.')} kr.) | {int(loan_pct)}% lån</p>", 
-            unsafe_allow_html=True
-        )
-        realkreditydelse_netto = st.number_input("Realkreditydelse", value=ydelse_default, step=100, key=ydelse_key)
-    
-    # --- FIRE BEREGNINGER ---
-    depot_free_j = st.session_state["basis_frie_j"] + (cash_j - faktisk_udbetaling_j)
-    depot_ask_j = st.session_state["basis_ask_j"]
-
-    solo_budget_j = st.session_state["budget_j"].copy()
-    solo_budget_j["Mad"] = 3000
-
-    bolig_total = realkreditydelse_netto + ejerudgifter_total + boligskat_md
-    
-    # Håndter Johans lønsikring for soloscenariet
-    use_loensikring_j = st.session_state.get("use_loensikring_j", True)
-    budget_j_total = sum(solo_budget_j.values())
-    if not use_loensikring_j:
-        budget_j_total -= solo_budget_j.get("Loensikring", 0)
-
-    start_inv_md_j = st.session_state["inkomst_j"] - (budget_j_total + bolig_total)
-    start_fire_j = sum(v for k, v in solo_budget_j.items() if k not in ["A_kasse_Fagforening", "Loensikring"]) + bolig_total
-
-    with col_j:
-        st.subheader(f"JOHAN (SOLO: {scenario_name})")
-        st.markdown(f"""
-        **Boligpris:** {f'{int(boligpris):,}'.replace(',', '.')} kr.  
-        **Udbetaling (betalt af formue):** {f'{int(faktisk_udbetaling_j):,}'.replace(',', '.')} kr.  
-        **Boligskat total:** {f'{int(boligskat_md):,}'.replace(',', '.')} kr./md.  
-        **Boligudgifter total:** {f'{int(bolig_total):,}'.replace(',', '.')} kr./md.  
-        **Startdepot (Efter boligkøb):** {f'{int(depot_free_j + depot_ask_j):,}'.replace(',', '.')} kr.  
-        **Mdl. opsparing:** {f'{int(start_inv_md_j):,}'.replace(',', '.')} kr.  
-        **Mdl. Udgifter:** {f'{int(start_fire_j):,}'.replace(',', '.')} kr./md.
-        """)
+        with col_inp:
+            st.markdown(
+                f"<p style='margin-bottom: 105px; margin-top: 0; line-height: 1.3;'>"
+                f"{int(cash_pct)}% kontantudbetaling ({f'{int(faktisk_udbetaling_j):,}'.replace(',', '.')} kr.) | {int(loan_pct)}% lån</p>", 
+                unsafe_allow_html=True
+            )
+            realkreditydelse_netto = st.number_input("Realkreditydelse", value=ydelse_default, step=100, key=ydelse_key)
         
+        # --- FIRE BEREGNINGER ---
+        depot_free_j = st.session_state["basis_frie_j"] + (cash_j - faktisk_udbetaling_j)
+        depot_ask_j = st.session_state["basis_ask_j"]
+
+        solo_budget_j = st.session_state["budget_j"].copy()
+        solo_budget_j["Mad"] = 3000
+
+        bolig_total = realkreditydelse_netto + ejerudgifter_total + boligskat_md
+        
+        # Håndter Johans lønsikring for soloscenariet
+        use_loensikring_j = st.session_state.get("use_loensikring_j", True)
+        budget_j_total = sum(solo_budget_j.values())
+        if not use_loensikring_j:
+            budget_j_total -= solo_budget_j.get("Loensikring", 0)
+
+        start_inv_md_j = st.session_state["inkomst_j"] - (budget_j_total + bolig_total)
+        start_fire_j = sum(v for k, v in solo_budget_j.items() if k not in ["A_kasse_Fagforening", "Loensikring"]) + bolig_total
+
+        with col_j:
+            st.subheader(f"JOHAN (SOLO: {scenario_name})")
+            st.markdown(f"""
+            **Boligpris:** {f'{int(boligpris):,}'.replace(',', '.')} kr.  
+            **Udbetaling (betalt af formue):** {f'{int(faktisk_udbetaling_j):,}'.replace(',', '.')} kr.  
+            **Boligskat total:** {f'{int(boligskat_md):,}'.replace(',', '.')} kr./md.  
+            **Boligudgifter total:** {f'{int(bolig_total):,}'.replace(',', '.')} kr./md.  
+            **Startdepot (Efter boligkøb):** {f'{int(depot_free_j + depot_ask_j):,}'.replace(',', '.')} kr.  
+            **Mdl. opsparing:** {f'{int(start_inv_md_j):,}'.replace(',', '.')} kr.  
+            **Mdl. Udgifter:** {f'{int(start_fire_j):,}'.replace(',', '.')} kr./md.
+            """)
+            
     st.write("")
 
     table_data = []
