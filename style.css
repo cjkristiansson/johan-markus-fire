@@ -64,6 +64,11 @@ html, body, [class*="css"], .stApp {
     color: #4a4742 !important; 
 }
 
+/* Farv Streamlits topbar så den blender usynligt ind i den beige baggrund */
+header[data-testid="stHeader"] {
+    background-color: #fcfaf7 !important;
+}
+
 /* Generel tekststørrelse skruet op */
 p, label, li, a, .markdown-text-container {
     font-size: 18px !important;
@@ -251,6 +256,12 @@ div[data-baseweb="tab-list"] button[aria-selected="true"] p {
         background-color: #1c1b1a !important;
         color: #e5e7eb !important;
     }
+    
+    /* Gør headeren mørk i dark mode i stedet for hvid */
+    header[data-testid="stHeader"] {
+        background-color: #1c1b1a !important;
+    }
+
     [data-testid="stSidebar"] {
         background-color: #262422 !important;
         border-right: 1px solid #3a3835 !important;
