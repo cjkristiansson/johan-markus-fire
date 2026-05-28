@@ -41,6 +41,19 @@
     }
 }
 
+/* --- STREAMLIT CLOUD UI FIX --- */
+/* Skjul "Share", "Star", "Edit" og "GitHub" ikoner fra Streamlit Cloud, men behold "..." menuen */
+[data-testid="stToolbarActions"],
+.stAppDeployButton,
+.stDeployButton {
+    display: none !important;
+}
+
+/* Farv Streamlits topbar så den blender usynligt ind i den beige baggrund */
+header[data-testid="stHeader"] {
+    background-color: #fcfaf7 !important;
+}
+
 /* --- SIKKER FONT-TILDELING --- */
 html, body, .stApp, p, div, span, label, input, button, li, a, th, td, h2, h3, h4, h5, h6 {
     font-family: 'Belleza', sans-serif !important;
@@ -62,11 +75,6 @@ svg * {
 html, body, [class*="css"], .stApp {
     background-color: #fcfaf7 !important; 
     color: #4a4742 !important; 
-}
-
-/* Farv Streamlits topbar så den blender usynligt ind i den beige baggrund */
-header[data-testid="stHeader"] {
-    background-color: #fcfaf7 !important;
 }
 
 /* Generel tekststørrelse skruet op */
