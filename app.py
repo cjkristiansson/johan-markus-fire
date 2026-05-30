@@ -43,7 +43,6 @@ if "basis_frie_m" not in st.session_state: st.session_state["basis_frie_m"] = 0
 
 # Toggles (Sikrer default-værdier i session state)
 if "use_bsu_m" not in st.session_state: st.session_state["use_bsu_m"] = False
-# Ændret til False som default for Johans lønsikring
 if "use_loensikring_j" not in st.session_state: st.session_state["use_loensikring_j"] = False
 if "use_loensikring_m" not in st.session_state: st.session_state["use_loensikring_m"] = True
 
@@ -297,16 +296,13 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
     st.table(pd.DataFrame(table_data).set_index("År"))
 
     # Vis Omlægningsscenariet UNDER tabellen (Altid synlige felter)
-    with st.expander("🔄 Omlægningsscenarie", expanded=True):
+    with st.expander("🔄 Omlægningsscenarie", expanded=False):
         st.toggle("Aktiver omlægningsscenarie", value=False, key=f"aktiver_oml_{ydelse_key}")
         col_o1, col_o2, col_o3, col_o4 = st.columns(4)
         col_o1.number_input("År for omlægning (0-10)", min_value=0, max_value=10, value=5, key=f"oml_aar_{ydelse_key}")
         col_o2.number_input("Ny rente + bidrag (%)", min_value=0.0, max_value=10.0, value=4.0, step=0.1, key=f"oml_rente_{ydelse_key}")
         col_o3.toggle("Afdragsfrihed aktiveret", value=False, key=f"oml_afdrag_fri_{ydelse_key}")
         col_o4.number_input("Omkostninger (kr)", value=50000, step=5000, key=f"oml_omk_{ydelse_key}")
-
-    if j_reached: st.markdown(f"<div class='success-box'>✅ <b>Johans brofinansiering er sikret ved alder {j_fire_age}.</b><br>Pension forventes ca. {pension_at_target_j / 1_000_000:.2f}M kr.</div>", unsafe_allow_html=True)
-    if m_reached: st.markdown(f"<div class='success-box'>✅ <b>Markus brofinansiering er sikret ved alder {m_fire_age}.</b><br>Pension forventes ca. {pension_at_target_m / 1_000_000:.2f}M kr.</div>", unsafe_allow_html=True)
 
 
 def simulate_solo_fire_plan(scenario_name, boligpris, udbetaling_j, ydelse_default, ydelse_key, ejerudgifter_total, boligskat_md):
@@ -415,7 +411,7 @@ def simulate_solo_fire_plan(scenario_name, boligpris, udbetaling_j, ydelse_defau
     st.table(pd.DataFrame(table_data).set_index("År"))
     
     # Vis Omlægningsscenariet UNDER tabellen (Altid synlige felter)
-    with st.expander("🔄 Omlægningsscenarie", expanded=True):
+    with st.expander("🔄 Omlægningsscenarie", expanded=False):
         st.toggle("Aktiver omlægningsscenarie", value=False, key=f"aktiver_oml_{s_key}")
         col_o1, col_o2, col_o3, col_o4 = st.columns(4)
         col_o1.number_input("År for omlægning (0-10)", min_value=0, max_value=10, value=5, key=f"oml_aar_{s_key}")
@@ -423,7 +419,6 @@ def simulate_solo_fire_plan(scenario_name, boligpris, udbetaling_j, ydelse_defau
         col_o3.toggle("Afdragsfrihed aktiveret", value=False, key=f"oml_afdrag_fri_{s_key}")
         col_o4.number_input("Omkostninger (kr)", value=50000, step=5000, key=f"oml_omk_{s_key}")
 
-    if j_reached: st.markdown(f"<div class='success-box'>✅ <b>Johans brofinansiering er sikret ved alder {j_fire_age}.</b><br>Pension forventes ca. {pension_at_target_j / 1_000_000:.2f}M kr.</div>", unsafe_allow_html=True)
 
 # --- VISNING 1: OPSÆTNING ---
 if view_selection == "⚙️ Basisdata & Opsætning":
