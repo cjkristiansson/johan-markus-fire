@@ -62,7 +62,7 @@ def show_rules_dialog():
     * **Pension adskilt:** Pensionsdepoter bruges *ikke* før pensionsalderen nås. Indbetalinger stopper det år fuld FIRE nås, hvorefter depotet kun vokser med afkast minus PAL-skat (15,3%).
     * **Barista-timer:** Timer beregnes på *restbehovet*. Passiv indkomst fra depotet fratrækkes FIRE-udgifterne først.
     * **Dynamiske boligudgifter:** Bliver der optaget realkreditlån, indgår ydelsen fuldt ud i de månedlige FIRE-udgifter for det givne scenarie. Nye boligskatter fordeles 50/50.
-    * **Omlægningsscenarie:** Kan aktiveres under tabellerne. Modulet er deaktiveret som standard. Når det slås til, justeres restgæld (efter de forløbne års afdrag), rente, afdrag og omkostninger, hvilket giver et nyt månedligt råderum der automatisk geninvesteres.
+    * **Omlægningsscenarie:** Kan aktiveres under tabellerne. Modulet er deaktiveret som standard. Når det slås til, udregnes restgælden dynamisk (fratrukket jeres løbende afdrag op til omlægningsåret), hvorefter ny rente, afdrag og omkostninger lægges på det nye lån.
     """)
 
 # --- TOP HEADER ---
@@ -219,8 +219,12 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
     restgaeld_start = boligpris - total_udbetaling
     bolig_faelles_current = bolig_faelles
     
-    # Antager 4,5% i samlet rente/bidrag på det OPRINDELIGE lån til udregning af afdragsværdi
-    oprindelig_rente_mnd = 0.045 / 12
+    # --- RENTE OG AFDRAGS-ANTAGELSER FOR DET OPRINDELIGE LÅN ---
+    if "Valby" in scenario_name:
+        oprindelig_rente_mnd = 0.024 / 12
+        start_afdrag_mnd = 6929
+    else:
+        oprindelig_rente_mnd = 0.04 / 12
 
     table_data = []
     j_reached, m_reached = False, False
@@ -231,11 +235,17 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
         c_age_j, c_age_m = age_j + year, age_m + year
         
         # Anvend omlægning hvis aktiveret i UI
-        if aktiver_oml and year == oml_aar and boligpris > 0:
+        if aktiver_oml and year == oml_aar and boligpris > 0 and oml_aar > 0:
             mdr_gaaet = oml_aar * 12
             
-            # Beregn restgælden for det oprindelige lån efter 'oml_aar' års afdrag
-            restgaeld_ved_oml = restgaeld_start * ((1 + oprindelig_rente_mnd)**360 - (1 + oprindelig_rente_mnd)**mdr_gaaet) / ((1 + oprindelig_rente_mnd)**360 - 1)
+            # Beregn restgælden for det oprindelige lån efter løbende afdrag
+            if "Valby" in scenario_name:
+                # Valby scenariet: Beregner nøjagtigt gældsreduktion med startafdrag på 6929 kr. (sum af annuitetsafdrag)
+                afdraget_beloeb = start_afdrag_mnd * (((1 + oprindelig_rente_mnd)**mdr_gaaet - 1) / oprindelig_rente_mnd)
+                restgaeld_ved_oml = max(0, restgaeld_start - afdraget_beloeb)
+            else:
+                # Øvrige scenarier: Almindelig annuitetsafvikling (30 år) med 4%
+                restgaeld_ved_oml = restgaeld_start * ((1 + oprindelig_rente_mnd)**360 - (1 + oprindelig_rente_mnd)**mdr_gaaet) / ((1 + oprindelig_rente_mnd)**360 - 1)
             
             ny_hovedstol = restgaeld_ved_oml + oml_omk
             mnd_rente_ny = oml_rente / 12
@@ -358,7 +368,7 @@ def simulate_solo_fire_plan(scenario_name, boligpris, udbetaling_j, ydelse_defau
     restgaeld_start = boligpris - faktisk_udbetaling_j
     bolig_total_current = bolig_total
     
-    oprindelig_rente_mnd = 0.045 / 12
+    oprindelig_rente_mnd = 0.04 / 12
 
     table_data = []
     j_reached = False; j_fire_age = 0; pension_at_target_j = 0
@@ -366,7 +376,7 @@ def simulate_solo_fire_plan(scenario_name, boligpris, udbetaling_j, ydelse_defau
     for year in range(0, 26):
         c_age_j = age_j + year
         
-        if aktiver_oml and year == oml_aar and boligpris > 0:
+        if aktiver_oml and year == oml_aar and boligpris > 0 and oml_aar > 0:
             mdr_gaaet = oml_aar * 12
             
             # Beregn restgælden for det oprindelige lån
