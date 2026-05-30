@@ -4,7 +4,7 @@ import pandas as pd
 # Her tvinges sidebaren ud på alle desktop-skærme
 st.set_page_config(page_title="FIRE Dashboard", layout="wide", initial_sidebar_state="expanded")
 
-# --- INDLÆS EKSTERN CSS ---
+# --- INDLÆS EKSTERN CSS & TVING KOMPAKTE TABELLER ---
 def load_css(file_name):
     try:
         with open(file_name) as f:
@@ -13,6 +13,19 @@ def load_css(file_name):
         pass
 
 load_css("style.css")
+
+# Tvinger st.table til at være lille og kompakt, uanset hvad der ellers står i CSS
+st.markdown("""
+<style>
+[data-testid="stTable"] {
+    font-size: 0.85rem !important;
+}
+[data-testid="stTable"] th, [data-testid="stTable"] td {
+    padding: 0.25rem 0.5rem !important;
+    line-height: 1.2 !important;
+}
+</style>
+""", unsafe_allow_html=True)
 
 # --- INITIALISERING AF SESSION STATE (BASISDATA) ---
 if "inkomst_j" not in st.session_state: st.session_state["inkomst_j"] = 38468
@@ -221,7 +234,7 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
             restgaeld += oml_omk
             mnd_rente_f = oml_rente / 12
             
-            # Hvis afdragsfrihed er aktiveret, betales kun renter
+            # Hvis afdragsfrihed IKKE er aktiveret, betales annuitet
             if not oml_afdrag_fri:
                 ny_ydelse = restgaeld * (mnd_rente_f * (1 + mnd_rente_f)**360) / ((1 + mnd_rente_f)**360 - 1)
             else:
@@ -265,7 +278,7 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
 
         if h_j <= 0 and h_m <= 0: break
 
-    # Oprindelig tabel med styling, indkapslet i et scrollbart område
+    # Beholder st.table i en st.container for at få scrolling MED farver og reduceret skriftstørrelse
     with st.container(height=380):
         st.table(pd.DataFrame(table_data).set_index("År"))
 
@@ -378,7 +391,7 @@ def simulate_solo_fire_plan(scenario_name, boligpris, udbetaling_j, ydelse_defau
             j_reached = True; j_fire_age = c_age_j
             pension_at_target_j = st.session_state["pension_j"] * ((1 + (global_return_rate_gross * (1 - pal_tax))) ** (pensionsalder_j - age_j))
 
-    # Oprindelig tabel med styling, indkapslet i et scrollbart område
+    # Beholder st.table i en st.container for at få scrolling MED farver og reduceret skriftstørrelse
     with st.container(height=380):
         st.table(pd.DataFrame(table_data).set_index("År"))
     
