@@ -152,7 +152,7 @@ h4 { font-size: 18px !important; font-weight: 600 !important; color: #2c2925 !im
     margin-right: 16px !important;
 }
 
-/* --- EXPANDER (Skjuleren) --- */
+/* --- EXPANDER --- */
 [data-testid="stExpander"] {
     background-color: #fcfaf7 !important;
     border: 1px solid #e5e0d8 !important;
