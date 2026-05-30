@@ -127,13 +127,6 @@ h4 { font-size: 18px !important; font-weight: 600 !important; color: #2c2925 !im
     box-shadow: 0 1px 2px rgba(0,0,0,0.02) !important;
 }
 
-/* SLETTET: margin-right for hover */
-[data-testid="stBaseButton-pills"]:hover {
-    border-color: #b5ae9f !important;
-    color: #4a4742 !important;
-    background-color: #f5f1ea !important;
-}
-
 [data-testid="stBaseButton-pillsActive"] {
     background-color: #eae3d8 !important;
     border: 1px solid #b5ae9f !important;
@@ -145,10 +138,6 @@ h4 { font-size: 18px !important; font-weight: 600 !important; color: #2c2925 !im
 [data-testid="stBaseButton-pillsActive"] p,
 [data-testid="stBaseButton-pillsActive"] span {
     color: #2c2925 !important;
-}
-
-[data-testid="st-emotion-cache-1uvhpyl"] {
-    margin-right: 16px !important;
 }
 
 /* --- EXPANDER --- */
@@ -203,14 +192,15 @@ div[data-baseweb="tab-list"] button[aria-selected="true"] p {
 [data-testid="stTable"] {
     border: 1px solid #dcd7cc !important;
     border-radius: 8px !important;
-    overflow: hidden !important;
+    overflow: auto !important; 
     font-size: 0.8rem !important;
 }
 
 [data-testid="stTable"] table {
-    width: 100% !important;
+    width: max-content !important; 
+    min-width: 100% !important; 
     margin: 0 !important;
-    table-layout: fixed !important;
+    table-layout: auto !important; 
     border-collapse: collapse !important;
 }
 
@@ -219,24 +209,20 @@ div[data-baseweb="tab-list"] button[aria-selected="true"] p {
     color: #2c2925 !important;
     font-weight: 600 !important;
     border-bottom: 2px solid #dcd7cc !important;
-    padding: 4px 6px !important;
+    padding: 6px 16px !important; 
     line-height: 1.0 !important;
     height: 25px !important;
     white-space: nowrap !important;
-    overflow: hidden !important;
-    text-overflow: ellipsis !important;
 }
 
 [data-testid="stTable"] td {
     background-color: #fcfaf7 !important;
     color: #4a4742 !important;
     border-bottom: 1px solid #e5e0d8 !important;
-    padding: 4px 6px !important;
+    padding: 4px 16px !important; 
     line-height: 1.0 !important;
     height: 25px !important;
     white-space: nowrap !important;
-    overflow: hidden !important;
-    text-overflow: ellipsis !important;
 }
 
 [data-testid="stTable"] tbody tr:nth-child(even) th,
@@ -252,9 +238,9 @@ div[data-baseweb="tab-list"] button[aria-selected="true"] p {
 /* --- MOBIL-OPTIMERING AF TABEL --- */
 @media (max-width: 768px) {
     [data-testid="stTable"] th, [data-testid="stTable"] td {
-        padding: 2px 4px !important;
+        padding: 2px 14px !important; 
         font-size: 12px !important;
-        height: 20px !important;
+        height: 22px !important;
     }
 }
 
