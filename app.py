@@ -216,8 +216,6 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
             **Mdl. Udgifter:** {f'{int(start_fire_m):,}'.replace(',', '.')} kr./md.
             """)
 
-    st.write("") 
-
     restgaeld = boligpris - total_udbetaling
     bolig_faelles_current = bolig_faelles
 
