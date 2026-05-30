@@ -278,9 +278,8 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
 
         if h_j <= 0 and h_m <= 0: break
 
-    # Beholder st.table i en st.container for at få scrolling MED farver og reduceret skriftstørrelse
-    with st.container(height=380):
-        st.table(pd.DataFrame(table_data).set_index("År"))
+    # Vis tabellen uden frame/scrollbar
+    st.table(pd.DataFrame(table_data).set_index("År"))
 
     # Vis Omlægningsscenariet UNDER tabellen
     with st.expander("🔄 Omlægningsscenarie", expanded=aktiver_oml):
@@ -391,9 +390,8 @@ def simulate_solo_fire_plan(scenario_name, boligpris, udbetaling_j, ydelse_defau
             j_reached = True; j_fire_age = c_age_j
             pension_at_target_j = st.session_state["pension_j"] * ((1 + (global_return_rate_gross * (1 - pal_tax))) ** (pensionsalder_j - age_j))
 
-    # Beholder st.table i en st.container for at få scrolling MED farver og reduceret skriftstørrelse
-    with st.container(height=380):
-        st.table(pd.DataFrame(table_data).set_index("År"))
+    # Vis tabellen uden frame/scrollbar
+    st.table(pd.DataFrame(table_data).set_index("År"))
     
     # Vis Omlægningsscenariet UNDER tabellen
     with st.expander("🔄 Omlægningsscenarie", expanded=aktiver_oml):
