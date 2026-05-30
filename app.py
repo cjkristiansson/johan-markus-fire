@@ -49,7 +49,7 @@ def show_rules_dialog():
     * **Pension adskilt:** Pensionsdepoter bruges *ikke* før pensionsalderen nås. Indbetalinger stopper det år fuld FIRE nås, hvorefter depotet kun vokser med afkast minus PAL-skat (15,3%).
     * **Barista-timer:** Timer beregnes på *restbehovet*. Passiv indkomst fra depotet fratrækkes FIRE-udgifterne først.
     * **Dynamiske boligudgifter:** Bliver der optaget realkreditlån, indgår ydelsen fuldt ud i de månedlige FIRE-udgifter for det givne scenarie. Nye boligskatter fordeles 50/50.
-    * **Omlægningsscenarie:** Kan aktiveres under tabellerne. Modulet deaktiveres som standard. Når det aktiveres, ændres restgælden og jeres månedlige udgifter fra det valgte år, og investeringerne tilpasses automatisk jeres nye råderum.
+    * **Omlægningsscenarie:** Kan aktiveres under tabellerne. Modulet er deaktiveret som standard. Når det slås til, justeres restgæld, rente, afdrag og omkostninger, hvilket giver et nyt månedligt råderum der automatisk geninvesteres.
     """)
 
 # --- TOP HEADER ---
@@ -110,7 +110,7 @@ def get_emoji_status(barista_hours):
 def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_m, ydelse_default, ydelse_key, ejerudgifter_total, bolig_solgt, boligskat_md):
     pal_tax, weeks_per_month, age_j, age_m = 0.153, 4.33, 41, 32
     
-    # Hent state for Omlægningsscenarie før beregningen
+    # Hent state for Omlægningsscenarie og indlæs dine specifikke defaults
     if f"aktiver_oml_{ydelse_key}" not in st.session_state: st.session_state[f"aktiver_oml_{ydelse_key}"] = False
     if f"oml_aar_{ydelse_key}" not in st.session_state: st.session_state[f"oml_aar_{ydelse_key}"] = 5
     if f"oml_rente_{ydelse_key}" not in st.session_state: st.session_state[f"oml_rente_{ydelse_key}"] = 4.0
@@ -222,7 +222,7 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
     for year in range(0, 26):
         c_age_j, c_age_m = age_j + year, age_m + year
         
-        # Anvend omlægning hvis aktiveret
+        # Anvend omlægning hvis aktiveret i UI
         if aktiver_oml and year == oml_aar and boligpris > 0:
             restgaeld += oml_omk
             mnd_rente_f = oml_rente / 12
@@ -290,7 +290,7 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
 def simulate_solo_fire_plan(scenario_name, boligpris, udbetaling_j, ydelse_default, ydelse_key, ejerudgifter_total, boligskat_md):
     pal_tax, weeks_per_month, age_j = 0.153, 4.33, 41
     
-    # Hent state for Omlægningsscenarie
+    # Hent state for Omlægningsscenarie og indlæs dine specifikke defaults
     s_key = f"solo_{ydelse_key}"
     if f"aktiver_oml_{s_key}" not in st.session_state: st.session_state[f"aktiver_oml_{s_key}"] = False
     if f"oml_aar_{s_key}" not in st.session_state: st.session_state[f"oml_aar_{s_key}"] = 5
