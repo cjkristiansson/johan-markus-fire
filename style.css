@@ -169,19 +169,6 @@ h4 { font-size: 18px !important; font-weight: 600 !important; color: #2c2925 !im
     background-color: #eae3d8 !important;
 }
 
-/* --- BROFINANSIERINGSKASSER --- */
-.success-box {
-    background-color: #f8fbf8;
-    border: 1px solid #d1e0d5;
-    border-radius: 8px;
-    padding: 16px 20px;
-    color: #2b593f;
-    font-size: 18px !important; 
-    margin-top: 10px;
-    margin-bottom: 12px;
-    box-shadow: 0 1px 2px rgba(0,0,0,0.02);
-}
-
 /* --- TAB DESIGN --- */
 div[data-baseweb="tab-list"] {
     gap: 24px; 
@@ -218,28 +205,39 @@ div[data-baseweb="tab-list"] button[aria-selected="true"] p {
     border: 1px solid #dcd7cc !important;
     border-radius: 8px !important;
     overflow: hidden !important;
+    font-size: 0.8rem !important;
 }
 
 [data-testid="stTable"] table {
     width: 100% !important;
     margin: 0 !important;
+    table-layout: fixed !important;
+    border-collapse: collapse !important;
 }
 
 [data-testid="stTable"] th {
     background-color: #eae3d8 !important; 
     color: #2c2925 !important;
-    font-size: 16px !important;
     font-weight: 600 !important;
     border-bottom: 2px solid #dcd7cc !important;
-    padding: 12px !important;
+    padding: 2px 4px !important;
+    line-height: 1.0 !important;
+    height: 25px !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
 }
 
 [data-testid="stTable"] td {
     background-color: #fcfaf7 !important;
     color: #4a4742 !important;
-    font-size: 16px !important;
     border-bottom: 1px solid #e5e0d8 !important;
-    padding: 10px 12px !important;
+    padding: 2px 4px !important;
+    line-height: 1.0 !important;
+    height: 25px !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
 }
 
 [data-testid="stTable"] tbody tr:nth-child(even) th,
@@ -255,8 +253,9 @@ div[data-baseweb="tab-list"] button[aria-selected="true"] p {
 /* --- MOBIL-OPTIMERING AF TABEL --- */
 @media (max-width: 768px) {
     [data-testid="stTable"] th, [data-testid="stTable"] td {
-        padding: 6px 8px !important;
-        font-size: 14px !important;
+        padding: 1px 2px !important;
+        font-size: 12px !important;
+        height: 20px !important;
     }
 }
 
@@ -333,11 +332,6 @@ div[data-baseweb="tab-list"] button[aria-selected="true"] p {
     }
     h1, h1 *, h2, h3, h4 {
         color: #f3f4f6 !important;
-    }
-    .success-box {
-        background-color: #1a2721;
-        border: 1px solid #274533;
-        color: #a7d3b9;
     }
     div[data-baseweb="tab-list"] {
         border-bottom: 1px solid #3a3835;
