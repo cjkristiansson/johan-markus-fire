@@ -1,10 +1,10 @@
 import streamlit as st
 import pandas as pd
 
-# Her tvinges sidebaren ud på alle desktop-skærme
+# Konfiguration
 st.set_page_config(page_title="FIRE Dashboard", layout="wide", initial_sidebar_state="expanded")
 
-# --- INDLÆS EKSTERN CSS & TVING KOMPAKTE TABELLER ---
+# --- INDLÆS EKSTERN CSS ---
 def load_css(file_name):
     try:
         with open(file_name) as f:
@@ -13,19 +13,6 @@ def load_css(file_name):
         pass
 
 load_css("style.css")
-
-# Tvinger st.table til at være lille og kompakt, uanset hvad der ellers står i CSS
-st.markdown("""
-<style>
-[data-testid="stTable"] {
-    font-size: 0.85rem !important;
-}
-[data-testid="stTable"] th, [data-testid="stTable"] td {
-    padding: 0.25rem 0.5rem !important;
-    line-height: 1.2 !important;
-}
-</style>
-""", unsafe_allow_html=True)
 
 # --- INITIALISERING AF SESSION STATE (BASISDATA) ---
 if "inkomst_j" not in st.session_state: st.session_state["inkomst_j"] = 38468
@@ -41,10 +28,10 @@ if "basis_frie_j" not in st.session_state: st.session_state["basis_frie_j"] = 65
 if "basis_ask_m" not in st.session_state: st.session_state["basis_ask_m"] = 170000
 if "basis_frie_m" not in st.session_state: st.session_state["basis_frie_m"] = 0
 
-# Toggles (Sikrer default-værdier i session state)
+# Toggles (Sikrer default-værdier er sat til False konsekvent)
 if "use_bsu_m" not in st.session_state: st.session_state["use_bsu_m"] = False
 if "use_loensikring_j" not in st.session_state: st.session_state["use_loensikring_j"] = False
-if "use_loensikring_m" not in st.session_state: st.session_state["use_loensikring_m"] = True
+if "use_loensikring_m" not in st.session_state: st.session_state["use_loensikring_m"] = False
 
 # Personlige budgetter
 if "budget_j" not in st.session_state:
@@ -176,13 +163,13 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
 
         bolig_faelles = (realkreditydelse_netto + ejerudgifter_total + boligskat_md) / 2
         
-        # Håndter lønsikring
+        # Håndter lønsikring ud fra stramme session state variables
         use_loensikring_j = st.session_state.get("use_loensikring_j", False)
         budget_j_total = sum(st.session_state["budget_j"].values())
         if not use_loensikring_j:
             budget_j_total -= st.session_state["budget_j"].get("Loensikring", 0)
 
-        use_loensikring_m = st.session_state.get("use_loensikring_m", True)
+        use_loensikring_m = st.session_state.get("use_loensikring_m", False)
         budget_m_total = sum(st.session_state["budget_m"].values())
         if not use_loensikring_m:
             budget_m_total -= st.session_state["budget_m"].get("Loensikring", 0)
@@ -340,6 +327,7 @@ def simulate_solo_fire_plan(scenario_name, boligpris, udbetaling_j, ydelse_defau
 
         bolig_total = realkreditydelse_netto + ejerudgifter_total + boligskat_md
         
+        # Lønsikring default til False
         use_loensikring_j = st.session_state.get("use_loensikring_j", False)
         budget_j_total = sum(solo_budget_j.values())
         if not use_loensikring_j: budget_j_total -= solo_budget_j.get("Loensikring", 0)
@@ -447,7 +435,7 @@ if view_selection == "⚙️ Basisdata & Opsætning":
         df_m = st.data_editor(pd.DataFrame(list(st.session_state["budget_m"].items()), columns=["Kategori", "Beløb"]), hide_index=True, use_container_width=True, key="ed_m")
         st.session_state["budget_m"] = dict(df_m.values)
         st.write("")
-        st.session_state["use_loensikring_m"] = st.toggle("Inddrag Lønsikring (720 kr.)", value=st.session_state.get("use_loensikring_m", True), key="toggle_loen_m")
+        st.session_state["use_loensikring_m"] = st.toggle("Inddrag Lønsikring (720 kr.)", value=st.session_state.get("use_loensikring_m", False), key="toggle_loen_m")
         st.session_state["use_bsu_m"] = st.toggle("Inddrag Norsk BSU", value=st.session_state.get("use_bsu_m", False), key="toggle_bsu_m")
 
 # --- VISNING 2: SCENARIER ---
