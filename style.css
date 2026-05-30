@@ -252,6 +252,14 @@ div[data-baseweb="tab-list"] button[aria-selected="true"] p {
     background-color: #ebdccc !important;
 }
 
+/* --- MOBIL-OPTIMERING AF TABEL --- */
+@media (max-width: 768px) {
+    [data-testid="stTable"] th, [data-testid="stTable"] td {
+        padding: 6px 8px !important;
+        font-size: 14px !important;
+    }
+}
+
 /* --- DARK MODE --- */
 @media (prefers-color-scheme: dark) {
     html, body, [class*="css"], .stApp {
