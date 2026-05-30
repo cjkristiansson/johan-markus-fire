@@ -28,16 +28,16 @@ if "basis_frie_j" not in st.session_state: st.session_state["basis_frie_j"] = 65
 if "basis_ask_m" not in st.session_state: st.session_state["basis_ask_m"] = 170000
 if "basis_frie_m" not in st.session_state: st.session_state["basis_frie_m"] = 0
 
-# Toggles (Sikrer default-værdier er sat til False konsekvent)
+# Toggles (Sikrer default-værdier er sat til False)
 if "use_bsu_m" not in st.session_state: st.session_state["use_bsu_m"] = False
 if "use_loensikring_j" not in st.session_state: st.session_state["use_loensikring_j"] = False
 if "use_loensikring_m" not in st.session_state: st.session_state["use_loensikring_m"] = False
 
 # Personlige budgetter
 if "budget_j" not in st.session_state:
-    st.session_state["budget_j"] = {"Studielaan": 0, "Mad": 6000, "Ferie": 1500, "Renovering": 1000, "A_kasse_Fagforening": 672, "Loensikring": 1836, "Puregym": 279, "Transport": 730, "Telefon": 100, "Spotify_Cloud": 100, "Charity": 100, "Frisoer": 450, "Toej": 1200, "Oevrig": 3000}
+    st.session_state["budget_j"] = {"Studielaan": 0, "Mad": 6000, "Ferie": 1500, "Renovering": 1000, "A_kasse_Fagforening": 672, "Loensikring": 0, "Puregym": 279, "Transport": 730, "Telefon": 100, "Spotify_Cloud": 100, "Charity": 100, "Frisoer": 450, "Toej": 1200, "Oevrig": 3000}
 if "budget_m" not in st.session_state:
-    st.session_state["budget_m"] = {"Studielaan": 1600, "Mad": 0, "Ferie": 1500, "Renovering": 1000, "A_kasse_Fagforening": 520, "Loensikring": 720, "Puregym": 0, "Transport": 500, "Telefon": 300, "Streaming": 565, "Charity": 100, "Frisoer": 450, "Toej": 1200, "Oevrig": 3000}
+    st.session_state["budget_m"] = {"Studielaan": 1600, "Mad": 0, "Ferie": 1500, "Renovering": 1000, "A_kasse_Fagforening": 520, "Loensikring": 0, "Puregym": 0, "Transport": 500, "Telefon": 300, "Streaming": 565, "Charity": 100, "Frisoer": 450, "Toej": 1200, "Oevrig": 3000}
 
 # --- POP-UP MODAL TIL REGLER OG LOGIK ---
 @st.dialog("📜 Modellens Regler & Logik")
@@ -88,7 +88,6 @@ st.sidebar.divider()
 pensionsalder_j = st.sidebar.number_input("Johans pensionsalder", min_value=55, max_value=75, value=67, step=1)
 pensionsalder_m = st.sidebar.number_input("Markus' pensionsalder", min_value=55, max_value=75, value=65, step=1)
 
-# DEN HEMMELIGE BAGDØR
 st.sidebar.divider()
 st.sidebar.text_input("Gendan Scenarie-ID", help="Indtast ID for at indlæse specifik konfiguration.", key="secret_id")
 
@@ -110,14 +109,12 @@ def get_emoji_status(barista_hours):
 def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_m, ydelse_default, ydelse_key, ejerudgifter_total, bolig_solgt, boligskat_md):
     pal_tax, weeks_per_month, age_j, age_m = 0.153, 4.33, 41, 32
     
-    # Hent state for Omlægningsscenarie
     aktiver_oml = st.session_state.get(f"aktiver_oml_{ydelse_key}", False)
     oml_aar = st.session_state.get(f"oml_aar_{ydelse_key}", 5)
     oml_rente = st.session_state.get(f"oml_rente_{ydelse_key}", 4.0) / 100
     oml_afdrag_fri = st.session_state.get(f"oml_afdrag_fri_{ydelse_key}", False)
     oml_omk = st.session_state.get(f"oml_omk_{ydelse_key}", 50000)
 
-    # BSU Logik
     use_bsu = st.session_state.get("use_bsu_m", False)
     bsu_amount = 292060
     
@@ -144,7 +141,6 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
     cash_pct = (total_udbetaling / boligpris * 100) if boligpris > 0 else 0
     loan_pct = 100 - cash_pct
 
-    # Placer specifikationerne ind i en expander
     with st.expander("🏠 Vis økonomiske detaljer & lån", expanded=False):
         col_j, col_m, col_inp = st.columns([0.41, 0.41, 0.18], vertical_alignment="bottom")
 
@@ -156,27 +152,20 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
             )
             realkreditydelse_netto = st.number_input("Realkreditydelse", value=ydelse_default, step=100, key=ydelse_key)
 
-        # --- FIRE BEREGNINGER ---
         depot_free_j = st.session_state["basis_frie_j"] + (cash_j - faktisk_udbetaling_j)
         depot_free_m = st.session_state["basis_frie_m"] + (cash_m - faktisk_udbetaling_m)
         depot_ask_j, depot_ask_m = st.session_state["basis_ask_j"], st.session_state["basis_ask_m"]
 
         bolig_faelles = (realkreditydelse_netto + ejerudgifter_total + boligskat_md) / 2
         
-        # Håndter lønsikring ud fra stramme session state variables
-        use_loensikring_j = st.session_state.get("use_loensikring_j", False)
+        # Budgetterne indeholder allerede den korrekte lønsikring ud fra brugerens toggle
         budget_j_total = sum(st.session_state["budget_j"].values())
-        if not use_loensikring_j:
-            budget_j_total -= st.session_state["budget_j"].get("Loensikring", 0)
-
-        use_loensikring_m = st.session_state.get("use_loensikring_m", False)
         budget_m_total = sum(st.session_state["budget_m"].values())
-        if not use_loensikring_m:
-            budget_m_total -= st.session_state["budget_m"].get("Loensikring", 0)
 
         start_inv_md_j = st.session_state["inkomst_j"] - (budget_j_total + bolig_faelles)
         start_inv_md_m = st.session_state["inkomst_m"] - (budget_m_total + bolig_faelles) + bsu_passive
         
+        # I FIRE fasen fjernes A-kasse og Lønsikring altid uanset hvad
         start_fire_j = sum(v for k, v in st.session_state["budget_j"].items() if k not in ["A_kasse_Fagforening", "Loensikring"]) + bolig_faelles
         start_fire_m = sum(v for k, v in st.session_state["budget_m"].items() if k not in ["A_kasse_Fagforening", "Loensikring", "Studielaan"]) + bolig_faelles
 
@@ -206,7 +195,6 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
     restgaeld_start = boligpris - total_udbetaling
     bolig_faelles_current = bolig_faelles
     
-    # --- RENTE OG AFDRAGS-ANTAGELSER FOR DET OPRINDELIGE LÅN ---
     if "Valby" in scenario_name:
         oprindelig_rente_mnd = 0.024 / 12
         start_afdrag_mnd = 6929
@@ -216,16 +204,13 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
     table_data = []
     j_reached, m_reached = False, False
     j_fire_age, m_fire_age = 0, 0
-    pension_at_target_j, pension_at_target_m = 0, 0
     
     for year in range(0, 26):
         c_age_j, c_age_m = age_j + year, age_m + year
         
-        # Anvend omlægning hvis aktiveret i UI
+        # Omlægning
         if aktiver_oml and year == oml_aar and boligpris > 0 and oml_aar > 0:
             mdr_gaaet = oml_aar * 12
-            
-            # Beregn restgælden for det oprindelige lån efter løbende afdrag
             if "Valby" in scenario_name:
                 afdraget_beloeb = start_afdrag_mnd * (((1 + oprindelig_rente_mnd)**mdr_gaaet - 1) / oprindelig_rente_mnd)
                 restgaeld_ved_oml = max(0, restgaeld_start - afdraget_beloeb)
@@ -235,7 +220,6 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
             ny_hovedstol = restgaeld_ved_oml + oml_omk
             mnd_rente_ny = oml_rente / 12
             
-            # Hvis afdragsfrihed IKKE er aktiveret, betales annuitet over 30 nye år
             if not oml_afdrag_fri:
                 ny_ydelse = ny_hovedstol * (mnd_rente_ny * (1 + mnd_rente_ny)**360) / ((1 + mnd_rente_ny)**360 - 1)
             else:
@@ -245,20 +229,38 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
             netto_bolig_faelles = (ny_ydelse + ejerudgifter_total + boligskat_md - (renter_md * 0.256)) / 2
             
             diff_faelles = bolig_faelles_current - netto_bolig_faelles
-            
-            start_fire_j -= diff_faelles
-            start_fire_m -= diff_faelles
-            start_inv_md_j += diff_faelles
-            start_inv_md_m += diff_faelles
-            
+            start_fire_j -= diff_faelles; start_fire_m -= diff_faelles
+            start_inv_md_j += diff_faelles; start_inv_md_m += diff_faelles
             bolig_faelles_current = netto_bolig_faelles
 
+        # Beskatning, Vækst & Opsparing
         if year > 0:
             start_fire_j *= (1 + global_inflation_rate); start_fire_m *= (1 + global_inflation_rate)
+            
+            # --- PROGRESSIV LAGERBESKATNING (Regel-compliance) ---
+            # Grænsen fremskrives med inflation
+            prog_limit_j = 79400 * ((1 + global_inflation_rate)**year)
+            prog_limit_m = 79400 * ((1 + global_inflation_rate)**year)
+            
+            # Afkast
+            return_frie_j = depot_free_j * global_return_rate_gross
+            return_frie_m = depot_free_m * global_return_rate_gross
+            
+            # Skatteberegning (27% under, 42% over)
+            tax_j = (return_frie_j * 0.27) if return_frie_j <= prog_limit_j else (prog_limit_j * 0.27 + (return_frie_j - prog_limit_j) * 0.42)
+            tax_m = (return_frie_m * 0.27) if return_frie_m <= prog_limit_m else (prog_limit_m * 0.27 + (return_frie_m - prog_limit_m) * 0.42)
+            
+            # Tilføj afkast minus skat
+            depot_free_j += (return_frie_j - tax_j)
+            depot_free_m += (return_frie_m - tax_m)
+            
+            # ASK (17% flad skat)
+            depot_ask_j *= (1 + global_return_rate_gross * 0.83)
+            depot_ask_m *= (1 + global_return_rate_gross * 0.83)
+            
+            # Indskud af årets nye opsparing (ved slutningen af året)
             if not j_reached: depot_free_j += start_inv_md_j * 12 * ((1 + global_inflation_rate)**year)
             if not m_reached: depot_free_m += start_inv_md_m * 12 * ((1 + global_inflation_rate)**year)
-            depot_ask_j *= (1 + global_return_rate_gross * 0.83); depot_free_j *= (1 + global_return_rate_gross * 0.73)
-            depot_ask_m *= (1 + global_return_rate_gross * 0.83); depot_free_m *= (1 + global_return_rate_gross * 0.73)
 
         p_j = calculate_drawdown_monthly_income(depot_ask_j + depot_free_j, c_age_j, pensionsalder_j, global_return_rate_net_drawdown)
         p_m_drawdown = calculate_drawdown_monthly_income(depot_ask_m + depot_free_m, c_age_m, pensionsalder_m, global_return_rate_net_drawdown)
@@ -269,20 +271,12 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
 
         table_data.append({"År": year, "J.alder": c_age_j, "J.depot (M)": f"{(depot_ask_j + depot_free_j)/1e6:.2f}", "J.Passiv (kr)": f"{int(p_j):,}".replace(',', '.'), "J.Arbtid": get_emoji_status(h_j), "M.alder": c_age_m, "M.depot (M)": f"{(depot_ask_m + depot_free_m)/1e6:.2f}", "M.Passiv (kr)": f"{int(p_m_total):,}".replace(',', '.'), "M.Arbtid": get_emoji_status(h_m)})
         
-        if h_j <= 0 and not j_reached:
-            j_reached = True; j_fire_age = c_age_j
-            pension_at_target_j = st.session_state["pension_j"] * ((1 + (global_return_rate_gross * (1 - pal_tax))) ** (pensionsalder_j - age_j))
-
-        if h_m <= 0 and not m_reached:
-            m_reached = True; m_fire_age = c_age_m
-            pension_at_target_m = st.session_state["pension_m"] * ((1 + (global_return_rate_gross * (1 - pal_tax))) ** (pensionsalder_m - age_m))
-
+        if h_j <= 0 and not j_reached: j_reached = True; j_fire_age = c_age_j
+        if h_m <= 0 and not m_reached: m_reached = True; m_fire_age = c_age_m
         if h_j <= 0 and h_m <= 0: break
 
-    # Vis tabellen uden frame/scrollbar
     st.table(pd.DataFrame(table_data).set_index("År"))
 
-    # Vis Omlægningsscenariet UNDER tabellen (Altid synlige felter)
     with st.expander("🔄 Omlægningsscenarie", expanded=False):
         st.toggle("Aktiver omlægningsscenarie", value=False, key=f"aktiver_oml_{ydelse_key}")
         col_o1, col_o2, col_o3, col_o4 = st.columns(4)
@@ -295,7 +289,6 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
 def simulate_solo_fire_plan(scenario_name, boligpris, udbetaling_j, ydelse_default, ydelse_key, ejerudgifter_total, boligskat_md):
     pal_tax, weeks_per_month, age_j = 0.153, 4.33, 41
     
-    # Hent state for Omlægningsscenarie
     s_key = f"solo_{ydelse_key}"
     aktiver_oml = st.session_state.get(f"aktiver_oml_{s_key}", False)
     oml_aar = st.session_state.get(f"oml_aar_{s_key}", 5)
@@ -326,12 +319,8 @@ def simulate_solo_fire_plan(scenario_name, boligpris, udbetaling_j, ydelse_defau
         solo_budget_j["Mad"] = 3000
 
         bolig_total = realkreditydelse_netto + ejerudgifter_total + boligskat_md
-        
-        # Lønsikring default til False
-        use_loensikring_j = st.session_state.get("use_loensikring_j", False)
         budget_j_total = sum(solo_budget_j.values())
-        if not use_loensikring_j: budget_j_total -= solo_budget_j.get("Loensikring", 0)
-
+        
         start_inv_md_j = st.session_state["inkomst_j"] - (budget_j_total + bolig_total)
         start_fire_j = sum(v for k, v in solo_budget_j.items() if k not in ["A_kasse_Fagforening", "Loensikring"]) + bolig_total
 
@@ -350,55 +339,48 @@ def simulate_solo_fire_plan(scenario_name, boligpris, udbetaling_j, ydelse_defau
 
     restgaeld_start = boligpris - faktisk_udbetaling_j
     bolig_total_current = bolig_total
-    
     oprindelig_rente_mnd = 0.04 / 12
 
     table_data = []
-    j_reached = False; j_fire_age = 0; pension_at_target_j = 0
+    j_reached = False; j_fire_age = 0
     
     for year in range(0, 26):
         c_age_j = age_j + year
         
         if aktiver_oml and year == oml_aar and boligpris > 0 and oml_aar > 0:
             mdr_gaaet = oml_aar * 12
-            
-            # Beregn restgælden for det oprindelige lån
             restgaeld_ved_oml = restgaeld_start * ((1 + oprindelig_rente_mnd)**360 - (1 + oprindelig_rente_mnd)**mdr_gaaet) / ((1 + oprindelig_rente_mnd)**360 - 1)
-            
             ny_hovedstol = restgaeld_ved_oml + oml_omk
             mnd_rente_ny = oml_rente / 12
             
-            if not oml_afdrag_fri: 
-                ny_ydelse = ny_hovedstol * (mnd_rente_ny * (1 + mnd_rente_ny)**360) / ((1 + mnd_rente_ny)**360 - 1)
-            else: 
-                ny_ydelse = ny_hovedstol * mnd_rente_ny
+            if not oml_afdrag_fri: ny_ydelse = ny_hovedstol * (mnd_rente_ny * (1 + mnd_rente_ny)**360) / ((1 + mnd_rente_ny)**360 - 1)
+            else: ny_ydelse = ny_hovedstol * mnd_rente_ny
                 
             renter_md = (ny_hovedstol * oml_rente) / 12
             netto_bolig_total = ny_ydelse + ejerudgifter_total + boligskat_md - (renter_md * 0.256)
-            
             diff_bolig = bolig_total_current - netto_bolig_total
-            start_fire_j -= diff_bolig
-            start_inv_md_j += diff_bolig
+            start_fire_j -= diff_bolig; start_inv_md_j += diff_bolig
             bolig_total_current = netto_bolig_total
 
         if year > 0:
             start_fire_j *= (1 + global_inflation_rate)
+            prog_limit_j = 79400 * ((1 + global_inflation_rate)**year)
+            return_frie_j = depot_free_j * global_return_rate_gross
+            tax_j = (return_frie_j * 0.27) if return_frie_j <= prog_limit_j else (prog_limit_j * 0.27 + (return_frie_j - prog_limit_j) * 0.42)
+            
+            depot_free_j += (return_frie_j - tax_j)
+            depot_ask_j *= (1 + global_return_rate_gross * 0.83)
             if not j_reached: depot_free_j += start_inv_md_j * 12 * ((1 + global_inflation_rate)**year)
-            depot_ask_j *= (1 + global_return_rate_gross * 0.83); depot_free_j *= (1 + global_return_rate_gross * 0.73)
 
         p_j = calculate_drawdown_monthly_income(depot_ask_j + depot_free_j, c_age_j, pensionsalder_j, global_return_rate_net_drawdown)
         h_j = max(0, start_fire_j - p_j) / (global_barista_wage_net * ((1+global_inflation_rate)**year) * weeks_per_month)
 
         table_data.append({"År": year, "Alder": c_age_j, "Depot (M)": f"{(depot_ask_j + depot_free_j)/1e6:.2f}", "Passiv Indkomst (kr)": f"{int(p_j):,}".replace(',', '.'), "Arbejdstid (Barista)": get_emoji_status(h_j)})
         
-        if h_j <= 0 and not j_reached:
-            j_reached = True; j_fire_age = c_age_j
-            pension_at_target_j = st.session_state["pension_j"] * ((1 + (global_return_rate_gross * (1 - pal_tax))) ** (pensionsalder_j - age_j))
+        if h_j <= 0 and not j_reached: j_reached = True; j_fire_age = c_age_j
 
-    # Vis tabellen uden frame/scrollbar
     st.table(pd.DataFrame(table_data).set_index("År"))
     
-    # Vis Omlægningsscenariet UNDER tabellen (Altid synlige felter)
     with st.expander("🔄 Omlægningsscenarie", expanded=False):
         st.toggle("Aktiver omlægningsscenarie", value=False, key=f"aktiver_oml_{s_key}")
         col_o1, col_o2, col_o3, col_o4 = st.columns(4)
@@ -420,10 +402,14 @@ if view_selection == "⚙️ Basisdata & Opsætning":
         st.session_state["cash_j_base"] = st.number_input("Kontanter / Friværdi (kr.)", value=st.session_state["cash_j_base"], step=10000, key="csh_j")
         st.session_state["basis_ask_j"] = st.number_input("Aktiesparekonto (kr.)", value=st.session_state["basis_ask_j"], key="ask_j")
         st.session_state["basis_frie_j"] = st.number_input("Frie midler / Aktier (kr.)", value=st.session_state["basis_frie_j"], key="fr_j")
+        
+        # Toggle og dynamisk ordbog-opdatering for Johan
+        st.session_state["use_loensikring_j"] = st.toggle("Inddrag Lønsikring (1.836 kr.)", value=st.session_state.get("use_loensikring_j", False), key="toggle_loen_j")
+        st.session_state["budget_j"]["Loensikring"] = 1836 if st.session_state["use_loensikring_j"] else 0
+        
         df_j = st.data_editor(pd.DataFrame(list(st.session_state["budget_j"].items()), columns=["Kategori", "Beløb"]), hide_index=True, use_container_width=True, key="ed_j")
         st.session_state["budget_j"] = dict(df_j.values)
         st.write("")
-        st.session_state["use_loensikring_j"] = st.toggle("Inddrag Lønsikring (1.836 kr.)", value=st.session_state.get("use_loensikring_j", False), key="toggle_loen_j")
         
     with col_setup_m:
         st.markdown("### 👤 MARKUS DATA")
@@ -432,10 +418,14 @@ if view_selection == "⚙️ Basisdata & Opsætning":
         st.session_state["cash_m_base"] = st.number_input("Kontanter / Friværdi (kr.)", value=st.session_state["cash_m_base"], step=10000, key="csh_m")
         st.session_state["basis_ask_m"] = st.number_input("Aktiesparekonto (kr.)", value=st.session_state["basis_ask_m"], key="ask_m")
         st.session_state["basis_frie_m"] = st.number_input("Frie midler / Aktier (kr.)", value=st.session_state["basis_frie_m"], key="fr_m")
+        
+        # Toggle og dynamisk ordbog-opdatering for Markus
+        st.session_state["use_loensikring_m"] = st.toggle("Inddrag Lønsikring (720 kr.)", value=st.session_state.get("use_loensikring_m", False), key="toggle_loen_m")
+        st.session_state["budget_m"]["Loensikring"] = 720 if st.session_state["use_loensikring_m"] else 0
+        
         df_m = st.data_editor(pd.DataFrame(list(st.session_state["budget_m"].items()), columns=["Kategori", "Beløb"]), hide_index=True, use_container_width=True, key="ed_m")
         st.session_state["budget_m"] = dict(df_m.values)
         st.write("")
-        st.session_state["use_loensikring_m"] = st.toggle("Inddrag Lønsikring (720 kr.)", value=st.session_state.get("use_loensikring_m", False), key="toggle_loen_m")
         st.session_state["use_bsu_m"] = st.toggle("Inddrag Norsk BSU", value=st.session_state.get("use_bsu_m", False), key="toggle_bsu_m")
 
 # --- VISNING 2: SCENARIER ---
