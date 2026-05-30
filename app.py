@@ -49,6 +49,7 @@ def show_rules_dialog():
     * **Pension adskilt:** Pensionsdepoter bruges *ikke* før pensionsalderen nås. Indbetalinger stopper det år fuld FIRE nås, hvorefter depotet kun vokser med afkast minus PAL-skat (15,3%).
     * **Barista-timer:** Timer beregnes på *restbehovet*. Passiv indkomst fra depotet fratrækkes FIRE-udgifterne først.
     * **Dynamiske boligudgifter:** Bliver der optaget realkreditlån, indgår ydelsen fuldt ud i de månedlige FIRE-udgifter for det givne scenarie. Nye boligskatter fordeles 50/50.
+    * **Omlægningsscenarie:** Kan aktiveres for at simulere en låneomlægning i et givent år. Restgælden øges med omkostninger, ny rente og afdragsfrihed kan vælges. Rentefradrag (25,6%) indregnes, og det øgede råderum investeres automatisk fremefter.
     """)
 
 # --- TOP HEADER ---
@@ -197,7 +198,18 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
             **Mdl. Udgifter:** {f'{int(start_fire_m):,}'.replace(',', '.')} kr./md.
             """)
 
-    st.write("") # Sikrer lidt luft mellem expanderen og tabellen
+    st.write("") # Luft
+
+    # --- OMLÆGNINGSSCENARIE MODUL ---
+    with st.expander("🔄 Omlægningsscenarie", expanded=False):
+        col_o1, col_o2, col_o3, col_o4 = st.columns(4)
+        oml_aar = col_o1.number_input("År for omlægning (0-10)", min_value=0, max_value=10, value=5, key=f"oml_aar_{ydelse_key}")
+        oml_rente = col_o2.number_input("Ny rente + bidrag (%)", min_value=0.0, max_value=10.0, value=4.0, step=0.1, key=f"oml_rente_{ydelse_key}") / 100
+        oml_afdrag = col_o3.toggle("Med afdrag", value=True, key=f"oml_afdrag_{ydelse_key}")
+        oml_omk = col_o4.number_input("Omkostninger (kr)", value=50000, step=5000, key=f"oml_omk_{ydelse_key}")
+
+    restgaeld = boligpris - total_udbetaling
+    bolig_faelles_current = bolig_faelles
 
     table_data = []
     j_reached, m_reached = False, False
@@ -206,6 +218,31 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
     
     for year in range(0, 26):
         c_age_j, c_age_m = age_j + year, age_m + year
+        
+        # Omlægningslogik aktiveres i det angivne år
+        if year == oml_aar and boligpris > 0:
+            restgaeld += oml_omk
+            mnd_rente = oml_rente / 12
+            
+            if oml_afdrag:
+                ny_ydelse = restgaeld * (mnd_rente * (1 + mnd_rente)**360) / ((1 + mnd_rente)**360 - 1)
+            else:
+                ny_ydelse = restgaeld * mnd_rente
+                
+            renter_md = (restgaeld * oml_rente) / 12
+            # Fratræk 25,6% i skatteværdi af renteudgifterne for at finde nettoydelsen
+            netto_bolig_faelles = (ny_ydelse + ejerudgifter_total + boligskat_md - (renter_md * 0.256)) / 2
+            
+            # Beregn forskellen på den gamle og nye udgift for at justere opsparing og FIRE-behov dynamisk
+            diff_faelles = bolig_faelles_current - netto_bolig_faelles
+            
+            start_fire_j -= diff_faelles
+            start_fire_m -= diff_faelles
+            start_inv_md_j += diff_faelles
+            start_inv_md_m += diff_faelles
+            
+            bolig_faelles_current = netto_bolig_faelles
+
         if year > 0:
             start_fire_j *= (1 + global_inflation_rate); start_fire_m *= (1 + global_inflation_rate)
             if not j_reached: depot_free_j += start_inv_md_j * 12 * ((1 + global_inflation_rate)**year)
@@ -294,6 +331,17 @@ def simulate_solo_fire_plan(scenario_name, boligpris, udbetaling_j, ydelse_defau
             
     st.write("")
 
+    # --- OMLÆGNINGSSCENARIE MODUL (SOLO) ---
+    with st.expander("🔄 Omlægningsscenarie", expanded=False):
+        col_o1, col_o2, col_o3, col_o4 = st.columns(4)
+        oml_aar = col_o1.number_input("År for omlægning (0-10)", min_value=0, max_value=10, value=5, key=f"oml_aar_solo_{ydelse_key}")
+        oml_rente = col_o2.number_input("Ny rente + bidrag (%)", min_value=0.0, max_value=10.0, value=4.0, step=0.1, key=f"oml_rente_solo_{ydelse_key}") / 100
+        oml_afdrag = col_o3.toggle("Med afdrag", value=True, key=f"oml_afdrag_solo_{ydelse_key}")
+        oml_omk = col_o4.number_input("Omkostninger (kr)", value=50000, step=5000, key=f"oml_omk_solo_{ydelse_key}")
+
+    restgaeld = boligpris - faktisk_udbetaling_j
+    bolig_total_current = bolig_total
+
     table_data = []
     j_reached = False
     j_fire_age = 0
@@ -301,6 +349,27 @@ def simulate_solo_fire_plan(scenario_name, boligpris, udbetaling_j, ydelse_defau
     
     for year in range(0, 26):
         c_age_j = age_j + year
+        
+        # Omlægningslogik aktiveres i det angivne år (Solo)
+        if year == oml_aar and boligpris > 0:
+            restgaeld += oml_omk
+            mnd_rente = oml_rente / 12
+            
+            if oml_afdrag:
+                ny_ydelse = restgaeld * (mnd_rente * (1 + mnd_rente)**360) / ((1 + mnd_rente)**360 - 1)
+            else:
+                ny_ydelse = restgaeld * mnd_rente
+                
+            renter_md = (restgaeld * oml_rente) / 12
+            netto_bolig_total = ny_ydelse + ejerudgifter_total + boligskat_md - (renter_md * 0.256)
+            
+            diff_bolig = bolig_total_current - netto_bolig_total
+            
+            start_fire_j -= diff_bolig
+            start_inv_md_j += diff_bolig
+            
+            bolig_total_current = netto_bolig_total
+
         if year > 0:
             start_fire_j *= (1 + global_inflation_rate)
             if not j_reached: depot_free_j += start_inv_md_j * 12 * ((1 + global_inflation_rate)**year)
