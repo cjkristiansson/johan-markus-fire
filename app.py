@@ -43,7 +43,8 @@ if "basis_frie_m" not in st.session_state: st.session_state["basis_frie_m"] = 0
 
 # Toggles (Sikrer default-værdier i session state)
 if "use_bsu_m" not in st.session_state: st.session_state["use_bsu_m"] = False
-if "use_loensikring_j" not in st.session_state: st.session_state["use_loensikring_j"] = True
+# Ændret til False som default for Johans lønsikring
+if "use_loensikring_j" not in st.session_state: st.session_state["use_loensikring_j"] = False
 if "use_loensikring_m" not in st.session_state: st.session_state["use_loensikring_m"] = True
 
 # Personlige budgetter
@@ -177,7 +178,7 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
         bolig_faelles = (realkreditydelse_netto + ejerudgifter_total + boligskat_md) / 2
         
         # Håndter lønsikring
-        use_loensikring_j = st.session_state.get("use_loensikring_j", True)
+        use_loensikring_j = st.session_state.get("use_loensikring_j", False)
         budget_j_total = sum(st.session_state["budget_j"].values())
         if not use_loensikring_j:
             budget_j_total -= st.session_state["budget_j"].get("Loensikring", 0)
@@ -240,11 +241,9 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
             
             # Beregn restgælden for det oprindelige lån efter løbende afdrag
             if "Valby" in scenario_name:
-                # Valby scenariet: Beregner nøjagtigt gældsreduktion med startafdrag på 6929 kr. (sum af annuitetsafdrag)
                 afdraget_beloeb = start_afdrag_mnd * (((1 + oprindelig_rente_mnd)**mdr_gaaet - 1) / oprindelig_rente_mnd)
                 restgaeld_ved_oml = max(0, restgaeld_start - afdraget_beloeb)
             else:
-                # Øvrige scenarier: Almindelig annuitetsafvikling (30 år) med 4%
                 restgaeld_ved_oml = restgaeld_start * ((1 + oprindelig_rente_mnd)**360 - (1 + oprindelig_rente_mnd)**mdr_gaaet) / ((1 + oprindelig_rente_mnd)**360 - 1)
             
             ny_hovedstol = restgaeld_ved_oml + oml_omk
@@ -345,7 +344,7 @@ def simulate_solo_fire_plan(scenario_name, boligpris, udbetaling_j, ydelse_defau
 
         bolig_total = realkreditydelse_netto + ejerudgifter_total + boligskat_md
         
-        use_loensikring_j = st.session_state.get("use_loensikring_j", True)
+        use_loensikring_j = st.session_state.get("use_loensikring_j", False)
         budget_j_total = sum(solo_budget_j.values())
         if not use_loensikring_j: budget_j_total -= solo_budget_j.get("Loensikring", 0)
 
@@ -441,7 +440,7 @@ if view_selection == "⚙️ Basisdata & Opsætning":
         df_j = st.data_editor(pd.DataFrame(list(st.session_state["budget_j"].items()), columns=["Kategori", "Beløb"]), hide_index=True, use_container_width=True, key="ed_j")
         st.session_state["budget_j"] = dict(df_j.values)
         st.write("")
-        st.session_state["use_loensikring_j"] = st.toggle("Inddrag Lønsikring (1.836 kr.)", value=st.session_state.get("use_loensikring_j", True), key="toggle_loen_j")
+        st.session_state["use_loensikring_j"] = st.toggle("Inddrag Lønsikring (1.836 kr.)", value=st.session_state.get("use_loensikring_j", False), key="toggle_loen_j")
         
     with col_setup_m:
         st.markdown("### 👤 MARKUS DATA")
