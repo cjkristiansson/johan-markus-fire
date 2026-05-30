@@ -114,7 +114,7 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
     aktiver_oml = st.session_state.get(f"aktiver_oml_{ydelse_key}", False)
     oml_aar = st.session_state.get(f"oml_aar_{ydelse_key}", 5)
     oml_rente = st.session_state.get(f"oml_rente_{ydelse_key}", 4.0) / 100
-    oml_afdrag = st.session_state.get(f"oml_afdrag_{ydelse_key}", True)
+    oml_afdrag_fri = st.session_state.get(f"oml_afdrag_fri_{ydelse_key}", False)
     oml_omk = st.session_state.get(f"oml_omk_{ydelse_key}", 50000)
 
     # BSU Logik
@@ -221,7 +221,8 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
             restgaeld += oml_omk
             mnd_rente_f = oml_rente / 12
             
-            if oml_afdrag:
+            # Hvis afdragsfrihed er aktiveret, betales kun renter
+            if not oml_afdrag_fri:
                 ny_ydelse = restgaeld * (mnd_rente_f * (1 + mnd_rente_f)**360) / ((1 + mnd_rente_f)**360 - 1)
             else:
                 ny_ydelse = restgaeld * mnd_rente_f
@@ -264,8 +265,9 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
 
         if h_j <= 0 and h_m <= 0: break
 
-    # Udskiftning af st.table med st.dataframe for at tillade scrolling
-    st.dataframe(pd.DataFrame(table_data).set_index("År"), height=380, use_container_width=True)
+    # Oprindelig tabel med styling, indkapslet i et scrollbart område
+    with st.container(height=380):
+        st.table(pd.DataFrame(table_data).set_index("År"))
 
     # Vis Omlægningsscenariet UNDER tabellen
     with st.expander("🔄 Omlægningsscenarie", expanded=aktiver_oml):
@@ -274,7 +276,7 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
             col_o1, col_o2, col_o3, col_o4 = st.columns(4)
             col_o1.number_input("År for omlægning (0-10)", min_value=0, max_value=10, value=5, key=f"oml_aar_{ydelse_key}")
             col_o2.number_input("Ny rente + bidrag (%)", min_value=0.0, max_value=10.0, value=4.0, step=0.1, key=f"oml_rente_{ydelse_key}")
-            col_o3.toggle("Med afdrag", value=True, key=f"oml_afdrag_{ydelse_key}")
+            col_o3.toggle("Afdragsfrihed aktiveret", value=False, key=f"oml_afdrag_fri_{ydelse_key}")
             col_o4.number_input("Omkostninger (kr)", value=50000, step=5000, key=f"oml_omk_{ydelse_key}")
 
     if j_reached: st.markdown(f"<div class='success-box'>✅ <b>Johans brofinansiering er sikret ved alder {j_fire_age}.</b><br>Pension forventes ca. {pension_at_target_j / 1_000_000:.2f}M kr.</div>", unsafe_allow_html=True)
@@ -289,7 +291,7 @@ def simulate_solo_fire_plan(scenario_name, boligpris, udbetaling_j, ydelse_defau
     aktiver_oml = st.session_state.get(f"aktiver_oml_{s_key}", False)
     oml_aar = st.session_state.get(f"oml_aar_{s_key}", 5)
     oml_rente = st.session_state.get(f"oml_rente_{s_key}", 4.0) / 100
-    oml_afdrag = st.session_state.get(f"oml_afdrag_{s_key}", True)
+    oml_afdrag_fri = st.session_state.get(f"oml_afdrag_fri_{s_key}", False)
     oml_omk = st.session_state.get(f"oml_omk_{s_key}", 50000)
 
     cash_j = st.session_state["cash_j_base"]
@@ -349,8 +351,10 @@ def simulate_solo_fire_plan(scenario_name, boligpris, udbetaling_j, ydelse_defau
             restgaeld += oml_omk
             mnd_rente_f = oml_rente / 12
             
-            if oml_afdrag: ny_ydelse = restgaeld * (mnd_rente_f * (1 + mnd_rente_f)**360) / ((1 + mnd_rente_f)**360 - 1)
-            else: ny_ydelse = restgaeld * mnd_rente_f
+            if not oml_afdrag_fri: 
+                ny_ydelse = restgaeld * (mnd_rente_f * (1 + mnd_rente_f)**360) / ((1 + mnd_rente_f)**360 - 1)
+            else: 
+                ny_ydelse = restgaeld * mnd_rente_f
                 
             renter_md = (restgaeld * oml_rente) / 12
             netto_bolig_total = ny_ydelse + ejerudgifter_total + boligskat_md - (renter_md * 0.256)
@@ -374,8 +378,9 @@ def simulate_solo_fire_plan(scenario_name, boligpris, udbetaling_j, ydelse_defau
             j_reached = True; j_fire_age = c_age_j
             pension_at_target_j = st.session_state["pension_j"] * ((1 + (global_return_rate_gross * (1 - pal_tax))) ** (pensionsalder_j - age_j))
 
-    # Udskiftning af st.table med st.dataframe for at tillade scrolling
-    st.dataframe(pd.DataFrame(table_data).set_index("År"), height=380, use_container_width=True)
+    # Oprindelig tabel med styling, indkapslet i et scrollbart område
+    with st.container(height=380):
+        st.table(pd.DataFrame(table_data).set_index("År"))
     
     # Vis Omlægningsscenariet UNDER tabellen
     with st.expander("🔄 Omlægningsscenarie", expanded=aktiver_oml):
@@ -384,7 +389,7 @@ def simulate_solo_fire_plan(scenario_name, boligpris, udbetaling_j, ydelse_defau
             col_o1, col_o2, col_o3, col_o4 = st.columns(4)
             col_o1.number_input("År for omlægning (0-10)", min_value=0, max_value=10, value=5, key=f"oml_aar_{s_key}")
             col_o2.number_input("Ny rente + bidrag (%)", min_value=0.0, max_value=10.0, value=4.0, step=0.1, key=f"oml_rente_{s_key}")
-            col_o3.toggle("Med afdrag", value=True, key=f"oml_afdrag_{s_key}")
+            col_o3.toggle("Afdragsfrihed aktiveret", value=False, key=f"oml_afdrag_fri_{s_key}")
             col_o4.number_input("Omkostninger (kr)", value=50000, step=5000, key=f"oml_omk_{s_key}")
 
     if j_reached: st.markdown(f"<div class='success-box'>✅ <b>Johans brofinansiering er sikret ved alder {j_fire_age}.</b><br>Pension forventes ca. {pension_at_target_j / 1_000_000:.2f}M kr.</div>", unsafe_allow_html=True)
