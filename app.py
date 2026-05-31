@@ -14,25 +14,6 @@ def load_css(file_name):
 
 load_css("style.css")
 
-# --- JS: Overskriver Streamlits inline rød farve på slider track med burgundy ---
-st.markdown("""
-<script>
-function fixSliderTrack() {
-    document.querySelectorAll('[data-testid="stSlider"] [data-baseweb="slider"] div').forEach(el => {
-        const bg = el.style.backgroundColor;
-        if (bg && (bg.includes('255, 75') || bg.includes('rgb(255') || bg === 'red')) {
-            el.style.backgroundColor = '#7a2d3a';
-        }
-    });
-}
-// Kør ved load og igen når sliders ændres
-setTimeout(fixSliderTrack, 500);
-setTimeout(fixSliderTrack, 1500);
-const observer = new MutationObserver(fixSliderTrack);
-observer.observe(document.body, { subtree: true, attributes: true, attributeFilter: ['style'] });
-</script>
-""", unsafe_allow_html=True)
-
 # --- INITIALISERING AF SESSION STATE (BASISDATA) ---
 if "inkomst_j" not in st.session_state: st.session_state["inkomst_j"] = 38468
 if "inkomst_m" not in st.session_state: st.session_state["inkomst_m"] = 32983
@@ -123,10 +104,12 @@ def calculate_drawdown_monthly_income(depot_total, current_age, target_age, net_
     if current_age >= target_age: return 0
     years_left = target_age - current_age
     months_left = years_left * 12
+    
     if use_real_rate:
         effective_rate = ((1 + net_return_rate) / (1 + inflation_rate)) - 1
     else:
         effective_rate = net_return_rate
+        
     monthly_rate = effective_rate / 12
     if monthly_rate <= 0: return depot_total / months_left
     return depot_total * (monthly_rate * (1 + monthly_rate)**months_left) / ((1 + monthly_rate)**months_left - 1)
@@ -427,6 +410,7 @@ def simulate_solo_fire_plan(scenario_name, boligpris, udbetaling_j, ydelse_defau
 if view_selection == "⚙️ Basisdata & Opsætning":
     st.subheader("Konfiguration af personlig økonomi")
     
+    # --- FÆLLES UDGIFTER MODUL ---
     st.markdown("### 🛒 Fælles Udgifter (Mad)")
     col_mad1, col_mad2 = st.columns(2)
     with col_mad1:
@@ -434,6 +418,7 @@ if view_selection == "⚙️ Basisdata & Opsætning":
     with col_mad2:
         st.session_state["mad_j_val"] = st.slider("Johans andel af madbudgettet", min_value=0, max_value=int(st.session_state["mad_total_val"]), value=min(st.session_state["mad_j_val"], int(st.session_state["mad_total_val"])), step=100, key="mad_slider_j")
     
+    # Opdater automatisk budgetterne ud fra gemte variabler
     st.session_state["budget_j"]["Mad"] = st.session_state["mad_j_val"]
     st.session_state["budget_m"]["Mad"] = int(st.session_state["mad_total_val"]) - st.session_state["mad_j_val"]
     
