@@ -1,43 +1,39 @@
 /* Import Spectral (overskrift) og Belleza (brødtekst) */
 @import url('https://fonts.googleapis.com/css2?family=Belleza&family=Spectral:ital,wght@0,400;0,600;0,700;1,400&display=swap');
 
-/* --- LAYOUT JUSTERING --- */
-.stMain .block-container {
-    padding-top: 3rem !important; 
+/* --- LAYOUT JUSTERING (Trækker alt op - reduceret padding) --- */
+.block-container {
+    padding-top: 0.5rem !important; 
 }
 
+/* Tvinger sidebaren længere ned, så den flugter perfekt med overskriften */
 [data-testid="stSidebar"] .block-container {
-    padding-top: 0rem !important; 
+    padding-top: 0.5rem !important; 
 }
 
+/* Fjerner det usynlige logo-område i toppen af sidebaren */
 [data-testid="stSidebarHeader"] {
-    padding: 1rem 1rem 0 1rem !important; 
-}
-
-@media (max-width: 768px) {
-    .stMain .block-container {
-        padding-top: 4.5rem !important; 
-    }
-    
-    /* Fjerner gap mellem titel og "Regler" knap når kolonner stackes */
-    .stMain [data-testid="stHorizontalBlock"]:first-of-type {
-        gap: 0rem !important;
-    }
-}
-
-/* --- STREAMLIT CLOUD UI FIX --- */
-[data-testid="stToolbarActions"],
-.stAppDeployButton,
-.stDeployButton {
+    padding: 0 !important;
+    height: 0 !important;
+    min-height: 0 !important;
     display: none !important;
 }
 
+/* Gør headeren usynlig men behold den i DOM så sidebar-toggle virker */
 header[data-testid="stHeader"] {
-    background-color: #fcfaf7 !important;
-    pointer-events: none !important;
+    background: transparent !important;
+    border-bottom: none !important;
+    box-shadow: none !important;
 }
-header[data-testid="stHeader"] * {
-    pointer-events: auto !important;
+
+/* Skjul alle header-ikoner undtagen ... menuen */
+[data-testid="stToolbarActions"] [data-testid="stToolbarActionButton"]:not(:last-child) {
+    display: none !important;
+}
+
+/* Skjul GitHub-ikonet specifikt */
+[data-testid="stBaseButton-header"] {
+    display: none !important;
 }
 
 /* --- SIKKER FONT-TILDELING --- */
@@ -45,21 +41,25 @@ html, body, .stApp, p, div, span, label, input, button, li, a, th, td, h2, h3, h
     font-family: 'Belleza', sans-serif !important;
 }
 
+/* Beskyt alle ikoner mod at få overskrevet deres font */
 .material-icons, 
 .material-symbols-rounded, 
 .material-symbols-outlined, 
 [class*="icon"], 
 [class*="Icon"], 
-[data-testid*="Icon"] {
+[data-testid*="Icon"], 
+svg, 
+svg * {
     font-family: 'Material Symbols Rounded', 'Material Icons', sans-serif !important;
 }
 
-/* Base baggrund og tekstfarve */
+/* Base baggrund og tekstfarve (Varm, blød mørkegrå) */
 html, body, [class*="css"], .stApp {
     background-color: #fcfaf7 !important; 
     color: #4a4742 !important; 
 }
 
+/* Generel tekststørrelse skruet op */
 p, label, li, a, .markdown-text-container {
     font-size: 18px !important;
 }
@@ -76,27 +76,27 @@ h1, h1 * {
     margin-bottom: 0 !important;
 }
 
-h2 { font-size: 26px !important; font-weight: 600 !important; color: #2c2925 !important; margin-top: 0 !important; padding-top: 0 !important;}
-h3 { font-size: 22px !important; font-weight: 600 !important; color: #2c2925 !important; margin-top: 0 !important; padding-top: 0 !important;}
-h4 { font-size: 18px !important; font-weight: 600 !important; color: #2c2925 !important; margin-top: 0 !important; padding-top: 0 !important;}
+h2 { font-size: 26px !important; font-weight: 600 !important; color: #2c2925 !important; }
+h3 { font-size: 22px !important; font-weight: 600 !important; color: #2c2925 !important; }
+h4 { font-size: 18px !important; font-weight: 600 !important; color: #2c2925 !important; }
 
 /* --- SIDEBAR STYLING --- */
 [data-testid="stSidebar"] {
     background-color: #f3eee7 !important;
     border-right: 1px solid #e5e0d8 !important;
 }
+[data-testid="stSidebar"] h2 {
+    padding-top: 2rem !important;
+}
 [data-testid="stSidebar"] p, 
 [data-testid="stSidebar"] label, 
-[data-testid="stSidebar"] div {
-    font-size: 16px !important;
-    color: #4a4742 !important;
-}
+[data-testid="stSidebar"] div,
 [data-testid="stSidebar"] input {
     font-size: 16px !important;
     color: #4a4742 !important;
 }
 
-/* --- KNAPPER --- */
+/* --- KNAPPER (Beige og Taktile) --- */
 [data-testid="stSidebar"] button {
     background-color: #fcfaf7 !important; 
     border: 1px solid #dcd7cc !important; 
@@ -132,6 +132,12 @@ h4 { font-size: 18px !important; font-weight: 600 !important; color: #2c2925 !im
     box-shadow: 0 1px 2px rgba(0,0,0,0.02) !important;
 }
 
+[data-testid="stBaseButton-pills"]:hover {
+    border-color: #b5ae9f !important;
+    color: #4a4742 !important;
+    background-color: #f5f1ea !important;
+}
+
 [data-testid="stBaseButton-pillsActive"] {
     background-color: #eae3d8 !important;
     border: 1px solid #b5ae9f !important;
@@ -145,24 +151,20 @@ h4 { font-size: 18px !important; font-weight: 600 !important; color: #2c2925 !im
     color: #2c2925 !important;
 }
 
-/* --- EXPANDER --- */
-[data-testid="stExpander"] {
-    background-color: #fcfaf7 !important;
-    border: 1px solid #e5e0d8 !important;
-    border-radius: 8px !important;
-    box-shadow: 0 1px 2px rgba(0,0,0,0.02) !important;
-    margin-bottom: 1rem !important;
-}
-[data-testid="stExpander"] summary {
-    background-color: #f5f1ea !important;
-    border-radius: 8px !important;
-    color: #4a4742 !important;
-}
-[data-testid="stExpander"] summary:hover {
-    background-color: #eae3d8 !important;
+/* --- BROFINANSIERINGSKASSER --- */
+.success-box {
+    background-color: #f8fbf8;
+    border: 1px solid #d1e0d5;
+    border-radius: 8px;
+    padding: 16px 20px;
+    color: #2b593f;
+    font-size: 18px !important; 
+    margin-top: 10px;
+    margin-bottom: 12px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.02);
 }
 
-/* --- TAB DESIGN --- */
+/* --- TAB DESIGN (Minimalistisk linje) --- */
 div[data-baseweb="tab-list"] {
     gap: 24px; 
     padding-bottom: 0px;
@@ -193,41 +195,33 @@ div[data-baseweb="tab-list"] button[aria-selected="true"] p {
     font-weight: 600 !important;
 }
 
-/* --- TABEL --- */
+/* --- NY STYLING TIL ST.TABLE --- */
 [data-testid="stTable"] {
     border: 1px solid #dcd7cc !important;
     border-radius: 8px !important;
-    overflow: auto !important; 
-    font-size: 0.8rem !important;
+    overflow: hidden !important;
 }
 
 [data-testid="stTable"] table {
-    width: max-content !important; 
-    min-width: 100% !important; 
+    width: 100% !important;
     margin: 0 !important;
-    table-layout: auto !important; 
-    border-collapse: collapse !important;
 }
 
 [data-testid="stTable"] th {
     background-color: #eae3d8 !important; 
     color: #2c2925 !important;
+    font-size: 16px !important;
     font-weight: 600 !important;
     border-bottom: 2px solid #dcd7cc !important;
-    padding: 6px 16px !important; 
-    line-height: 1.0 !important;
-    height: 25px !important;
-    white-space: nowrap !important;
+    padding: 12px !important;
 }
 
 [data-testid="stTable"] td {
     background-color: #fcfaf7 !important;
     color: #4a4742 !important;
+    font-size: 16px !important;
     border-bottom: 1px solid #e5e0d8 !important;
-    padding: 4px 16px !important; 
-    line-height: 1.0 !important;
-    height: 25px !important;
-    white-space: nowrap !important;
+    padding: 10px 12px !important;
 }
 
 [data-testid="stTable"] tbody tr:nth-child(even) th,
@@ -240,46 +234,22 @@ div[data-baseweb="tab-list"] button[aria-selected="true"] p {
     background-color: #ebdccc !important;
 }
 
-/* --- MOBIL-OPTIMERING AF TABEL --- */
-@media (max-width: 768px) {
-    [data-testid="stTable"] th, [data-testid="stTable"] td {
-        padding: 4px 14px !important; 
-        font-size: 13px !important;
-        height: 28px !important;
-        line-height: 1.2 !important;
-    }
-}
-
 /* --- DARK MODE --- */
 @media (prefers-color-scheme: dark) {
     html, body, [class*="css"], .stApp {
         background-color: #1c1b1a !important;
         color: #e5e7eb !important;
     }
-    
-    header[data-testid="stHeader"] {
-        background-color: #1c1b1a !important;
-        pointer-events: none !important;
-    }
-    header[data-testid="stHeader"] * {
-        pointer-events: auto !important;
-    }
-
     [data-testid="stSidebar"] {
         background-color: #262422 !important;
         border-right: 1px solid #3a3835 !important;
     }
     [data-testid="stSidebar"] p, 
     [data-testid="stSidebar"] label, 
-    [data-testid="stSidebar"] div {
+    [data-testid="stSidebar"] div,
+    [data-testid="stSidebar"] input {
         color: #e5e7eb !important;
     }
-    
-    [data-testid="stSidebar"] input {
-        color: #f3f4f6 !important;
-        -webkit-text-fill-color: #f3f4f6 !important;
-    }
-
     [data-testid="stSidebar"] button {
         background-color: #2a2826 !important;
         border: 1px solid #4a4744 !important;
@@ -290,19 +260,6 @@ div[data-baseweb="tab-list"] button[aria-selected="true"] p {
         border-color: #625f5c !important;
         color: #ffffff !important;
     }
-    
-    [data-testid="stExpander"] {
-        background-color: #1c1b1a !important;
-        border: 1px solid #3a3835 !important;
-    }
-    [data-testid="stExpander"] summary {
-        background-color: #262422 !important;
-        color: #e5e7eb !important;
-    }
-    [data-testid="stExpander"] summary:hover {
-        background-color: #32302d !important;
-    }
-
     [data-testid="stSegmentedControl"] button {
         background-color: #2a2826 !important;
         border: 1px solid #4a4744 !important;
@@ -323,6 +280,11 @@ div[data-baseweb="tab-list"] button[aria-selected="true"] p {
     }
     h1, h1 *, h2, h3, h4 {
         color: #f3f4f6 !important;
+    }
+    .success-box {
+        background-color: #1a2721;
+        border: 1px solid #274533;
+        color: #a7d3b9;
     }
     div[data-baseweb="tab-list"] {
         border-bottom: 1px solid #3a3835;
@@ -357,4 +319,23 @@ div[data-baseweb="tab-list"] button[aria-selected="true"] p {
     [data-testid="stTable"] tbody tr:hover td {
         background-color: #2a2826 !important;
     }
+}
+
+/* --- SLIDER FARVE (Burgundy i stedet for Streamlit rød) --- */
+
+/* Slider thumb (den runde knap) */
+[data-testid="stSlider"] [role="slider"] {
+    background-color: #7a2d3a !important;
+    border-color: #7a2d3a !important;
+}
+
+/* Slider filled track (linjen til venstre for thumb) */
+[data-testid="stSlider"] [data-baseweb="slider"] [role="slider"] ~ div,
+[data-testid="stSlider"] div[data-baseweb="slider"] > div > div:first-child {
+    background-color: #7a2d3a !important;
+}
+
+/* Slider thumb hover/focus ring */
+[data-testid="stSlider"] [role="slider"]:focus {
+    box-shadow: 0 0 0 4px rgba(122, 45, 58, 0.2) !important;
 }
