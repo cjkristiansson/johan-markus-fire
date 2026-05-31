@@ -36,11 +36,11 @@ if "use_loensikring_j" not in st.session_state: st.session_state["use_loensikrin
 if "use_loensikring_m" not in st.session_state: st.session_state["use_loensikring_m"] = False
 if "use_real_drawdown" not in st.session_state: st.session_state["use_real_drawdown"] = False
 
-# Personlige budgetter
+# Personlige budgetter (Nye standardværdier for mad)
 if "budget_j" not in st.session_state:
-    st.session_state["budget_j"] = {"Studielaan": 0, "Mad": 6000, "Ferie": 1500, "Renovering": 1000, "A_kasse_Fagforening": 672, "Loensikring": 0, "Puregym": 279, "Transport": 730, "Telefon": 100, "Spotify_Cloud": 100, "Charity": 100, "Frisoer": 450, "Toej": 1200, "Oevrig": 3000}
+    st.session_state["budget_j"] = {"Studielaan": 0, "Mad": 4500, "Ferie": 1500, "Renovering": 1000, "A_kasse_Fagforening": 672, "Loensikring": 0, "Puregym": 279, "Transport": 730, "Telefon": 100, "Spotify_Cloud": 100, "Charity": 100, "Frisoer": 450, "Toej": 1200, "Oevrig": 3000}
 if "budget_m" not in st.session_state:
-    st.session_state["budget_m"] = {"Studielaan": 1600, "Mad": 0, "Ferie": 1500, "Renovering": 1000, "A_kasse_Fagforening": 520, "Loensikring": 0, "Puregym": 0, "Transport": 500, "Telefon": 300, "Streaming": 565, "Charity": 100, "Frisoer": 450, "Toej": 1200, "Oevrig": 3000}
+    st.session_state["budget_m"] = {"Studielaan": 1600, "Mad": 1500, "Ferie": 1500, "Renovering": 1000, "A_kasse_Fagforening": 520, "Loensikring": 0, "Puregym": 0, "Transport": 500, "Telefon": 300, "Streaming": 565, "Charity": 100, "Frisoer": 450, "Toej": 1200, "Oevrig": 3000}
 
 # --- POP-UP MODAL TIL REGLER OG LOGIK ---
 @st.dialog("📜 Modellens Regler & Logik")
@@ -407,6 +407,22 @@ def simulate_solo_fire_plan(scenario_name, boligpris, udbetaling_j, ydelse_defau
 # --- VISNING 1: OPSÆTNING ---
 if view_selection == "⚙️ Basisdata & Opsætning":
     st.subheader("Konfiguration af personlig økonomi")
+    
+    # --- NYT: FÆLLES UDGIFTER MODUL ---
+    st.markdown("### 🛒 Fælles Udgifter (Mad)")
+    col_mad1, col_mad2 = st.columns(2)
+    with col_mad1:
+        total_mad = st.number_input("Samlet månedligt madbudget (kr.)", min_value=0, value=6000, step=500, key="total_mad_input")
+    with col_mad2:
+        mad_andel_j = st.slider("Johans andel af madbudgettet", min_value=0, max_value=int(total_mad), value=min(4500, int(total_mad)), step=100, key="mad_slider_j")
+    
+    # Opdater automatisk budgetterne før tabellerne tegnes
+    st.session_state["budget_j"]["Mad"] = mad_andel_j
+    st.session_state["budget_m"]["Mad"] = int(total_mad) - mad_andel_j
+    
+    st.write("")
+    st.divider()
+    
     col_setup_j, col_setup_m = st.columns(2)
     
     with col_setup_j:
