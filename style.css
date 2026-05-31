@@ -327,7 +327,6 @@ div[data-baseweb="tab-list"] button[aria-selected="true"] p {
 [data-testid="stSlider"] [role="slider"] {
     background-color: #7a2d3a !important;
     border-color: #7a2d3a !important;
-    color: #7a2d3a !important;
 }
 
 /* Focus ring */
@@ -345,4 +344,8 @@ div[data-baseweb="tab-list"] button[aria-selected="true"] p {
 /* Tab underline farve — burgundy */
 div[data-baseweb="tab-list"] button[aria-selected="true"] {
     border-bottom: 2px solid #7a2d3a !important;
+}
+div[data-baseweb="tab-list"] button[aria-selected="true"] p {
+    color: #7a2d3a !important;
+    font-weight: 600 !important;
 }
