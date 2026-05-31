@@ -71,22 +71,35 @@ st.write("")
 
 # --- SIDEBAR ---
 st.sidebar.header("Globale Antagelser")
+
+# Initialisering af Preset Logik og Slider Nøgler
+if "active_preset" not in st.session_state:
+    st.session_state["active_preset"] = "Standard"
+    st.session_state["slider_return"] = 7.0
+    st.session_state["slider_drawdown"] = 4.5
+    st.session_state["slider_inflation"] = 2.0
+
+def set_preset(preset):
+    st.session_state["active_preset"] = preset
+    if preset == "Standard":
+        st.session_state["slider_return"] = 7.0
+        st.session_state["slider_drawdown"] = 4.5
+        st.session_state["slider_inflation"] = 2.0
+    elif preset == "Konservativ":
+        st.session_state["slider_return"] = 5.5
+        st.session_state["slider_drawdown"] = 3.5
+        st.session_state["slider_inflation"] = 2.5
+
+def clear_preset():
+    st.session_state["active_preset"] = "Custom"
+
 col_preset1, col_preset2 = st.sidebar.columns(2)
-use_base = col_preset1.button("Standard", use_container_width=True)
-use_conservative = col_preset2.button("Konservativ", use_container_width=True)
+col_preset1.button("Standard", type="primary" if st.session_state["active_preset"] == "Standard" else "secondary", use_container_width=True, on_click=set_preset, args=("Standard",))
+col_preset2.button("Konservativ", type="primary" if st.session_state["active_preset"] == "Konservativ" else "secondary", use_container_width=True, on_click=set_preset, args=("Konservativ",))
 
-if use_conservative:
-    st.session_state["preset_return"] = 5.5
-    st.session_state["preset_drawdown"] = 3.5
-    st.session_state["preset_inflation"] = 2.5
-elif use_base:
-    st.session_state["preset_return"] = 7.0
-    st.session_state["preset_drawdown"] = 4.5
-    st.session_state["preset_inflation"] = 2.0
-
-global_return_rate_gross = st.sidebar.slider("Bruttoafkast under opsparing (%)", min_value=3.0, max_value=10.0, value=st.session_state.get("preset_return", 7.0), step=0.5) / 100
-global_return_rate_net_drawdown = st.sidebar.slider("Nettoafkast i passiv fase (%)", min_value=2.0, max_value=8.0, value=st.session_state.get("preset_drawdown", 4.5), step=0.1) / 100
-global_inflation_rate = st.sidebar.slider("Årlig inflation (%)", min_value=0.0, max_value=5.0, value=st.session_state.get("preset_inflation", 2.0), step=0.5) / 100
+global_return_rate_gross = st.sidebar.slider("Bruttoafkast under opsparing (%)", min_value=3.0, max_value=10.0, step=0.5, on_change=clear_preset, key="slider_return") / 100
+global_return_rate_net_drawdown = st.sidebar.slider("Nettoafkast i passiv fase (%)", min_value=2.0, max_value=8.0, step=0.1, on_change=clear_preset, key="slider_drawdown") / 100
+global_inflation_rate = st.sidebar.slider("Årlig inflation (%)", min_value=0.0, max_value=5.0, step=0.5, on_change=clear_preset, key="slider_inflation") / 100
 
 st.sidebar.toggle("Købekraftsjusteret udtræk i FIRE-fasen", key="use_real_drawdown")
 
