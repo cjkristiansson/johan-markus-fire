@@ -324,16 +324,18 @@ div[data-baseweb="tab-list"] button[aria-selected="true"] p {
 /* --- SLIDER FARVE (Burgundy i stedet for Streamlit rød) --- */
 
 /* Thumb */
-[data-testid="stSlider"] [role="slider"] {
+/* [data-testid="stSlider"] [role="slider"] {
     background-color: #7a2d3a !important;
     border-color: #7a2d3a !important;
     color: #7a2d3a !important;
 }
+*/
 
 /* Focus ring */
-[data-testid="stSlider"] [role="slider"]:focus {
+/* [data-testid="stSlider"] [role="slider"]:focus {
     box-shadow: 0 0 0 4px rgba(122, 45, 58, 0.2) !important;
 }
+*/
 
 /* Min/max labels ved slider-enderne — skjul de grimme firkanter */
 [data-testid="stSlider"] [data-baseweb="tooltip"],
@@ -343,6 +345,7 @@ div[data-baseweb="tab-list"] button[aria-selected="true"] p {
 }
 
 /* Tab underline farve — burgundy */
-div[data-baseweb="tab-list"] button[aria-selected="true"] {
+/*div[data-baseweb="tab-list"] button[aria-selected="true"] {
     border-bottom: 2px solid #7a2d3a !important;
 }
+*/
