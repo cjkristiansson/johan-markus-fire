@@ -323,31 +323,29 @@ div[data-baseweb="tab-list"] button[aria-selected="true"] p {
 
 /* --- SLIDER FARVE (Burgundy i stedet for Streamlit rød) --- */
 
-/* Thumb (den runde knap) */
+/* Thumb */
 [data-testid="stSlider"] [role="slider"] {
     background-color: #7a2d3a !important;
     border-color: #7a2d3a !important;
 }
 
-/* Focus ring på thumb */
+/* Focus ring */
 [data-testid="stSlider"] [role="slider"]:focus {
     box-shadow: 0 0 0 4px rgba(122, 45, 58, 0.2) !important;
 }
 
-/* Filled track — Streamlit bruger inline styles her, så vi overskriver med filter */
-[data-testid="stSlider"] [data-baseweb="slider"] > div > div {
-    background: #7a2d3a !important;
+/* Min/max labels ved slider-enderne — skjul de grimme firkanter */
+[data-testid="stSlider"] [data-baseweb="tooltip"],
+[data-testid="stSlider"] [role="tooltip"],
+[data-testid="stTickBar"] {
+    display: none !important;
 }
 
-/* Tooltip/value boks — gør den usynlig/transparent så den ikke viser som stor firkant */
-[data-testid="stSlider"] [data-baseweb="tooltip"],
-[data-testid="stSlider"] [role="tooltip"] {
-    background-color: transparent !important;
-    box-shadow: none !important;
-    color: #4a4742 !important;
+/* Tab underline farve — burgundy */
+div[data-baseweb="tab-list"] button[aria-selected="true"] {
+    border-bottom: 2px solid #7a2d3a !important;
 }
-[data-testid="stSlider"] [data-baseweb="tooltip"] div,
-[data-testid="stSlider"] [role="tooltip"] div {
-    background-color: transparent !important;
-    box-shadow: none !important;
+div[data-baseweb="tab-list"] button[aria-selected="true"] p {
+    color: #7a2d3a !important;
+    font-weight: 600 !important;
 }
