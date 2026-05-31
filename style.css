@@ -214,7 +214,7 @@ div[data-baseweb="tab-list"] button[aria-selected="true"] p {
     color: #2c2925 !important;
     font-weight: 600 !important;
     border-bottom: 2px solid #dcd7cc !important;
-    padding: 2px 16px !important; /* Tight height, wide width */
+    padding: 4px 16px !important; /* Lidt ekstra vertical padding */
     line-height: 1.2 !important;
     height: auto !important;
     white-space: nowrap !important;
@@ -224,7 +224,7 @@ div[data-baseweb="tab-list"] button[aria-selected="true"] p {
     background-color: #fcfaf7 !important;
     color: #4a4742 !important;
     border-bottom: 1px solid #e5e0d8 !important;
-    padding: 2px 16px !important; /* Tight height, wide width */
+    padding: 4px 16px !important; /* Lidt ekstra vertical padding */
     line-height: 1.2 !important;
     height: auto !important;
     white-space: nowrap !important;
@@ -243,7 +243,7 @@ div[data-baseweb="tab-list"] button[aria-selected="true"] p {
 /* --- MOBIL-OPTIMERING AF TABEL --- */
 @media (max-width: 768px) {
     [data-testid="stTable"] th, [data-testid="stTable"] td {
-        padding: 2px 14px !important; /* Tight height, adequate width */
+        padding: 4px 14px !important; /* Lidt ekstra vertical padding */
         font-size: 13px !important;
         height: auto !important;
         line-height: 1.2 !important; /* Protects emojis from clipping */
