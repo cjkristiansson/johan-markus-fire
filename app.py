@@ -35,6 +35,7 @@ if "use_bsu_m" not in st.session_state: st.session_state["use_bsu_m"] = False
 if "use_loensikring_j" not in st.session_state: st.session_state["use_loensikring_j"] = False
 if "use_loensikring_m" not in st.session_state: st.session_state["use_loensikring_m"] = False
 if "use_real_drawdown" not in st.session_state: st.session_state["use_real_drawdown"] = False
+if "use_ask_500k" not in st.session_state: st.session_state["use_ask_500k"] = False
 if "mad_total_val" not in st.session_state: st.session_state["mad_total_val"] = 6000
 if "mad_j_val" not in st.session_state: st.session_state["mad_j_val"] = 4500
 
@@ -49,7 +50,7 @@ if "budget_m" not in st.session_state:
 def show_rules_dialog():
     st.markdown("""
     * **Trin 0 (Boligkøb først):** Startdepotet i år 1 er formuen *efter* udbetaling til bolig. Aktiedepoter Låst til FIRE.
-    * **Lagerbeskatning:** ASK beskattes fladt med 17%. Frie midler beskattes progressivt (27% op til grænsen, 42% derover). Progressionsgrænsen (79.400 kr. i 2026) indekseres årligt med inflationen.
+    * **Lagerbeskatning:** ASK beskattes fladt med 17%. Frie midler beskattes progressivt (27% op til grænsen, 42% derover). Progressionsgrænsen (79.400 kr. i 2026) indekseres årligt med inflationen. Er det nye ASK-loft aktiveret, udnyttes dette altid før indskud på frie midler.
     * **Inflationseffekt:** Udgifter, opsparingsrate og progressionsgrænser stiger alle med den valgte inflationsrate år for år i modellen.
     * **Pension Dynamisk:** Pensionen vokser med afkast (minus 15,3% PAL-skat) PLUS jeres faste månedlige indbetalinger. Indbetalingerne stopper helt, det år I rammer 0 barista-timer.
     * **Barista-timer (Drawdown):** Passiv indkomst udregnes som standard med det nominelle afkast. Kan ændres til realafkast (købekraftsjusteret) via sidebaren.
@@ -102,6 +103,7 @@ global_return_rate_net_drawdown = st.sidebar.slider("Nettoafkast i passiv fase (
 global_inflation_rate = st.sidebar.slider("Årlig inflation (%)", min_value=0.0, max_value=5.0, step=0.5, on_change=clear_preset, key="slider_inflation") / 100
 
 st.sidebar.toggle("Købekraftsjusteret udtræk i FIRE-fasen", key="use_real_drawdown")
+st.sidebar.toggle("Hæv ASK-loft til 500.000 kr.", key="use_ask_500k")
 
 global_barista_wage_net = st.sidebar.number_input("Baristaløn (Netto kr./t)", min_value=80, max_value=250, value=135, step=5)
 
@@ -142,6 +144,8 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
     oml_afdrag_fri = st.session_state.get(f"oml_afdrag_fri_{ydelse_key}", False)
     oml_omk = st.session_state.get(f"oml_omk_{ydelse_key}", 50000)
     use_real_drawdown = st.session_state.get("use_real_drawdown", False)
+    use_ask_500k = st.session_state.get("use_ask_500k", False)
+    ask_base_limit = 500000 if use_ask_500k else 174000
 
     use_bsu = st.session_state.get("use_bsu_m", False)
     bsu_amount = 292060
@@ -169,6 +173,24 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
     cash_pct = (total_udbetaling / boligpris * 100) if boligpris > 0 else 0
     loan_pct = 100 - cash_pct
 
+    # Opsætning af basis depoter
+    depot_free_j = st.session_state["basis_frie_j"] + (cash_j - faktisk_udbetaling_j)
+    depot_free_m = st.session_state["basis_frie_m"] + (cash_m - faktisk_udbetaling_m)
+    depot_ask_j, depot_ask_m = st.session_state["basis_ask_j"], st.session_state["basis_ask_m"]
+
+    # Initial Rebalance: Flyt midler fra frie til ASK, hvis det nye loft tillader det (År 0)
+    space_j_init = max(0, ask_base_limit - depot_ask_j)
+    if space_j_init > 0 and depot_free_j > 0:
+        move_j = min(space_j_init, depot_free_j)
+        depot_ask_j += move_j
+        depot_free_j -= move_j
+
+    space_m_init = max(0, ask_base_limit - depot_ask_m)
+    if space_m_init > 0 and depot_free_m > 0:
+        move_m = min(space_m_init, depot_free_m)
+        depot_ask_m += move_m
+        depot_free_m -= move_m
+
     with st.expander("🏠 Vis økonomiske detaljer & lån", expanded=False):
         col_j, col_m, col_inp = st.columns([0.41, 0.41, 0.18], vertical_alignment="bottom")
 
@@ -179,10 +201,6 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
                 unsafe_allow_html=True
             )
             realkreditydelse_netto = st.number_input("Realkreditydelse", value=ydelse_default, step=100, key=ydelse_key)
-
-        depot_free_j = st.session_state["basis_frie_j"] + (cash_j - faktisk_udbetaling_j)
-        depot_free_m = st.session_state["basis_frie_m"] + (cash_m - faktisk_udbetaling_m)
-        depot_ask_j, depot_ask_m = st.session_state["basis_ask_j"], st.session_state["basis_ask_m"]
 
         bolig_faelles = (realkreditydelse_netto + ejerudgifter_total + boligskat_md) / 2
         
@@ -279,8 +297,24 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
             depot_ask_j *= (1 + global_return_rate_gross * 0.83)
             depot_ask_m *= (1 + global_return_rate_gross * 0.83)
             
+            # Indskud af ny opsparing (lander først i frie midler)
             if not j_reached: depot_free_j += start_inv_md_j * 12 * ((1 + global_inflation_rate)**year)
             if not m_reached: depot_free_m += start_inv_md_m * 12 * ((1 + global_inflation_rate)**year)
+
+            # Rebalancering: Fyld ASK op hvis grænsen tillader det (sker årligt)
+            ask_limit_year = ask_base_limit * ((1 + global_inflation_rate)**year)
+            
+            space_j = max(0, ask_limit_year - depot_ask_j)
+            if space_j > 0 and depot_free_j > 0:
+                move_j = min(space_j, depot_free_j)
+                depot_ask_j += move_j
+                depot_free_j -= move_j
+
+            space_m = max(0, ask_limit_year - depot_ask_m)
+            if space_m > 0 and depot_free_m > 0:
+                move_m = min(space_m, depot_free_m)
+                depot_ask_m += move_m
+                depot_free_m -= move_m
 
             pension_j_current *= (1 + (global_return_rate_gross * (1 - pal_tax)))
             pension_m_current *= (1 + (global_return_rate_gross * (1 - pal_tax)))
@@ -320,11 +354,24 @@ def simulate_solo_fire_plan(scenario_name, boligpris, udbetaling_j, ydelse_defau
     oml_afdrag_fri = st.session_state.get(f"oml_afdrag_fri_{s_key}", False)
     oml_omk = st.session_state.get(f"oml_omk_{s_key}", 50000)
     use_real_drawdown = st.session_state.get("use_real_drawdown", False)
+    use_ask_500k = st.session_state.get("use_ask_500k", False)
+    ask_base_limit = 500000 if use_ask_500k else 174000
 
     cash_j = st.session_state["cash_j_base"]
     faktisk_udbetaling_j = min(udbetaling_j, cash_j)
     cash_pct = (faktisk_udbetaling_j / boligpris * 100) if boligpris > 0 else 0
     loan_pct = 100 - cash_pct
+
+    # Opsætning af basis depoter
+    depot_free_j = st.session_state["basis_frie_j"] + (cash_j - faktisk_udbetaling_j)
+    depot_ask_j = st.session_state["basis_ask_j"]
+
+    # Initial Rebalance: Flyt midler fra frie til ASK, hvis det nye loft tillader det (År 0)
+    space_j_init = max(0, ask_base_limit - depot_ask_j)
+    if space_j_init > 0 and depot_free_j > 0:
+        move_j = min(space_j_init, depot_free_j)
+        depot_ask_j += move_j
+        depot_free_j -= move_j
 
     with st.expander("⚙️ Vis økonomiske detaljer & lån", expanded=False):
         col_j, col_m, col_inp = st.columns([0.41, 0.41, 0.18], vertical_alignment="bottom")
@@ -336,9 +383,6 @@ def simulate_solo_fire_plan(scenario_name, boligpris, udbetaling_j, ydelse_defau
                 unsafe_allow_html=True
             )
             realkreditydelse_netto = st.number_input("Realkreditydelse", value=ydelse_default, step=100, key=ydelse_key)
-        
-        depot_free_j = st.session_state["basis_frie_j"] + (cash_j - faktisk_udbetaling_j)
-        depot_ask_j = st.session_state["basis_ask_j"]
 
         solo_budget_j = st.session_state["budget_j"].copy()
         solo_budget_j["Mad"] = 3000
@@ -396,7 +440,16 @@ def simulate_solo_fire_plan(scenario_name, boligpris, udbetaling_j, ydelse_defau
             
             depot_free_j += (return_frie_j - tax_j)
             depot_ask_j *= (1 + global_return_rate_gross * 0.83)
+            
             if not j_reached: depot_free_j += start_inv_md_j * 12 * ((1 + global_inflation_rate)**year)
+
+            # Rebalancering: Fyld ASK op hvis grænsen tillader det (sker årligt)
+            ask_limit_year = ask_base_limit * ((1 + global_inflation_rate)**year)
+            space_j = max(0, ask_limit_year - depot_ask_j)
+            if space_j > 0 and depot_free_j > 0:
+                move_j = min(space_j, depot_free_j)
+                depot_ask_j += move_j
+                depot_free_j -= move_j
             
             pension_j_current *= (1 + (global_return_rate_gross * (1 - pal_tax)))
             if not j_reached: pension_j_current += (st.session_state["pension_indb_j"] * 12 * ((1 + global_inflation_rate)**year))
