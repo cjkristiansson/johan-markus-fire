@@ -73,7 +73,7 @@ st.write("")
 # --- SIDEBAR ---
 st.sidebar.header("Globale Antagelser")
 
-# Initialisering af Preset Logik og Slider Nøgler (Realistisk er nu default)
+# Initialisering af Preset Logik og Slider Nøgler
 if "active_preset" not in st.session_state:
     st.session_state["active_preset"] = "Realistisk"
     st.session_state["slider_return"] = 7.0
@@ -98,11 +98,10 @@ def set_preset(preset):
 def clear_preset():
     st.session_state["active_preset"] = "Custom"
 
-# Tilføjet gap="small" for at klemme kolonnerne tættere sammen
-col_preset1, col_preset2, col_preset3 = st.sidebar.columns(3, gap="small")
-col_preset1.button("Standard", type="primary" if st.session_state["active_preset"] == "Standard" else "secondary", use_container_width=True, on_click=set_preset, args=("Standard",))
-col_preset2.button("Realistisk", type="primary" if st.session_state["active_preset"] == "Realistisk" else "secondary", use_container_width=True, on_click=set_preset, args=("Realistisk",))
-col_preset3.button("Konserv.", type="primary" if st.session_state["active_preset"] == "Konservativ" else "secondary", use_container_width=True, on_click=set_preset, args=("Konservativ",))
+# Vertikalt stablede knapper
+st.sidebar.button("Standard", type="primary" if st.session_state["active_preset"] == "Standard" else "secondary", use_container_width=True, on_click=set_preset, args=("Standard",))
+st.sidebar.button("Realistisk", type="primary" if st.session_state["active_preset"] == "Realistisk" else "secondary", use_container_width=True, on_click=set_preset, args=("Realistisk",))
+st.sidebar.button("Konservativ", type="primary" if st.session_state["active_preset"] == "Konservativ" else "secondary", use_container_width=True, on_click=set_preset, args=("Konservativ",))
 
 global_return_rate_gross = st.sidebar.slider("Bruttoafkast under opsparing (%)", min_value=3.0, max_value=10.0, step=0.5, on_change=clear_preset, key="slider_return") / 100
 global_return_rate_net_drawdown = st.sidebar.slider("Nettoafkast i passiv fase (%)", min_value=2.0, max_value=8.0, step=0.1, on_change=clear_preset, key="slider_drawdown") / 100
@@ -258,13 +257,6 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
     
     pension_j_current = st.session_state["pension_j"]
     pension_m_current = st.session_state["pension_m"]
-
-    # Coast FIRE opsætning
-    coast_hit_year_j, coast_hit_age_j = None, None
-    coast_hit_year_m, coast_hit_age_m = None, None
-    real_return = global_return_rate_gross - global_inflation_rate
-    if real_return <= 0: real_return = 0.001
-    target_age_coast_j, target_age_coast_m = 60, 60
     
     for year in range(0, 26):
         c_age_j, c_age_m = age_j + year, age_m + year
@@ -335,19 +327,6 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
             if not j_reached: pension_j_current += (st.session_state["pension_indb_j"] * 12 * ((1 + global_inflation_rate)**year))
             if not m_reached: pension_m_current += (st.session_state["pension_indb_m"] * 12 * ((1 + global_inflation_rate)**year))
 
-        # Coast FIRE løbende tjek
-        if c_age_j <= target_age_coast_j:
-            coast_target_j = (start_fire_j * 12 * 25) / ((1 + real_return)**(target_age_coast_j - c_age_j))
-            if (depot_ask_j + depot_free_j + pension_j_current) >= coast_target_j and coast_hit_year_j is None:
-                coast_hit_year_j = year
-                coast_hit_age_j = c_age_j
-                
-        if c_age_m <= target_age_coast_m:
-            coast_target_m = (start_fire_m * 12 * 25) / ((1 + real_return)**(target_age_coast_m - c_age_m))
-            if (depot_ask_m + depot_free_m + pension_m_current) >= coast_target_m and coast_hit_year_m is None:
-                coast_hit_year_m = year
-                coast_hit_age_m = c_age_m
-
         p_j = calculate_drawdown_monthly_income(depot_ask_j + depot_free_j, c_age_j, pensionsalder_j, global_return_rate_net_drawdown, global_inflation_rate, use_real_drawdown)
         p_m_drawdown = calculate_drawdown_monthly_income(depot_ask_m + depot_free_m, c_age_m, pensionsalder_m, global_return_rate_net_drawdown, global_inflation_rate, use_real_drawdown)
         p_m_total = p_m_drawdown + bsu_passive
@@ -362,33 +341,6 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
         if h_j <= 0 and h_m <= 0: break
 
     st.table(pd.DataFrame(table_data).set_index("År"))
-
-    # COAST FIRE BENCHMARK UI (FÆLLES / PAR)
-    st.markdown("### 🌴 Coast FIRE Benchmark")
-    col_c1, col_c2 = st.columns(2)
-    with col_c1:
-        if coast_hit_year_j is not None:
-            st.success(f"**JOHAN:** Opnår Coast FIRE i **år {coast_hit_year_j}** (Alder {coast_hit_age_j})")
-        else:
-            st.info("**JOHAN:** Nås ikke inden for 25 år.")
-    with col_c2:
-        if coast_hit_year_m is not None:
-            st.success(f"**MARKUS:** Opnår Coast FIRE i **år {coast_hit_year_m}** (Alder {coast_hit_age_m})")
-        else:
-            st.info("**MARKUS:** Nås ikke inden for 25 år.")
-
-    with st.expander("❓ Hvad er Coast FIRE, og hvordan beregnes det her?", expanded=False):
-        st.markdown("""
-        **Coast FIRE** er det præcise tidspunkt, hvor jeres samlede formue (Frie midler + ASK + Pension) er vokset sig stor nok til, at renters rente alene kan finansiere jeres fulde pensionstilværelse. Fra dette år kan I stoppe *alle* indbetalinger til investering og pension, og blot tage et lavere lønnet job, der dækker jeres faste udgifter frem mod pensionsalderen.
-        
-        **Matematikken i denne beregning:**
-        * Modellen bruger den klassiske 4 %-regel (25 x årlige udgifter) som måltal.
-        * Målalderen er sat til **60 år**.
-        * Formlen tilbagediskonterer måltallet med jeres valgte realafkast (bruttoafkast minus inflation).
-        
-        **⚠️ Vigtig analytisk risiko:**
-        I overensstemmelse med analytisk objektivitet er der en væsentlig matematisk risiko ved at bruge denne form for standard Coast FIRE-beregning i en dansk kontekst: Der er en markant likviditetskløft. Modellen slår låste arbejdsmarkedspensioner og frie midler sammen i Coast FIRE-beregningen. Selvom din *samlede* formue teoretisk set kan dække dine udgifter, fra du er 60 år, kan du ikke betale regninger med penge, der er låst i en pension frem til du bliver 67. Det kræver, at det frie depot isoleret set er vokset sig tilstrækkeligt stort til at bære hele den mellemliggende årrække fra du er 60 til 67.
-        """)
     
     with st.expander("🔄 Omlægningsscenarie", expanded=False):
         st.toggle("Aktiver omlægningsscenarie", value=False, key=f"aktiver_oml_{ydelse_key}")
@@ -468,12 +420,6 @@ def simulate_solo_fire_plan(scenario_name, boligpris, udbetaling_j, ydelse_defau
     table_data = []
     j_reached = False; j_fire_age = 0
     pension_j_current = st.session_state["pension_j"]
-
-    # Coast FIRE opsætning solo
-    coast_hit_year_j, coast_hit_age_j = None, None
-    real_return = global_return_rate_gross - global_inflation_rate
-    if real_return <= 0: real_return = 0.001
-    target_age_coast_j = 60
     
     for year in range(0, 26):
         c_age_j = age_j + year
@@ -515,13 +461,6 @@ def simulate_solo_fire_plan(scenario_name, boligpris, udbetaling_j, ydelse_defau
             pension_j_current *= (1 + (global_return_rate_gross * (1 - pal_tax)))
             if not j_reached: pension_j_current += (st.session_state["pension_indb_j"] * 12 * ((1 + global_inflation_rate)**year))
 
-        # Coast FIRE løbende tjek solo
-        if c_age_j <= target_age_coast_j:
-            coast_target_j = (start_fire_j * 12 * 25) / ((1 + real_return)**(target_age_coast_j - c_age_j))
-            if (depot_ask_j + depot_free_j + pension_j_current) >= coast_target_j and coast_hit_year_j is None:
-                coast_hit_year_j = year
-                coast_hit_age_j = c_age_j
-
         p_j = calculate_drawdown_monthly_income(depot_ask_j + depot_free_j, c_age_j, pensionsalder_j, global_return_rate_net_drawdown, global_inflation_rate, use_real_drawdown)
         h_j = max(0, start_fire_j - p_j) / (global_barista_wage_net * ((1+global_inflation_rate)**year) * weeks_per_month)
 
@@ -530,26 +469,6 @@ def simulate_solo_fire_plan(scenario_name, boligpris, udbetaling_j, ydelse_defau
         if h_j <= 0 and not j_reached: j_reached = True; j_fire_age = c_age_j
 
     st.table(pd.DataFrame(table_data).set_index("År"))
-
-    # COAST FIRE BENCHMARK UI (SOLO)
-    st.markdown("### 🌴 Coast FIRE Benchmark")
-    if coast_hit_year_j is not None:
-        st.success(f"**JOHAN (SOLO):** Opnår Coast FIRE i **år {coast_hit_year_j}** (Alder {coast_hit_age_j})")
-    else:
-        st.info("**JOHAN (SOLO):** Nås ikke inden for 25 år.")
-
-    with st.expander("❓ Hvad er Coast FIRE, og hvordan beregnes det her?", expanded=False):
-        st.markdown("""
-        **Coast FIRE** er det præcise tidspunkt, hvor jeres samlede formue (Frie midler + ASK + Pension) er vokset sig stor nok til, at renters rente alene kan finansiere jeres fulde pensionstilværelse. Fra dette år kan I stoppe *alle* indbetalinger til investering og pension, og blot tage et lavere lønnet job, der dækker jeres faste udgifter frem mod pensionsalderen.
-        
-        **Matematikken i denne beregning:**
-        * Modellen bruger den klassiske 4 %-regel (25 x årlige udgifter) som måltal.
-        * Målalderen er sat til **60 år**.
-        * Formlen tilbagediskonterer måltallet med jeres valgte realafkast (bruttoafkast minus inflation).
-        
-        **⚠️ Vigtig analytisk risiko:**
-        I overensstemmelse med analytisk objektivitet er der en væsentlig matematisk risiko ved at bruge denne form for standard Coast FIRE-beregning i en dansk kontekst: Der er en markant likviditetskløft. Modellen slår låste arbejdsmarkedspensioner og frie midler sammen i Coast FIRE-beregningen. Selvom din *samlede* formue teoretisk set kan dække dine udgifter, fra du er 60 år, kan du ikke betale regninger med penge, der er låst i en pension frem til du bliver 67. Det kræver, at det frie depot isoleret set er vokset sig tilstrækkeligt stort til at bære hele den mellemliggende årrække fra du er 60 til 67.
-        """)
     
     with st.expander("🔄 Omlægningsscenarie", expanded=False):
         st.toggle("Aktiver omlægningsscenarie", value=False, key=f"aktiver_oml_{ydelse_key_clean}")
