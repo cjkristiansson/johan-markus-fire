@@ -50,7 +50,7 @@ if "budget_m" not in st.session_state:
 def show_rules_dialog():
     st.markdown("""
     * **Trin 0 (Boligkøb først):** Startdepotet i år 1 er formuen *efter* udbetaling til bolig. Aktiedepoter Låst til FIRE.
-    * **Lagerbeskatning:** ASK beskattes fladt med 17%. Frie midler beskattes progressivt (27% op til grænsen, 42% derover). Progressionsgrænsen (79.400 kr. i 2026) indeksedes årligt med inflationen. Er det nye ASK-loft aktiveret, udnyttes dette altid før indskud på frie midler.
+    * **Lagerbeskatning:** ASK beskattes fladt med 17%. Frie midler beskattes progressivt (27% op til grænsen, 42% derover). Progressionsgrænsen (79.400 kr. i 2026) indekseres årligt med inflationen. Er det nye ASK-loft aktiveret, udnyttes dette altid før indskud på frie midler.
     * **Inflationseffekt:** Udgifter, opsparingsrate og progressionsgrænser stiger alle med den valgte inflationsrate år for år i modellen.
     * **Pension Dynamisk:** Pensionen vokser med afkast (minus 15,3% PAL-skat) PLUS jeres faste månedlige indbetalinger. Indbetalingerne stopper helt, det år I rammer 0 barista-timer.
     * **Barista-timer (Drawdown):** Passiv indkomst udregnes som standard med det nominelle afkast. Kan ændres til realafkast (købekraftsjusteret) via sidebaren.
@@ -98,7 +98,8 @@ def set_preset(preset):
 def clear_preset():
     st.session_state["active_preset"] = "Custom"
 
-col_preset1, col_preset2, col_preset3 = st.sidebar.columns(3)
+# Tilføjet gap="small" for at klemme kolonnerne tættere sammen
+col_preset1, col_preset2, col_preset3 = st.sidebar.columns(3, gap="small")
 col_preset1.button("Standard", type="primary" if st.session_state["active_preset"] == "Standard" else "secondary", use_container_width=True, on_click=set_preset, args=("Standard",))
 col_preset2.button("Realistisk", type="primary" if st.session_state["active_preset"] == "Realistisk" else "secondary", use_container_width=True, on_click=set_preset, args=("Realistisk",))
 col_preset3.button("Konserv.", type="primary" if st.session_state["active_preset"] == "Konservativ" else "secondary", use_container_width=True, on_click=set_preset, args=("Konservativ",))
@@ -541,7 +542,7 @@ def simulate_solo_fire_plan(scenario_name, boligpris, udbetaling_j, ydelse_defau
         st.markdown("""
         **Coast FIRE** er det præcise tidspunkt, hvor jeres samlede formue (Frie midler + ASK + Pension) er vokset sig stor nok til, at renters rente alene kan finansiere jeres fulde pensionstilværelse. Fra dette år kan I stoppe *alle* indbetalinger til investering og pension, og blot tage et lavere lønnet job, der dækker jeres faste udgifter frem mod pensionsalderen.
         
-        **Matematikken i deze beregning:**
+        **Matematikken i denne beregning:**
         * Modellen bruger den klassiske 4 %-regel (25 x årlige udgifter) som måltal.
         * Målalderen er sat til **60 år**.
         * Formlen tilbagediskonterer måltallet med jeres valgte realafkast (bruttoafkast minus inflation).
