@@ -213,8 +213,8 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
         start_fire_j = sum(v for k, v in st.session_state["budget_j"].items() if k not in ["A_kasse_Fagforening", "Loensikring"]) + bolig_faelles
         start_fire_m = sum(v for k, v in st.session_state["budget_m"].items() if k not in ["A_kasse_Fagforening", "Loensikring", "Studielaan"]) + bolig_faelles
 
-        skat_line_j = f"**Boligskat (egen andel):** {f'{int(boligskat_md / 2):,}'.replace(',', '.')} kr./md.  \n" if boligskat_md > 0 else ""
-        skat_line_m = f"**Boligskat (egen andel):** {f'{int(boligskat_md / 2):,}'.replace(',', '.')} kr./md.  \n" if boligskat_md > 0 else ""
+        skat_line_j = f"**Boligskat (egen andel):** {f'{int(boligskat_md / 2):,}'.replace(',', '.')} kr./md. " if boligskat_md > 0 else ""
+        skat_line_m = f"**Boligskat (egen andel):** {f'{int(boligskat_md / 2):,}'.replace(',', '.')} kr./md. " if boligskat_md > 0 else ""
 
         with col_j:
             st.subheader(f"JOHAN")
@@ -251,6 +251,13 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
     
     pension_j_current = st.session_state["pension_j"]
     pension_m_current = st.session_state["pension_m"]
+
+    # Coast FIRE opsætning
+    coast_hit_year_j, coast_hit_age_j = None, None
+    coast_hit_year_m, coast_hit_age_m = None, None
+    real_return = global_return_rate_gross - global_inflation_rate
+    if real_return <= 0: real_return = 0.001
+    target_age_coast_j, target_age_coast_m = 60, 60
     
     for year in range(0, 26):
         c_age_j, c_age_m = age_j + year, age_m + year
@@ -321,6 +328,19 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
             if not j_reached: pension_j_current += (st.session_state["pension_indb_j"] * 12 * ((1 + global_inflation_rate)**year))
             if not m_reached: pension_m_current += (st.session_state["pension_indb_m"] * 12 * ((1 + global_inflation_rate)**year))
 
+        # Coast FIRE løbende tjek
+        if c_age_j <= target_age_coast_j:
+            coast_target_j = (start_fire_j * 12 * 25) / ((1 + real_return)**(target_age_coast_j - c_age_j))
+            if (depot_ask_j + depot_free_j + pension_j_current) >= coast_target_j and coast_hit_year_j is None:
+                coast_hit_year_j = year
+                coast_hit_age_j = c_age_j
+                
+        if c_age_m <= target_age_coast_m:
+            coast_target_m = (start_fire_m * 12 * 25) / ((1 + real_return)**(target_age_coast_m - c_age_m))
+            if (depot_ask_m + depot_free_m + pension_m_current) >= coast_target_m and coast_hit_year_m is None:
+                coast_hit_year_m = year
+                coast_hit_age_m = c_age_m
+
         p_j = calculate_drawdown_monthly_income(depot_ask_j + depot_free_j, c_age_j, pensionsalder_j, global_return_rate_net_drawdown, global_inflation_rate, use_real_drawdown)
         p_m_drawdown = calculate_drawdown_monthly_income(depot_ask_m + depot_free_m, c_age_m, pensionsalder_m, global_return_rate_net_drawdown, global_inflation_rate, use_real_drawdown)
         p_m_total = p_m_drawdown + bsu_passive
@@ -330,11 +350,40 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
 
         table_data.append({"År": year, "J.alder": c_age_j, "J.depot (M)": f"{(depot_ask_j + depot_free_j)/1e6:.2f}", "J.Passiv (kr)": f"{int(p_j):,}".replace(',', '.'), "J.Arbtid": get_emoji_status(h_j), "M.alder": c_age_m, "M.depot (M)": f"{(depot_ask_m + depot_free_m)/1e6:.2f}", "M.Passiv (kr)": f"{int(p_m_total):,}".replace(',', '.'), "M.Arbtid": get_emoji_status(h_m)})
         
-        if h_j <= 0 and not j_reached: j_reached = True; j_fire_age = c_age_j
+        if h_j <= 0 and not j_reached: j_reached = True; j_fir
+
+j_fire_age = c_age_j
         if h_m <= 0 and not m_reached: m_reached = True; m_fire_age = c_age_m
         if h_j <= 0 and h_m <= 0: break
 
     st.table(pd.DataFrame(table_data).set_index("År"))
+
+    # COAST FIRE BENCHMARK UI
+    st.markdown("### 🌴 Coast FIRE Benchmark")
+    col_cj, col_cm = st.columns(2)
+    with col_cj:
+        if coast_hit_year_j is not None:
+            st.success(f"**JOHAN:** Opnår Coast FIRE i **år {coast_hit_year_j}** (Alder {coast_hit_age_j})")
+        else:
+            st.info("**JOHAN:** Nås ikke inden for 25 år.")
+    with col_cm:
+        if coast_hit_year_m is not None:
+            st.success(f"**MARKUS:** Opnår Coast FIRE i **år {coast_hit_year_m}** (Alder {coast_hit_age_m})")
+        else:
+            st.info("**MARKUS:** Nås ikke inden for 25 år.")
+
+    with st.expander("❓ Hvad er Coast FIRE, og hvordan beregnes det her?", expanded=False):
+        st.markdown("""
+        **Coast FIRE** er det præcise tidspunkt, hvor jeres samlede formue (Frie midler + ASK + Pension) er vokset sig stor nok til, at renters rente alene kan finansiere jeres fulde pensionstilværelse. Fra dette år kan I stoppe *alle* indbetalinger til investering og pension, og blot tage et lavere lønnet job, der dækker jeres faste udgifter frem mod pensionsalderen.
+        
+        **Matematikken i denne beregning:**
+        * Modellen bruger den klassiske 4 %-regel (25 x årlige udgifter) som måltal.
+        * Målalderen er sat til **60 år**.
+        * Formlen tilbagediskonterer måltallet med jeres valgte realafkast (bruttoafkast minus inflation).
+        
+        **⚠️ Vigtig analytisk risiko:**
+        I overensstemmelse med analytisk objektivitet er der en væsentlig matematisk risiko ved at bruge denne form for standard Coast FIRE-beregning i en dansk kontekst: Der er en markant likviditetskløft. Modellen slår låste arbejdsmarkedspensioner og frie midler sammen i Coast FIRE-beregningen. Selvom din *samlede* formue teoretisk set kan dække dine udgifter, fra du er 60 år, kan du ikke betale regninger med penge, der er låst i en pension frem til du bliver 67. Det kræver, at det frie depot isoleret set er vokset sig tilstrækkeligt stort til at bære hele den mellemliggende årrække fra du er 60 til 67.
+        """)
 
     with st.expander("🔄 Omlægningsscenarie", expanded=False):
         st.toggle("Aktiver omlægningsscenarie", value=False, key=f"aktiver_oml_{ydelse_key}")
@@ -414,6 +463,12 @@ def simulate_solo_fire_plan(scenario_name, boligpris, udbetaling_j, ydelse_defau
     j_reached = False; j_fire_age = 0
     pension_j_current = st.session_state["pension_j"]
     
+    # Coast FIRE opsætning
+    coast_hit_year_j, coast_hit_age_j = None, None
+    real_return = global_return_rate_gross - global_inflation_rate
+    if real_return <= 0: real_return = 0.001
+    target_age_coast_j = 60
+    
     for year in range(0, 26):
         c_age_j = age_j + year
         
@@ -454,6 +509,13 @@ def simulate_solo_fire_plan(scenario_name, boligpris, udbetaling_j, ydelse_defau
             pension_j_current *= (1 + (global_return_rate_gross * (1 - pal_tax)))
             if not j_reached: pension_j_current += (st.session_state["pension_indb_j"] * 12 * ((1 + global_inflation_rate)**year))
 
+        # Coast FIRE løbende tjek
+        if c_age_j <= target_age_coast_j:
+            coast_target_j = (start_fire_j * 12 * 25) / ((1 + real_return)**(target_age_coast_j - c_age_j))
+            if (depot_ask_j + depot_free_j + pension_j_current) >= coast_target_j and coast_hit_year_j is None:
+                coast_hit_year_j = year
+                coast_hit_age_j = c_age_j
+
         p_j = calculate_drawdown_monthly_income(depot_ask_j + depot_free_j, c_age_j, pensionsalder_j, global_return_rate_net_drawdown, global_inflation_rate, use_real_drawdown)
         h_j = max(0, start_fire_j - p_j) / (global_barista_wage_net * ((1+global_inflation_rate)**year) * weeks_per_month)
 
@@ -462,6 +524,26 @@ def simulate_solo_fire_plan(scenario_name, boligpris, udbetaling_j, ydelse_defau
         if h_j <= 0 and not j_reached: j_reached = True; j_fire_age = c_age_j
 
     st.table(pd.DataFrame(table_data).set_index("År"))
+
+    # COAST FIRE BENCHMARK UI (SOLO)
+    st.markdown("### 🌴 Coast FIRE Benchmark")
+    if coast_hit_year_j is not None:
+        st.success(f"**JOHAN (SOLO):** Opnår Coast FIRE i **år {coast_hit_year_j}** (Alder {coast_hit_age_j})")
+    else:
+        st.info("**JOHAN (SOLO):** Nås ikke inden for 25 år.")
+
+    with st.expander("❓ Hvad er Coast FIRE, og hvordan beregnes det her?", expanded=False):
+        st.markdown("""
+        **Coast FIRE** er det præcise tidspunkt, hvor jeres samlede formue (Frie midler + ASK + Pension) er vokset sig stor nok til, at renters rente alene kan finansiere jeres fulde pensionstilværelse. Fra dette år kan I stoppe *alle* indbetalinger til investering og pension, og blot tage et lavere lønnet job, der dækker jeres faste udgifter frem mod pensionsalderen.
+        
+        **Matematikken i denne beregning:**
+        * Modellen bruger den klassiske 4 %-regel (25 x årlige udgifter) som måltal.
+        * Målalderen er sat til **60 år**.
+        * Formlen tilbagediskonterer måltallet med jeres valgte realafkast (bruttoafkast minus inflation).
+        
+        **⚠️ Vigtig analytisk risiko:**
+        I overensstemmelse med analytisk objektivitet er der en væsentlig matematisk risiko ved at bruge denne form for standard Coast FIRE-beregning i en dansk kontekst: Der er en markant likviditetskløft. Modellen slår låste arbejdsmarkedspensioner og frie midler sammen i Coast FIRE-beregningen. Selvom din *samlede* formue teoretisk set kan dække dine udgifter, fra du er 60 år, kan du ikke betale regninger med penge, der er låst i en pension frem til du bliver 67. Det kræver, at det frie depot isoleret set er vokset sig tilstrækkeligt stort til at bære hele den mellemliggende årrække fra du er 60 til 67.
+        """)
     
     with st.expander("🔄 Omlægningsscenarie", expanded=False):
         st.toggle("Aktiver omlægningsscenarie", value=False, key=f"aktiver_oml_{s_key}")
@@ -549,4 +631,4 @@ else:
     if is_solo_mode:
         with tabs[6]: simulate_solo_fire_plan("3.0M", 3000000, 1200000, 7308, "yds30", 3500, 1400)
         with tabs[7]: simulate_solo_fire_plan("3.5M", 3500000, 1400000, 8516, "yds35", 4000, 1600)
-        with tabs[8]: simulate_solo_fire_plan("4.0M", 4000000, 1600000, 9724, "yds40", 4500, 1850)
+        with tabs[8]: simulate_solo_fire_plan
