@@ -178,7 +178,7 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
     cash_pct = (total_udbetaling / boligpris * 100) if boligpris > 0 else 0
     loan_pct = 100 - cash_pct
 
-    # Opsætning af basis depoter
+    # Opsætning av basis depoter
     depot_free_j = st.session_state["basis_frie_j"] + (cash_j - faktisk_udbetaling_j)
     depot_free_m = st.session_state["basis_frie_m"] + (cash_m - faktisk_udbetaling_m)
     depot_ask_j, depot_ask_m = st.session_state["basis_ask_j"], st.session_state["basis_ask_m"]
@@ -353,6 +353,175 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
         h_j = max(0, start_fire_j - p_j) / (global_barista_wage_net * ((1+global_inflation_rate)**year) * weeks_per_month)
         h_m = max(0, start_fire_m - p_m_total) / (global_barista_wage_net * ((1+global_inflation_rate)**year) * weeks_per_month)
 
+        table_data.append({"År": year, "J.alder": c_age_j, "J.depot (M)": f"{(depot_ask_j + depot_free_j)/1e6:.2f}", "J.Passiv (kr)": f"{int(p_j):,}".replace(',', '.'), "J.Arbtid": get_emoji_status(h_j), "M.alder": c_age_m, "M.depot (M)": f"{(depot_ask_m + depot_free_m)/1e6:.2f}", "M.Passiv (kr)": f"{int(p_m_total):,}".replace(',', '.'), "M.Arbtid": get_emoji_status(h_m)})
+        
+        if h_j <= 0 and not j_reached: j_reached = True; j_fire_age = c_age_j
+        if h_m <= 0 and not m_reached: m_reached = True; m_fire_age = c_age_m
+        if h_j <= 0 and h_m <= 0: break
+
+    st.table(pd.DataFrame(table_data).set_index("År"))
+
+    # COAST FIRE BENCHMARK UI (FÆLLES / PAR)
+    st.markdown("### 🌴 Coast FIRE Benchmark")
+    col_c1, col_c2 = st.columns(2)
+    with col_c1:
+        if coast_hit_year_j is not None:
+            st.success(f"**JOHAN:** Opnår Coast FIRE i **år {coast_hit_year_j}** (Alder {coast_hit_age_j})")
+        else:
+            st.info("**JOHAN:** Nås ikke inden for 25 år.")
+    with col_c2:
+        if coast_hit_year_m is not None:
+            st.success(f"**MARKUS:** Opnår Coast FIRE i **år {coast_hit_year_m}** (Alder {coast_hit_age_m})")
+        else:
+            st.info("**MARKUS:** Nås ikke inden for 25 år.")
+
+    with st.expander("❓ Hvad er Coast FIRE, og hvordan beregnes det her?", expanded=False):
+        st.markdown("""
+        **Coast FIRE** er det præcise tidspunkt, hvor jeres samlede formue (Frie midler + ASK + Pension) er vokset sig stor nok til, at renters rente alene kan finansiere jeres fulde pensionstilværelse. Fra dette år kan I stoppe *alle* indbetalinger til investering og pension, og blot tage et lavere lønnet job, der dækker jeres faste udgifter frem mod pensionsalderen.
+        
+        **Matematikken i denne beregning:**
+        * Modellen bruger den klassiske 4 %-regel (25 x årlige udgifter) som måltal.
+        * Målalderen er sat til **60 år**.
+        * Formlen tilbagediskonterer måltallet med jeres valgte realafkast (bruttoafkast minus inflation).
+        
+        **⚠️ Vigtig analytisk risiko:**
+        I overensstemmelse med analytisk objektivitet er der en væsentlig matematisk risiko ved at bruge denne form for standard Coast FIRE-beregning i en dansk kontekst: Der er en markant likviditetskløft. Modellen slår låste arbejdsmarkedspensioner og frie midler sammen i Coast FIRE-beregningen. Selvom din *samlede* formue teoretisk set kan dække dine udgifter, fra du er 60 år, kan du ikke betale regninger med penge, der er låst i en pension frem til du bliver 67. Det kræver, at det frie depot isoleret set er vokset sig tilstrækkeligt stort til at bære hele den mellemliggende årrække fra du er 60 til 67.
+        """)
+    
+    with st.expander("🔄 Omlægningsscenarie", expanded=False):
+        st.toggle("Aktiver omlægningsscenarie", value=False, key=f"aktiver_oml_{ydelse_key}")
+        col_o1, col_o2, col_o3, col_o4 = st.columns(4)
+        col_o1.number_input("År for omlægning (0-10)", min_value=0, max_value=10, value=5, key=f"oml_aar_{ydelse_key}")
+        col_o2.number_input("Ny rente + bidrag (%)", min_value=0.0, max_value=10.0, value=4.0, step=0.1, key=f"oml_rente_{ydelse_key}")
+        col_o3.toggle("Afdragsfrihed aktiveret", value=False, key=f"oml_afdrag_fri_{ydelse_key}")
+        col_o4.number_input("Omkostninger (kr)", value=50000, step=5000, key=f"oml_omk_{ydelse_key}")
+
+def simulate_solo_fire_plan(scenario_name, boligpris, udbetaling_j, ydelse_default, ydelse_key, ejerudgifter_total, boligskat_md):
+    pal_tax, weeks_per_month, age_j = 0.153, 4.33, 41
+    
+    s_key = f"solo_{ydelse_key}"
+    aktiver_oml = st.session_state.get(f"aktiver_oml_{s_key}", False)
+    oml_aar = st.session_state.get(f"oml_aar_{s_key}", 5)
+    oml_rente = st.session_state.get(f"oml_rente_{s_key}", 4.0) / 100
+    oml_afdrag_fri = st.session_state.get(f"oml_afdrag_fri_{s_key}", False)
+    oml_omk = st.session_state.get(f"oml_omk_{s_key}", 50000)
+    use_real_drawdown = st.session_state.get("use_real_drawdown", False)
+    use_ask_500k = st.session_state.get("use_ask_500k", False)
+    ask_base_limit = 500000 if use_ask_500k else 174000
+
+    cash_j = st.session_state["cash_j_base"]
+    faktisk_udbetaling_j = min(udbetaling_j, cash_j)
+    cash_pct = (faktisk_udbetaling_j / boligpris * 100) if boligpris > 0 else 0
+    loan_pct = 100 - cash_pct
+
+    # Opsætning av basis depoter
+    depot_free_j = st.session_state["basis_frie_j"] + (cash_j - faktisk_udbetaling_j)
+    depot_ask_j = st.session_state["basis_ask_j"]
+
+    # Initial Rebalance: Flyt midler fra frie til ASK, hvis det nye loft tillader det (År 0)
+    space_j_init = max(0, ask_base_limit - depot_ask_j)
+    if space_j_init > 0 and depot_free_j > 0:
+        move_j = min(space_j_init, depot_free_j)
+        depot_ask_j += move_j
+        depot_free_j -= move_j
+
+    with st.expander("⚙️ Vis økonomiske detaljer & lån", expanded=False):
+        col_j, col_m, col_inp = st.columns([0.41, 0.41, 0.18], vertical_alignment="bottom")
+
+        with col_inp:
+            st.markdown(
+                f"<p style='margin-bottom: 105px; margin-top: 0; line-height: 1.3;'>"
+                f"{int(cash_pct)}% kontantudbetaling ({f'{int(faktisk_udbetaling_j):,}'.replace(',', '.')} kr.) | {int(loan_pct)}% lån</p>", 
+                unsafe_allow_html=True
+            )
+            realkreditydelse_netto = st.number_input("Realkreditydelse", value=ydelse_default, step=100, key=ydelse_key)
+
+        solo_budget_j = st.session_state["budget_j"].copy()
+        solo_budget_j["Mad"] = 3000
+
+        bolig_total = realkreditydelse_netto + ejerudgifter_total + boligskat_md
+        budget_j_total = sum(solo_budget_j.values())
+        
+        start_inv_md_j = st.session_state["inkomst_j"] - (budget_j_total + bolig_total)
+        start_fire_j = sum(v for k, v in solo_budget_j.items() if k not in ["A_kasse_Fagforening", "Loensikring"]) + bolig_total
+
+        with col_j:
+            st.subheader(f"JOHAN (SOLO)")
+            st.markdown(f"""
+            **Boligpris:** {f'{int(boligpris):,}'.replace(',', '.')} kr.  
+            **Udbetaling:** {f'{int(faktisk_udbetaling_j):,}'.replace(',', '.')} kr.  
+            **Boligudgifter total:** {f'{int(bolig_total):,}'.replace(',', '.')} kr./md.  
+            **Startdepot:** {f'{int(depot_free_j + depot_ask_j):,}'.replace(',', '.')} kr.  
+            **Mdl. opsparing:** {f'{int(start_inv_md_j):,}'.replace(',', '.')} kr.  
+            **Mdl. Udgifter:** {f'{int(start_fire_j):,}'.replace(',', '.')} kr./md.
+            """)
+            
+    st.write("")
+
+    restgaeld_start = boligpris - faktisk_udbetaling_j
+    bolig_total_current = bolig_total
+    oprindelig_rente_mnd = 0.04 / 12
+
+    table_data = []
+    j_reached = False; j_fire_age = 0
+    pension_j_current = st.session_state["pension_j"]
+
+    # Coast FIRE opsætning solo
+    coast_hit_year_j, coast_hit_age_j = None, None
+    real_return = global_return_rate_gross - global_inflation_rate
+    if real_return <= 0: real_return = 0.001
+    target_age_coast_j = 60
+    
+    for year in range(0, 26):
+        c_age_j = age_j + year
+        
+        if aktiver_oml and year == oml_aar and boligpris > 0 and oml_aar > 0:
+            mdr_gaaet = oml_aar * 12
+            restgaeld_ved_oml = restgaeld_start * ((1 + oprindelig_rente_mnd)**360 - (1 + oprindelig_rente_mnd)**mdr_gaaet) / ((1 + oprindelig_rente_mnd)**360 - 1)
+            ny_hovedstol = restgaeld_ved_oml + oml_omk
+            mnd_rente_ny = oml_rente / 12
+            
+            if not oml_afdrag_fri: ny_ydelse = ny_hovedstol * (mnd_rente_ny * (1 + mnd_rente_ny)**360) / ((1 + mnd_rente_ny)**360 - 1)
+            else: ny_ydelse = ny_hovedstol * mnd_rente_ny
+                
+            renter_md = (ny_hovedstol * oml_rente) / 12
+            netto_bolig_total = ny_ydelse + ejerudgifter_total + boligskat_md - (renter_md * 0.256)
+            diff_bolig = bolig_total_current - netto_bolig_total
+            start_fire_j -= diff_bolig; start_inv_md_j += diff_bolig
+            bolig_total_current = netto_bolig_total
+
+        if year > 0:
+            start_fire_j *= (1 + global_inflation_rate)
+            prog_limit_j = 79400 * ((1 + global_inflation_rate)**year)
+            return_frie_j = depot_free_j * global_return_rate_gross
+            tax_j = (return_frie_j * 0.27) if return_frie_j <= prog_limit_j else (prog_limit_j * 0.27 + (return_frie_j - prog_limit_j) * 0.42)
+            
+            depot_free_j += (return_frie_j - tax_j)
+            depot_ask_j *= (1 + global_return_rate_gross * 0.83)
+            
+            if not j_reached: depot_free_j += start_inv_md_j * 12 * ((1 + global_inflation_rate)**year)
+
+            # Rebalancering: Fyld ASK op hvis grænsen tillader det (sker årligt)
+            ask_limit_year = ask_base_limit * ((1 + global_inflation_rate)**year)
+            space_j = max(0, ask_limit_year - depot_ask_j)
+            if space_j > 0 and depot_free_j > 0:
+                move_j = min(space_j, depot_free_j)
+                depot_ask_j += move_j
+                depot_free_j -= move_j
+            
+            pension_j_current *= (1 + (global_return_rate_gross * (1 - pal_tax)))
+            if not j_reached: pension_j_current += (st.session_state["pension_indb_j"] * 12 * ((1 + global_inflation_rate)**year))
+
+        # Coast FIRE løbende tjek solo
+        if c_age_j <= target_age_coast_j:
+            coast_target_j = (start_fire_j * 12 * 25) / ((1 + real_return)**(target_age_coast_j - c_age_j))
+            if (depot_ask_j + depot_free_j + pension_j_current) >= coast_target_j and coast_hit_year_j is None:
+                coast_hit_year_j = year
+                coast_hit_age_j = c_age_j
+
+        p_j = calculate_drawdown_monthly_income(depot_ask_j + depot_free_j, c_age_j, pensionsalder_j, global_return_rate_net_drawdown, global_inflation_rate, use_real_drawdown)
+        h_j = max(0, start_fire_j - p_j) / (global_barista_wage_net * ((1+global_inflation_rate)**year) * weeks_per_month)
+
         table_data.append({"År": year, "Alder": c_age_j, "Depot (M)": f"{(depot_ask_j + depot_free_j)/1e6:.2f}", "Passiv Indkomst (kr)": f"{int(p_j):,}".replace(',', '.'), "Arbejdstid (Barista)": get_emoji_status(h_j)})
         
         if h_j <= 0 and not j_reached: j_reached = True; j_fire_age = c_age_j
@@ -368,7 +537,7 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
 
     with st.expander("❓ Hvad er Coast FIRE, og hvordan beregnes det her?", expanded=False):
         st.markdown("""
-        **Coast FIRE** er det præcise tidspunkt, hvor jeres samlede formue (Frie midler + ASK + Pension) er vokset sig stor nok til, at renters rente alene kan finansiere jeres fulde pensionstilværelse. Fra dette år kan I stoppe *alle* indbetalinger til investering og pension, og blot tage et lavere lønnet job, der dækker jeres faste udgifter frem mod pensionsalderen.
+        **Coast FIRE** er det præcise tidspunkt, hvor jeres samleden formue (Frie midler + ASK + Pension) er vokset sig stor nok til, at renters rente alene kan finansiere jeres fulde pensionstilværelse. Fra dette år kan I stoppe *alle* indbetalinger til investering og pension, og blot tage et lavere lønnet job, der dækker jeres faste udgifter frem mod pensionsalderen.
         
         **Matematikken i denne beregning:**
         * Modellen bruger den klassiske 4 %-regel (25 x årlige udgifter) som måltal.
