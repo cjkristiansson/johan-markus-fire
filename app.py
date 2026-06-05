@@ -350,9 +350,7 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
 
         table_data.append({"År": year, "J.alder": c_age_j, "J.depot (M)": f"{(depot_ask_j + depot_free_j)/1e6:.2f}", "J.Passiv (kr)": f"{int(p_j):,}".replace(',', '.'), "J.Arbtid": get_emoji_status(h_j), "M.alder": c_age_m, "M.depot (M)": f"{(depot_ask_m + depot_free_m)/1e6:.2f}", "M.Passiv (kr)": f"{int(p_m_total):,}".replace(',', '.'), "M.Arbtid": get_emoji_status(h_m)})
         
-        if h_j <= 0 and not j_reached: j_reached = True; j_fir
-
-j_fire_age = c_age_j
+        if h_j <= 0 and not j_reached: j_reached = True; j_fire_age = c_age_j
         if h_m <= 0 and not m_reached: m_reached = True; m_fire_age = c_age_m
         if h_j <= 0 and h_m <= 0: break
 
