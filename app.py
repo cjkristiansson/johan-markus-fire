@@ -50,7 +50,7 @@ if "budget_m" not in st.session_state:
 def show_rules_dialog():
     st.markdown("""
     * **Trin 0 (Boligkøb først):** Startdepotet i år 1 er formuen *efter* udbetaling til bolig. Aktiedepoter Låst til FIRE.
-    * **Lagerbeskatning:** ASK beskattes fladt med 17%. Frie midler beskattes progressivt (27% op til grænsen, 42% derover). Progressionsgrænsen (79.400 kr. i 2026) indekseres årligt med inflationen. Er det nye ASK-loft aktiveret, udnyttes dette altid før indskud på frie midler.
+    * **Lagerbeskatning:** ASK beskattes fladt med 17%. Frie midler beskattes progressivt (27% op til grænsen, 42% derover). Progressionsgrænsen (79.400 kr. i 2026) indeksedes årligt med inflationen. Er det nye ASK-loft aktiveret, udnyttes dette altid før indskud på frie midler.
     * **Inflationseffekt:** Udgifter, opsparingsrate og progressionsgrænser stiger alle med den valgte inflationsrate år for år i modellen.
     * **Pension Dynamisk:** Pensionen vokser med afkast (minus 15,3% PAL-skat) PLUS jeres faste månedlige indbetalinger. Indbetalingerne stopper helt, det år I rammer 0 barista-timer.
     * **Barista-timer (Drawdown):** Passiv indkomst udregnes som standard med det nominelle afkast. Kan ændres til realafkast (købekraftsjusteret) via sidebaren.
@@ -143,11 +143,12 @@ def get_emoji_status(barista_hours):
 def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_m, ydelse_default, ydelse_key, ejerudgifter_total, bolig_solgt, boligskat_md):
     pal_tax, weeks_per_month, age_j, age_m = 0.153, 4.33, 41, 32
     
-    aktiver_oml = st.session_state.get(f"aktiver_oml_{ydelse_key}", False)
-    oml_aar = st.session_state.get(f"oml_aar_{ydelse_key}", 5)
-    oml_rente = st.session_state.get(f"oml_rente_{ydelse_key}", 4.0) / 100
-    oml_afdrag_fri = st.session_state.get(f"oml_afdrag_fri_{ydelse_key}", False)
-    oml_omk = st.session_state.get(f"oml_omk_{ydelse_key}", 50000)
+    ydelse_key_clean = ydelse_key.replace("solo_", "")
+    aktiver_oml = st.session_state.get(f"aktiver_oml_{ydelse_key_clean}", False)
+    oml_aar = st.session_state.get(f"oml_aar_{ydelse_key_clean}", 5)
+    oml_rente = st.session_state.get(f"oml_rente_{ydelse_key_clean}", 4.0) / 100
+    oml_afdrag_fri = st.session_state.get(f"oml_afdrag_fri_{ydelse_key_clean}", False)
+    oml_omk = st.session_state.get(f"oml_omk_{ydelse_key_clean}", 50000)
     use_real_drawdown = st.session_state.get("use_real_drawdown", False)
     use_ask_500k = st.session_state.get("use_ask_500k", False)
     ask_base_limit = 500000 if use_ask_500k else 174000
@@ -400,11 +401,12 @@ def simulate_solo_fire_plan(scenario_name, boligpris, udbetaling_j, ydelse_defau
     pal_tax, weeks_per_month, age_j = 0.153, 4.33, 41
     
     s_key = f"solo_{ydelse_key}"
-    aktiver_oml = st.session_state.get(f"aktiver_oml_{s_key}", False)
-    oml_aar = st.session_state.get(f"oml_aar_{s_key}", 5)
-    oml_rente = st.session_state.get(f"oml_rente_{s_key}", 4.0) / 100
-    oml_afdrag_fri = st.session_state.get(f"oml_afdrag_fri_{s_key}", False)
-    oml_omk = st.session_state.get(f"oml_omk_{s_key}", 50000)
+    ydelse_key_clean = s_key.replace("solo_", "")
+    aktiver_oml = st.session_state.get(f"aktiver_oml_{ydelse_key_clean}", False)
+    oml_aar = st.session_state.get(f"oml_aar_{ydelse_key_clean}", 5)
+    oml_rente = st.session_state.get(f"oml_rente_{ydelse_key_clean}", 4.0) / 100
+    oml_afdrag_fri = st.session_state.get(f"oml_afdrag_fri_{ydelse_key_clean}", False)
+    oml_omk = st.session_state.get(f"oml_omk_{ydelse_key_clean}", 50000)
     use_real_drawdown = st.session_state.get("use_real_drawdown", False)
     use_ask_500k = st.session_state.get("use_ask_500k", False)
     ask_base_limit = 500000 if use_ask_500k else 174000
@@ -537,9 +539,9 @@ def simulate_solo_fire_plan(scenario_name, boligpris, udbetaling_j, ydelse_defau
 
     with st.expander("❓ Hvad er Coast FIRE, og hvordan beregnes det her?", expanded=False):
         st.markdown("""
-        **Coast FIRE** er det præcise tidspunkt, hvor jeres samleden formue (Frie midler + ASK + Pension) er vokset sig stor nok til, at renters rente alene kan finansiere jeres fulde pensionstilværelse. Fra dette år kan I stoppe *alle* indbetalinger til investering og pension, og blot tage et lavere lønnet job, der dækker jeres faste udgifter frem mod pensionsalderen.
+        **Coast FIRE** er det præcise tidspunkt, hvor jeres samlede formue (Frie midler + ASK + Pension) er vokset sig stor nok til, at renters rente alene kan finansiere jeres fulde pensionstilværelse. Fra dette år kan I stoppe *alle* indbetalinger til investering og pension, og blot tage et lavere lønnet job, der dækker jeres faste udgifter frem mod pensionsalderen.
         
-        **Matematikken i denne beregning:**
+        **Matematikken i deze beregning:**
         * Modellen bruger den klassiske 4 %-regel (25 x årlige udgifter) som måltal.
         * Målalderen er sat til **60 år**.
         * Formlen tilbagediskonterer måltallet med jeres valgte realafkast (bruttoafkast minus inflation).
@@ -549,12 +551,12 @@ def simulate_solo_fire_plan(scenario_name, boligpris, udbetaling_j, ydelse_defau
         """)
     
     with st.expander("🔄 Omlægningsscenarie", expanded=False):
-        st.toggle("Aktiver omlægningsscenarie", value=False, key=f"aktiver_oml_{s_key}")
+        st.toggle("Aktiver omlægningsscenarie", value=False, key=f"aktiver_oml_{ydelse_key_clean}")
         col_o1, col_o2, col_o3, col_o4 = st.columns(4)
-        col_o1.number_input("År for omlægning (0-10)", min_value=0, max_value=10, value=5, key=f"oml_aar_{s_key}")
-        col_o2.number_input("Ny rente + bidrag (%)", min_value=0.0, max_value=10.0, value=4.0, step=0.1, key=f"oml_rente_{s_key}")
-        col_o3.toggle("Afdragsfrihed aktiveret", value=False, key=f"oml_afdrag_fri_{s_key}")
-        col_o4.number_input("Omkostninger (kr)", value=50000, step=5000, key=f"oml_omk_{s_key}")
+        col_o1.number_input("År for omlægning (0-10)", min_value=0, max_value=10, value=5, key=f"oml_aar_{ydelse_key_clean}")
+        col_o2.number_input("Ny rente + bidrag (%)", min_value=0.0, max_value=10.0, value=4.0, step=0.1, key=f"oml_rente_{ydelse_key_clean}")
+        col_o3.toggle("Afdragsfrihed aktiveret", value=False, key=f"oml_afdrag_fri_{ydelse_key_clean}")
+        col_o4.number_input("Omkostninger (kr)", value=50000, step=5000, key=f"oml_omk_{ydelse_key_clean}")
 
 
 # --- VISNING 1: OPSÆTNING ---
