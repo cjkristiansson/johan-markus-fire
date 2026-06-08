@@ -114,14 +114,14 @@ st.sidebar.toggle("Købekraftsjusteret udtræk i FIRE-fasen", key="use_real_draw
 st.sidebar.toggle("Hæv ASK-loft til 500.000 kr.", key="use_ask_500k", on_change=clear_preset)
 
 st.sidebar.divider()
-st.sidebar.markdown("### 🏡 Salg af Valby-lejlighed (Fase 1)")
-global_salgsaar = st.sidebar.slider("Salgsår (0 = Sælg nu)", min_value=0, max_value=10, value=0, step=1, on_change=clear_preset)
-global_bolig_inflation = st.sidebar.slider("Årlig boligprisstigning (%)", min_value=0.0, max_value=10.0, value=3.0, step=0.5, on_change=clear_preset) / 100
-
-st.sidebar.divider()
-st.sidebar.markdown("### 🎲 Monte Carlo Simulering")
+st.sidebar.markdown("### Monte Carlo Simulering")
 mc_volatility = st.sidebar.slider("Markedsvolatilitet (%)", min_value=5.0, max_value=25.0, value=15.0, step=1.0, on_change=clear_preset) / 100
 st.sidebar.button("Beregn Monte Carlo (1000 kørsler)", type="primary", use_container_width=True, on_click=trigger_mc)
+
+st.sidebar.divider()
+st.sidebar.markdown("### Salg af Valby-lejlighed")
+global_salgsaar = st.sidebar.slider("Salgsår (0 = Sælg nu)", min_value=0, max_value=10, value=0, step=1, on_change=clear_preset)
+global_bolig_inflation = st.sidebar.slider("Årlig boligprisstigning (%)", min_value=0.0, max_value=10.0, value=3.0, step=0.5, on_change=clear_preset) / 100
 
 st.sidebar.divider()
 global_barista_wage_net = st.sidebar.number_input("Baristaløn (Netto kr./t)", min_value=80, max_value=250, value=135, step=5, on_change=clear_preset)
@@ -767,7 +767,7 @@ def simulate_solo_fire_plan(scenario_name, boligpris, udbetaling_j, ydelse_defau
     with st.expander("🔄 Omlægningsscenarie", expanded=False):
         st.toggle("Aktiver omlægningsscenarie", value=False, key=f"aktiver_oml_{ydelse_key_clean}", on_change=clear_preset)
         col_o1, col_o2, col_o3, col_o4 = st.columns(4)
-        col_o1.number_input("År for omlægning efter salg (1-10)", min_value=1, max_value=10, value=5, key=f"oml_aar_{ydelse_key_clean}", on_change=clear_preset)
+        col_o1.number_input("År for omlægning (0-10)", min_value=0, max_value=10, value=5, key=f"oml_aar_{ydelse_key_clean}", on_change=clear_preset)
         col_o2.number_input("Ny rente + bidrag (%)", min_value=0.0, max_value=10.0, value=4.0, step=0.1, key=f"oml_rente_{ydelse_key_clean}", on_change=clear_preset)
         col_o3.toggle("Afdragsfrihed aktiveret", value=False, key=f"oml_afdrag_fri_{ydelse_key_clean}", on_change=clear_preset)
         col_o4.number_input("Omkostninger (kr)", value=50000, step=5000, key=f"oml_omk_{ydelse_key_clean}", on_change=clear_preset)
