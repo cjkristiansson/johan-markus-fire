@@ -27,7 +27,7 @@ if "pension_indb_m" not in st.session_state: st.session_state["pension_indb_m"] 
 if "cash_j_base" not in st.session_state: st.session_state["cash_j_base"] = 2567500
 if "cash_m_base" not in st.session_state: st.session_state["cash_m_base"] = 1153888
 if "basis_ask_j" not in st.session_state: st.session_state["basis_ask_j"] = 174000
-if "basis_frie_j" not in st.session_state: st.session_state["basis_frie_j"] = 65000
+if "basis_frie_j" not in st.session_state: st.session_state["basis_frie_j"] = 134000
 if "basis_ask_m" not in st.session_state: st.session_state["basis_ask_m"] = 170000
 if "basis_frie_m" not in st.session_state: st.session_state["basis_frie_m"] = 0
 
