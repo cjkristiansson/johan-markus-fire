@@ -101,10 +101,10 @@ def clear_preset():
 def trigger_mc():
     st.session_state["mc_active"] = True
 
-col_preset1, col_preset2, col_preset3 = st.sidebar.columns(3, gap="small")
-col_preset1.button("Standard", type="primary" if st.session_state["active_preset"] == "Standard" else "secondary", use_container_width=True, on_click=set_preset, args=("Standard",))
-col_preset2.button("Realistisk", type="primary" if st.session_state["active_preset"] == "Realistisk" else "secondary", use_container_width=True, on_click=set_preset, args=("Realistisk",))
-col_preset3.button("Konserv.", type="primary" if st.session_state["active_preset"] == "Konservativ" else "secondary", use_container_width=True, on_click=set_preset, args=("Konservativ",))
+# Vertikalt stablede knapper
+st.sidebar.button("Standard", type="primary" if st.session_state["active_preset"] == "Standard" else "secondary", use_container_width=True, on_click=set_preset, args=("Standard",))
+st.sidebar.button("Realistisk", type="primary" if st.session_state["active_preset"] == "Realistisk" else "secondary", use_container_width=True, on_click=set_preset, args=("Realistisk",))
+st.sidebar.button("Konservativ", type="primary" if st.session_state["active_preset"] == "Konservativ" else "secondary", use_container_width=True, on_click=set_preset, args=("Konservativ",))
 
 global_return_rate_gross = st.sidebar.slider("Bruttoafkast under opsparing (%)", min_value=3.0, max_value=10.0, step=0.5, on_change=clear_preset, key="slider_return") / 100
 global_return_rate_net_drawdown = st.sidebar.slider("Nettoafkast i passiv fase (%)", min_value=2.0, max_value=8.0, step=0.1, on_change=clear_preset, key="slider_drawdown") / 100
@@ -226,7 +226,6 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
         locked_frivaerdi_j = float(cash_j)
         locked_frivaerdi_m = float(cash_m)
 
-    # Initialiser Vektor-Arrays (håndterer både n_sims=1 og n_sims=1000 gnidningsfrit)
     depot_free_j = np.full(n_sims, base_frie_j, dtype=float)
     depot_free_m = np.full(n_sims, base_frie_m, dtype=float)
     depot_ask_j = np.full(n_sims, st.session_state["basis_ask_j"], dtype=float)
@@ -237,12 +236,10 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
     j_reached_arr = np.zeros(n_sims, dtype=bool)
     m_reached_arr = np.zeros(n_sims, dtype=bool)
 
-    # Opsætning af UI visning (viser det teoretiske/ønskede LTV)
     target_total_udb = udbetaling_j + udbetaling_m
     ui_cash_pct = (target_total_udb / boligpris * 100) if boligpris > 0 else 0
     ui_loan_pct = 100 - ui_cash_pct
 
-    # Initial Rebalance (År 0)
     space_j_init = np.maximum(0, ask_base_limit - depot_ask_j)
     move_j = np.minimum(space_j_init, np.maximum(0, depot_free_j))
     depot_ask_j += move_j
@@ -308,6 +305,31 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
     else:
         oprindelig_rente_mnd = 0.04 / 12
 
+    # --- UI For Monte Carlo Toggle ---
+    if is_mc:
+        st.write("")
+        with st.expander("❓ Sådan læser du Monte Carlo-resultaterne", expanded=False):
+            st.markdown("""
+            **Median (Det Forventede):** Det midterste udfald af de 1.000 simulerede markedsforløb. Dette er jeres 50/50 sandsynlighed og lægger sig meget op ad den klassiske, lineære model.
+            
+            **P10 (Worst-Case Formue & Indkomst):** Den 10. percentil. Ud af 1.000 simulerede virkeligheder er dette det 100. dårligste. Det betyder, at I med 90 % statistisk sikkerhed vil have *flere* penge end dette, selv hvis markedet underpræsterer massivt i de tidlige år.
+            
+            **P90 (Worst-Case Arbejdstid):** Den 90. percentil. Da lavere er bedre for arbejdstimer, viser dette tal det maksimale antal timer, I risikerer at skulle arbejde for at klare regningerne under en kriselignende recession.
+            
+            **Succesrate:** Procentdelen af de 1.000 universer, hvor depotet i det pågældende år kan dække alle udgifter, så I kan trække jer fuldstændig tilbage (0.0 barista-timer).
+            """)
+            
+        mc_view = st.segmented_control(
+            "Vælg visning",
+            options=["Median (Forventet scenarie)", "P10 (Worst-case scenarie)"],
+            default="Median (Forventet scenarie)",
+            key=f"mc_view_joint_{ydelse_key_clean}",
+            label_visibility="collapsed"
+        )
+        is_worst_case = (mc_view == "P10 (Worst-case scenarie)")
+    else:
+        is_worst_case = False
+
     table_data = []
     
     for year in range(0, 26):
@@ -341,7 +363,6 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
         if year > 0:
             start_fire_j *= (1 + global_inflation_rate); start_fire_m *= (1 + global_inflation_rate)
             
-            # --- FASE 1 & LIKVIDITETS-EVENT: UDSKUDT SALG ---
             if actual_salgsaar > 0 and year <= actual_salgsaar:
                 valby_pris_stigning = valby_pris * global_bolig_inflation
                 maal_pris_stigning = maal_pris * global_bolig_inflation
@@ -372,7 +393,6 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
                     if fakt_udb_j > locked_frivaerdi_j and n_sims == 1:
                         st.error(f"⚠️ I År {year} overstiger den fremskrevne udbetaling friværdien i {scenario_name} scenariet.")
                     
-                    # Frigiv resterende kapital TIL arrays
                     depot_free_j += max(0, locked_frivaerdi_j - fakt_udb_j)
                     depot_free_m += max(0, locked_frivaerdi_m - fakt_udb_m)
                     
@@ -394,7 +414,6 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
                     bolig_faelles_current = ny_bolig_faelles / ((1 + global_inflation_rate)**year)
                     restgaeld_start = maal_pris - (fakt_udb_j + fakt_udb_m)
 
-            # --- PROGRESSIV BESKATNING & AKTIEMARKED (Vektoriseret) ---
             prog_limit_j = 79400 * ((1 + global_inflation_rate)**year)
             prog_limit_m = 79400 * ((1 + global_inflation_rate)**year)
             
@@ -410,11 +429,9 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
             depot_ask_j = np.maximum(0, depot_ask_j * (1 + current_ret * 0.83))
             depot_ask_m = np.maximum(0, depot_ask_m * (1 + current_ret * 0.83))
             
-            # Opsparing (Lander kun hvis FIRE ikke er nået)
             depot_free_j += np.where(~j_reached_arr, start_inv_md_j * 12 * ((1 + global_inflation_rate)**year), 0)
             depot_free_m += np.where(~m_reached_arr, start_inv_md_m * 12 * ((1 + global_inflation_rate)**year), 0)
 
-            # Rebalancering: Fyld ASK
             ask_limit_year = ask_base_limit * ((1 + global_inflation_rate)**year)
             space_j = np.maximum(0, ask_limit_year - depot_ask_j)
             move_j = np.minimum(space_j, np.maximum(0, depot_free_j))
@@ -431,7 +448,6 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
             pension_j_current += np.where(~j_reached_arr, st.session_state["pension_indb_j"] * 12 * ((1 + global_inflation_rate)**year), 0)
             pension_m_current += np.where(~m_reached_arr, st.session_state["pension_indb_m"] * 12 * ((1 + global_inflation_rate)**year), 0)
 
-        # Drawdown udregnes vektoriseret
         p_j = calculate_drawdown_monthly_income(np.maximum(0, depot_ask_j + depot_free_j), c_age_j, pensionsalder_j, global_return_rate_net_drawdown, global_inflation_rate, use_real_drawdown)
         p_m_drawdown = calculate_drawdown_monthly_income(np.maximum(0, depot_ask_m + depot_free_m), c_age_m, pensionsalder_m, global_return_rate_net_drawdown, global_inflation_rate, use_real_drawdown)
         p_m_total = p_m_drawdown + bsu_passive
@@ -442,7 +458,6 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
         j_reached_arr = j_reached_arr | (h_j_array <= 0)
         m_reached_arr = m_reached_arr | (h_m_array <= 0)
 
-        # Tabellogik (Afhængig af MC eller deterministisk)
         if n_sims > 1:
             med_dep_j = np.median(depot_ask_j + depot_free_j)
             p10_dep_j = np.percentile(depot_ask_j + depot_free_j, 10)
@@ -460,18 +475,32 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
             p90_h_m = np.percentile(h_m_array, 90)
             succ_m = np.mean(h_m_array <= 0) * 100
 
-            table_data.append({
-                "År": year, 
-                "Alder (J/M)": f"{c_age_j} / {c_age_m}", 
-                "J.Depot (Med/P10)": f"{med_dep_j/1e6:.2f} / {p10_dep_j/1e6:.2f}M", 
-                "J.Passiv (Med/P10)": f"{int(med_p_j):,} / {int(p10_p_j):,} ".replace(',', '.'), 
-                "J.Arbtid (Med/P90)": f"{get_emoji_status(med_h_j).split()[0]} {med_h_j:.1f}t / {p90_h_j:.1f}t",
-                "J.Succes (%)": f"{succ_j:.0f}%",
-                "M.Depot (Med/P10)": f"{med_dep_m/1e6:.2f} / {p10_dep_m/1e6:.2f}M", 
-                "M.Passiv (Med/P10)": f"{int(med_p_m):,} / {int(p10_p_m):,} ".replace(',', '.'), 
-                "M.Arbtid (Med/P90)": f"{get_emoji_status(med_h_m).split()[0]} {med_h_m:.1f}t / {p90_h_m:.1f}t",
-                "M.Succes (%)": f"{succ_m:.0f}%"
-            })
+            if is_worst_case:
+                table_data.append({
+                    "År": year, "J.alder": c_age_j, 
+                    "J.depot (M)": f"{p10_dep_j/1e6:.2f}", 
+                    "J.Passiv (kr)": f"{int(p10_p_j):,}".replace(',', '.'), 
+                    "J.Arbtid": f"{get_emoji_status(p90_h_j).split()[0]} {p90_h_j:.1f}t",
+                    "J.Succes": f"{succ_j:.0f}%",
+                    "M.alder": c_age_m, 
+                    "M.depot (M)": f"{p10_dep_m/1e6:.2f}", 
+                    "M.Passiv (kr)": f"{int(p10_p_m):,}".replace(',', '.'), 
+                    "M.Arbtid": f"{get_emoji_status(p90_h_m).split()[0]} {p90_h_m:.1f}t",
+                    "M.Succes": f"{succ_m:.0f}%"
+                })
+            else:
+                table_data.append({
+                    "År": year, "J.alder": c_age_j, 
+                    "J.depot (M)": f"{med_dep_j/1e6:.2f}", 
+                    "J.Passiv (kr)": f"{int(med_p_j):,}".replace(',', '.'), 
+                    "J.Arbtid": get_emoji_status(med_h_j),
+                    "J.Succes": f"{succ_j:.0f}%",
+                    "M.alder": c_age_m, 
+                    "M.depot (M)": f"{med_dep_m/1e6:.2f}", 
+                    "M.Passiv (kr)": f"{int(med_p_m):,}".replace(',', '.'), 
+                    "M.Arbtid": get_emoji_status(med_h_m),
+                    "M.Succes": f"{succ_m:.0f}%"
+                })
         else:
             table_data.append({
                 "År": year, "J.alder": c_age_j, 
@@ -485,8 +514,6 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
             })
             if j_reached_arr[0] and m_reached_arr[0]: break
 
-    if n_sims > 1:
-        st.success("🎲 Monte Carlo Simulering udført med 1.000 itererede markedsforløb. Bemærk P10 og P90 værdier for worst-case scenarier.")
     st.table(pd.DataFrame(table_data).set_index("År"))
     
     with st.expander("🔄 Omlægningsscenarie", expanded=False):
@@ -546,7 +573,6 @@ def simulate_solo_fire_plan(scenario_name, boligpris, udbetaling_j, ydelse_defau
     pension_j_current = np.full(n_sims, st.session_state["pension_j"], dtype=float)
     j_reached_arr = np.zeros(n_sims, dtype=bool)
 
-    # Initial Rebalance
     space_j_init = np.maximum(0, ask_base_limit - depot_ask_j)
     move_j = np.minimum(space_j_init, np.maximum(0, depot_free_j))
     depot_ask_j += move_j
@@ -595,6 +621,31 @@ def simulate_solo_fire_plan(scenario_name, boligpris, udbetaling_j, ydelse_defau
         start_afdrag_mnd = 6929
     else:
         oprindelig_rente_mnd = 0.04 / 12
+
+    # --- UI For Monte Carlo Toggle ---
+    if is_mc:
+        st.write("")
+        with st.expander("❓ Sådan læser du Monte Carlo-resultaterne", expanded=False):
+            st.markdown("""
+            **Median (Det Forventede):** Det midterste udfald af de 1.000 simulerede markedsforløb. Dette er din 50/50 sandsynlighed og lægger sig meget op ad den klassiske, lineære model.
+            
+            **P10 (Worst-Case Formue & Indkomst):** Den 10. percentil. Ud af 1.000 simulerede virkeligheder er dette det 100. dårligste. Det betyder, at du med 90 % statistisk sikkerhed vil have *flere* penge end dette, selv hvis markedet underpræsterer massivt.
+            
+            **P90 (Worst-Case Arbejdstid):** Den 90. percentil. Da lavere er bedre for arbejdstimer, viser dette tal det maksimale antal timer, du risikerer at skulle arbejde for at klare regningerne under en kriselignende recession.
+            
+            **Succesrate:** Procentdelen af de 1.000 universer, hvor depotet i det pågældende år kan dække alle udgifter, så du kan trække dig fuldstændig tilbage (0.0 barista-timer).
+            """)
+            
+        mc_view = st.segmented_control(
+            "Vælg visning",
+            options=["Median (Forventet scenarie)", "P10 (Worst-case scenarie)"],
+            default="Median (Forventet scenarie)",
+            key=f"mc_view_solo_{ydelse_key_clean}",
+            label_visibility="collapsed"
+        )
+        is_worst_case = (mc_view == "P10 (Worst-case scenarie)")
+    else:
+        is_worst_case = False
 
     table_data = []
     
@@ -683,14 +734,24 @@ def simulate_solo_fire_plan(scenario_name, boligpris, udbetaling_j, ydelse_defau
             p90_h_j = np.percentile(h_j_array, 90)
             succ_j = np.mean(h_j_array <= 0) * 100
 
-            table_data.append({
-                "År": year, 
-                "Alder": c_age_j, 
-                "Depot (Med/P10)": f"{med_dep_j/1e6:.2f} / {p10_dep_j/1e6:.2f}M", 
-                "Passiv (Med/P10)": f"{int(med_p_j):,} / {int(p10_p_j):,} ".replace(',', '.'), 
-                "Arbejdstid (Med/P90)": f"{get_emoji_status(med_h_j).split()[0]} {med_h_j:.1f}t / {p90_h_j:.1f}t",
-                "Succesrate": f"{succ_j:.0f}%"
-            })
+            if is_worst_case:
+                table_data.append({
+                    "År": year, 
+                    "Alder": c_age_j, 
+                    "Depot (M)": f"{p10_dep_j/1e6:.2f}", 
+                    "Passiv Indkomst (kr)": f"{int(p10_p_j):,}".replace(',', '.'), 
+                    "Arbejdstid (Barista)": f"{get_emoji_status(p90_h_j).split()[0]} {p90_h_j:.1f}t",
+                    "Succesrate": f"{succ_j:.0f}%"
+                })
+            else:
+                table_data.append({
+                    "År": year, 
+                    "Alder": c_age_j, 
+                    "Depot (M)": f"{med_dep_j/1e6:.2f}", 
+                    "Passiv Indkomst (kr)": f"{int(med_p_j):,}".replace(',', '.'), 
+                    "Arbejdstid (Barista)": get_emoji_status(med_h_j),
+                    "Succesrate": f"{succ_j:.0f}%"
+                })
         else:
             table_data.append({
                 "År": year, 
@@ -701,14 +762,12 @@ def simulate_solo_fire_plan(scenario_name, boligpris, udbetaling_j, ydelse_defau
             })
             if j_reached_arr[0]: break
 
-    if n_sims > 1:
-        st.success("🎲 Monte Carlo Simulering udført med 1.000 itererede markedsforløb. Bemærk P10 og P90 værdier for worst-case scenarier.")
     st.table(pd.DataFrame(table_data).set_index("År"))
     
     with st.expander("🔄 Omlægningsscenarie", expanded=False):
         st.toggle("Aktiver omlægningsscenarie", value=False, key=f"aktiver_oml_{ydelse_key_clean}", on_change=clear_preset)
         col_o1, col_o2, col_o3, col_o4 = st.columns(4)
-        col_o1.number_input("År for omlægning (0-10)", min_value=0, max_value=10, value=5, key=f"oml_aar_{ydelse_key_clean}", on_change=clear_preset)
+        col_o1.number_input("År for omlægning efter salg (1-10)", min_value=1, max_value=10, value=5, key=f"oml_aar_{ydelse_key_clean}", on_change=clear_preset)
         col_o2.number_input("Ny rente + bidrag (%)", min_value=0.0, max_value=10.0, value=4.0, step=0.1, key=f"oml_rente_{ydelse_key_clean}", on_change=clear_preset)
         col_o3.toggle("Afdragsfrihed aktiveret", value=False, key=f"oml_afdrag_fri_{ydelse_key_clean}", on_change=clear_preset)
         col_o4.number_input("Omkostninger (kr)", value=50000, step=5000, key=f"oml_omk_{ydelse_key_clean}", on_change=clear_preset)
