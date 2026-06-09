@@ -101,7 +101,7 @@ def clear_preset():
 def trigger_mc():
     st.session_state["mc_active"] = True
 
-# Knapper - Konservativ deaktiveres når MC er aktiv for at forhindre dobbelt-negativt bias
+# Knapper
 st.sidebar.button("Standard", type="primary" if st.session_state["active_preset"] == "Standard" else "secondary", use_container_width=True, on_click=set_preset, args=("Standard",))
 st.sidebar.button("Realistisk", type="primary" if st.session_state["active_preset"] == "Realistisk" else "secondary", use_container_width=True, on_click=set_preset, args=("Realistisk",))
 st.sidebar.button("Konservativ", type="primary" if st.session_state["active_preset"] == "Konservativ" else "secondary", use_container_width=True, on_click=set_preset, args=("Konservativ",), disabled=st.session_state["mc_active"], help="Deaktiveret under Monte Carlo for at forhindre bias i P10 scenariet.")
@@ -123,7 +123,7 @@ global_salgsaar = st.sidebar.slider("Salgsår (0 = Sælg nu)", min_value=0, max_
 global_bolig_inflation = st.sidebar.slider("Årlig boligprisstigning (%)", min_value=0.0, max_value=10.0, value=3.0, step=0.5, on_change=clear_preset) / 100
 
 st.sidebar.divider()
-st.sidebar.markdown("### ⚖️ Skattepolitik")
+st.sidebar.markdown("### Skattepolitik")
 st.sidebar.toggle("Hæv ASK-loft til 500.000 kr.", key="use_ask_500k", on_change=clear_preset)
 
 st.sidebar.divider()
@@ -162,16 +162,13 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
     use_ask_500k = st.session_state.get("use_ask_500k", False)
     ask_base_limit = 500000 if use_ask_500k else 174000
 
-    # MC Logik
     is_mc = st.session_state.get("mc_active", False)
     n_sims = 1000 if is_mc else 1
     vol = mc_volatility if is_mc else 0.0
     market_returns = np.random.normal(loc=global_return_rate_gross, scale=vol, size=(26, n_sims))
 
-    # Fase 1: Håndter udskudt salg. 
     is_valby = "Valby" in scenario_name
     actual_salgsaar = 0 if is_valby else global_salgsaar
-    
     valby_pris = 6700000
     maal_pris = boligpris
 
@@ -302,9 +299,7 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
     else:
         oprindelig_rente_mnd = 0.04 / 12
 
-    # --- UI For Monte Carlo Toggle ---
     if is_mc:
-        st.write("")
         with st.expander("❓ Sådan læser du Monte Carlo-resultaterne", expanded=False):
             st.markdown("""
             **P10 (Worst-Case Formue & Indkomst):** Den 10. percentil. Ud af 1.000 simulerede virkeligheder er dette det 100. dårligste. Det betyder, at I med 90 % statistisk sikkerhed vil have *flere* penge end dette, selv hvis markedet underpræsterer massivt i de tidlige år.
@@ -386,9 +381,6 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
                     fakt_udb_m = skaleret_udbetaling_m - mangler_m
                     udb_j_tot = skaleret_udbetaling_j + mangler_m
                     fakt_udb_j = udb_j_tot - max(0, udb_j_tot - locked_frivaerdi_j)
-                    
-                    if fakt_udb_j > locked_frivaerdi_j and n_sims == 1:
-                        st.error(f"⚠️ I År {year} overstiger den fremskrevne udbetaling friværdien i {scenario_name} scenariet.")
                     
                     depot_free_j += max(0, locked_frivaerdi_j - fakt_udb_j)
                     depot_free_m += max(0, locked_frivaerdi_m - fakt_udb_m)
@@ -619,9 +611,7 @@ def simulate_solo_fire_plan(scenario_name, boligpris, udbetaling_j, ydelse_defau
     else:
         oprindelig_rente_mnd = 0.04 / 12
 
-    # --- UI For Monte Carlo Toggle ---
     if is_mc:
-        st.write("")
         with st.expander("❓ Sådan læser du Monte Carlo-resultaterne", expanded=False):
             st.markdown("""
             **P10 (Worst-Case Formue & Indkomst):** Den 10. percentil. Ud af 1.000 simulerede virkeligheder er dette det 100. dårligste. Det betyder, at du med 90 % statistisk sikkerhed vil have *flere* penge end dette, selv hvis markedet underpræsterer massivt.
@@ -768,7 +758,6 @@ def simulate_solo_fire_plan(scenario_name, boligpris, udbetaling_j, ydelse_defau
         col_o2.number_input("Ny rente + bidrag (%)", min_value=0.0, max_value=10.0, value=4.0, step=0.1, key=f"oml_rente_{ydelse_key_clean}", on_change=clear_preset)
         col_o3.toggle("Afdragsfrihed aktiveret", value=False, key=f"oml_afdrag_fri_{ydelse_key_clean}", on_change=clear_preset)
         col_o4.number_input("Omkostninger (kr)", value=50000, step=5000, key=f"oml_omk_{ydelse_key_clean}", on_change=clear_preset)
-
 
 # --- VISNING 1: OPSÆTNING ---
 if view_selection == "⚙️ Basisdata & Opsætning":
