@@ -115,7 +115,7 @@ st.sidebar.toggle("Købekraftsjusteret udtræk i FIRE-fasen", key="use_real_draw
 st.sidebar.divider()
 st.sidebar.markdown("### Monte Carlo Simulering", help="Stresstester din FIRE-plan ved at køre 1.000 parallelle markedsforløb. Det kvantificerer risikoen for at ramme et krak tidligt i forløbet (Sequence of Returns Risk).")
 mc_volatility = st.sidebar.slider("Markedsvolatilitet (%)", min_value=5.0, max_value=25.0, value=15.0, step=1.0, on_change=clear_preset) / 100
-st.sidebar.button("Beregn Monte Carlo (1000 kørsler)", type="primary", use_container_width=True, on_click=trigger_mc)
+st.sidebar.button("Beregn Monte Carlo", type="primary", use_container_width=True, on_click=trigger_mc)
 
 st.sidebar.divider()
 st.sidebar.markdown("### Salg af Valby-lejlighed")
