@@ -53,8 +53,8 @@ def show_rules_dialog():
     st.markdown("""
     * **Trin 0 (Boligkøb først):** Startdepotet i år 1 er formuen *efter* udbetaling til bolig.
     * **Lagerbeskatning:** Frie midler beskattes progressivt (27/42%). Progressionsgrænsen indekseres årligt. ASK-loftet udnyttes før indskud på frie midler.
-    * **Udskudt Salg (Fase 1 & 2):** Hvis salget udskydes, låses friværdien. Modellen fremskriver asymmetrisk boliginflation og faste afdrag (84.000/år) frem til Salgsåret.
-    * **Monte Carlo Simulering:** Når aktiveret, kører modellen 1.000 parallelle universer vektoriseret i NumPy baseret på historisk volatilitet for at stressteste Barista-tilværelsen.
+    * **Udskudt Salg:** Hvis salget udskydes, låses friværdien. Modellen fremskriver asymmetrisk boliginflation og faste afdrag frem til Salgsåret.
+    * **Monte Carlo Simulering:** Kører 1.000 parallelle universer vektoriseret i NumPy baseret på historisk volatilitet for at stressteste Barista-tilværelsen.
     """)
 
 # --- TOP HEADER ---
@@ -101,17 +101,16 @@ def clear_preset():
 def trigger_mc():
     st.session_state["mc_active"] = True
 
-# Vertikalt stablede knapper
+# Knapper - Konservativ deaktiveres når MC er aktiv for at forhindre dobbelt-negativt bias
 st.sidebar.button("Standard", type="primary" if st.session_state["active_preset"] == "Standard" else "secondary", use_container_width=True, on_click=set_preset, args=("Standard",))
 st.sidebar.button("Realistisk", type="primary" if st.session_state["active_preset"] == "Realistisk" else "secondary", use_container_width=True, on_click=set_preset, args=("Realistisk",))
-st.sidebar.button("Konservativ", type="primary" if st.session_state["active_preset"] == "Konservativ" else "secondary", use_container_width=True, on_click=set_preset, args=("Konservativ",))
+st.sidebar.button("Konservativ", type="primary" if st.session_state["active_preset"] == "Konservativ" else "secondary", use_container_width=True, on_click=set_preset, args=("Konservativ",), disabled=st.session_state["mc_active"], help="Deaktiveret under Monte Carlo for at forhindre bias i P10 scenariet.")
 
 global_return_rate_gross = st.sidebar.slider("Bruttoafkast under opsparing (%)", min_value=3.0, max_value=10.0, step=0.5, on_change=clear_preset, key="slider_return") / 100
 global_return_rate_net_drawdown = st.sidebar.slider("Nettoafkast i passiv fase (%)", min_value=2.0, max_value=8.0, step=0.1, on_change=clear_preset, key="slider_drawdown") / 100
 global_inflation_rate = st.sidebar.slider("Årlig inflation (%)", min_value=0.0, max_value=5.0, step=0.5, on_change=clear_preset, key="slider_inflation") / 100
 
 st.sidebar.toggle("Købekraftsjusteret udtræk i FIRE-fasen", key="use_real_drawdown", on_change=clear_preset)
-st.sidebar.toggle("Hæv ASK-loft til 500.000 kr.", key="use_ask_500k", on_change=clear_preset)
 
 st.sidebar.divider()
 st.sidebar.markdown("### Monte Carlo Simulering")
@@ -124,24 +123,23 @@ global_salgsaar = st.sidebar.slider("Salgsår (0 = Sælg nu)", min_value=0, max_
 global_bolig_inflation = st.sidebar.slider("Årlig boligprisstigning (%)", min_value=0.0, max_value=10.0, value=3.0, step=0.5, on_change=clear_preset) / 100
 
 st.sidebar.divider()
+st.sidebar.markdown("### ⚖️ Skattepolitik")
+st.sidebar.toggle("Hæv ASK-loft til 500.000 kr.", key="use_ask_500k", on_change=clear_preset)
+
+st.sidebar.divider()
 global_barista_wage_net = st.sidebar.number_input("Baristaløn (Netto kr./t)", min_value=80, max_value=250, value=135, step=5, on_change=clear_preset)
 pensionsalder_j = st.sidebar.number_input("Johans pensionsalder", min_value=55, max_value=75, value=67, step=1, on_change=clear_preset)
 pensionsalder_m = st.sidebar.number_input("Markus' pensionsalder", min_value=55, max_value=75, value=65, step=1, on_change=clear_preset)
-
-st.sidebar.divider()
-st.sidebar.text_input("Gendan Scenarie-ID", help="Indtast ID for at indlæse specifik konfiguration.", key="secret_id")
 
 # --- DYNAMISKE SIMULERINGSFUNKTIONER ---
 def calculate_drawdown_monthly_income(depot_total_arr, current_age, target_age, net_return_rate, inflation_rate, use_real_rate):
     if current_age >= target_age: return depot_total_arr * 0.0
     years_left = target_age - current_age
     months_left = years_left * 12
-    
     if use_real_rate:
         effective_rate = ((1 + net_return_rate) / (1 + inflation_rate)) - 1
     else:
         effective_rate = net_return_rate
-        
     monthly_rate = effective_rate / 12
     if monthly_rate <= 0: return depot_total_arr / months_left
     return depot_total_arr * (monthly_rate * (1 + monthly_rate)**months_left) / ((1 + monthly_rate)**months_left - 1)
@@ -154,7 +152,6 @@ def get_emoji_status(barista_hours):
 
 def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_m, ydelse_default, ydelse_key, ejerudgifter_total, bolig_solgt, boligskat_md):
     pal_tax, weeks_per_month, age_j, age_m = 0.153, 4.33, 41, 32
-    
     ydelse_key_clean = ydelse_key.replace("solo_", "")
     aktiver_oml = st.session_state.get(f"aktiver_oml_{ydelse_key_clean}", False)
     oml_aar = st.session_state.get(f"oml_aar_{ydelse_key_clean}", 5)
@@ -310,19 +307,19 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
         st.write("")
         with st.expander("❓ Sådan læser du Monte Carlo-resultaterne", expanded=False):
             st.markdown("""
-            **Median (Det Forventede):** Det midterste udfald af de 1.000 simulerede markedsforløb. Dette er jeres 50/50 sandsynlighed og lægger sig meget op ad den klassiske, lineære model.
-            
             **P10 (Worst-Case Formue & Indkomst):** Den 10. percentil. Ud af 1.000 simulerede virkeligheder er dette det 100. dårligste. Det betyder, at I med 90 % statistisk sikkerhed vil have *flere* penge end dette, selv hvis markedet underpræsterer massivt i de tidlige år.
             
             **P90 (Worst-Case Arbejdstid):** Den 90. percentil. Da lavere er bedre for arbejdstimer, viser dette tal det maksimale antal timer, I risikerer at skulle arbejde for at klare regningerne under en kriselignende recession.
+            
+            **Median (Det Forventede):** Det midterste udfald af de 1.000 simulerede markedsforløb. Dette er jeres 50/50 sandsynlighed og lægger sig meget op ad den klassiske, lineære model.
             
             **Succesrate:** Procentdelen af de 1.000 universer, hvor depotet i det pågældende år kan dække alle udgifter, så I kan trække jer fuldstændig tilbage (0.0 barista-timer).
             """)
             
         mc_view = st.segmented_control(
             "Vælg visning",
-            options=["Median (Forventet scenarie)", "P10 (Worst-case scenarie)"],
-            default="Median (Forventet scenarie)",
+            options=["P10 (Worst-case scenarie)", "Median (Forventet scenarie)"],
+            default="P10 (Worst-case scenarie)",
             key=f"mc_view_joint_{ydelse_key_clean}",
             label_visibility="collapsed"
         )
@@ -627,19 +624,19 @@ def simulate_solo_fire_plan(scenario_name, boligpris, udbetaling_j, ydelse_defau
         st.write("")
         with st.expander("❓ Sådan læser du Monte Carlo-resultaterne", expanded=False):
             st.markdown("""
-            **Median (Det Forventede):** Det midterste udfald af de 1.000 simulerede markedsforløb. Dette er din 50/50 sandsynlighed og lægger sig meget op ad den klassiske, lineære model.
-            
             **P10 (Worst-Case Formue & Indkomst):** Den 10. percentil. Ud af 1.000 simulerede virkeligheder er dette det 100. dårligste. Det betyder, at du med 90 % statistisk sikkerhed vil have *flere* penge end dette, selv hvis markedet underpræsterer massivt.
             
             **P90 (Worst-Case Arbejdstid):** Den 90. percentil. Da lavere er bedre for arbejdstimer, viser dette tal det maksimale antal timer, du risikerer at skulle arbejde for at klare regningerne under en kriselignende recession.
+            
+            **Median (Det Forventede):** Det midterste udfald af de 1.000 simulerede markedsforløb. Dette er din 50/50 sandsynlighed og lægger sig meget op ad den klassiske, lineære model.
             
             **Succesrate:** Procentdelen af de 1.000 universer, hvor depotet i det pågældende år kan dække alle udgifter, så du kan trække dig fuldstændig tilbage (0.0 barista-timer).
             """)
             
         mc_view = st.segmented_control(
             "Vælg visning",
-            options=["Median (Forventet scenarie)", "P10 (Worst-case scenarie)"],
-            default="Median (Forventet scenarie)",
+            options=["P10 (Worst-case scenarie)", "Median (Forventet scenarie)"],
+            default="P10 (Worst-case scenarie)",
             key=f"mc_view_solo_{ydelse_key_clean}",
             label_visibility="collapsed"
         )
