@@ -101,7 +101,7 @@ def clear_preset():
 def trigger_mc():
     st.session_state["mc_active"] = True
 
-# Knapper
+# Knapper - Konservativ deaktiveres når MC er aktiv for at forhindre dobbelt-negativt bias
 st.sidebar.button("Standard", type="primary" if st.session_state["active_preset"] == "Standard" else "secondary", use_container_width=True, on_click=set_preset, args=("Standard",))
 st.sidebar.button("Realistisk", type="primary" if st.session_state["active_preset"] == "Realistisk" else "secondary", use_container_width=True, on_click=set_preset, args=("Realistisk",))
 st.sidebar.button("Konservativ", type="primary" if st.session_state["active_preset"] == "Konservativ" else "secondary", use_container_width=True, on_click=set_preset, args=("Konservativ",), disabled=st.session_state["mc_active"], help="Deaktiveret under Monte Carlo for at forhindre bias i P10 scenariet.")
@@ -113,7 +113,7 @@ global_inflation_rate = st.sidebar.slider("Årlig inflation (%)", min_value=0.0,
 st.sidebar.toggle("Købekraftsjusteret udtræk i FIRE-fasen", key="use_real_drawdown", on_change=clear_preset)
 
 st.sidebar.divider()
-st.sidebar.markdown("### Monte Carlo Simulering")
+st.sidebar.markdown("### Monte Carlo Simulering", help="Stresstester din FIRE-plan ved at køre 1.000 parallelle markedsforløb. Det kvantificerer risikoen for at ramme et krak tidligt i forløbet (Sequence of Returns Risk).")
 mc_volatility = st.sidebar.slider("Markedsvolatilitet (%)", min_value=5.0, max_value=25.0, value=15.0, step=1.0, on_change=clear_preset) / 100
 st.sidebar.button("Beregn Monte Carlo (1000 kørsler)", type="primary", use_container_width=True, on_click=trigger_mc)
 
@@ -162,6 +162,7 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
     use_ask_500k = st.session_state.get("use_ask_500k", False)
     ask_base_limit = 500000 if use_ask_500k else 174000
 
+    # MC Logik
     is_mc = st.session_state.get("mc_active", False)
     n_sims = 1000 if is_mc else 1
     vol = mc_volatility if is_mc else 0.0
@@ -300,7 +301,7 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
         oprindelig_rente_mnd = 0.04 / 12
 
     if is_mc:
-        with st.expander("❓ Sådan læser du Monte Carlo-resultaterne", expanded=False):
+        with st.expander("Sådan læser du Monte Carlo-resultaterne", expanded=False):
             st.markdown("""
             **P10 (Worst-Case Formue & Indkomst):** Den 10. percentil. Ud af 1.000 simulerede virkeligheder er dette det 100. dårligste. Det betyder, at I med 90 % statistisk sikkerhed vil have *flere* penge end dette, selv hvis markedet underpræsterer massivt i de tidlige år.
             
@@ -612,7 +613,7 @@ def simulate_solo_fire_plan(scenario_name, boligpris, udbetaling_j, ydelse_defau
         oprindelig_rente_mnd = 0.04 / 12
 
     if is_mc:
-        with st.expander("❓ Sådan læser du Monte Carlo-resultaterne", expanded=False):
+        with st.expander("Sådan læser du Monte Carlo-resultaterne", expanded=False):
             st.markdown("""
             **P10 (Worst-Case Formue & Indkomst):** Den 10. percentil. Ud af 1.000 simulerede virkeligheder er dette det 100. dårligste. Det betyder, at du med 90 % statistisk sikkerhed vil have *flere* penge end dette, selv hvis markedet underpræsterer massivt.
             
@@ -758,6 +759,7 @@ def simulate_solo_fire_plan(scenario_name, boligpris, udbetaling_j, ydelse_defau
         col_o2.number_input("Ny rente + bidrag (%)", min_value=0.0, max_value=10.0, value=4.0, step=0.1, key=f"oml_rente_{ydelse_key_clean}", on_change=clear_preset)
         col_o3.toggle("Afdragsfrihed aktiveret", value=False, key=f"oml_afdrag_fri_{ydelse_key_clean}", on_change=clear_preset)
         col_o4.number_input("Omkostninger (kr)", value=50000, step=5000, key=f"oml_omk_{ydelse_key_clean}", on_change=clear_preset)
+
 
 # --- VISNING 1: OPSÆTNING ---
 if view_selection == "⚙️ Basisdata & Opsætning":
