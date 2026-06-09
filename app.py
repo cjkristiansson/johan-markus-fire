@@ -101,7 +101,7 @@ def clear_preset():
 def trigger_mc():
     st.session_state["mc_active"] = True
 
-# Knapper - Konservativ deaktiveres når MC er aktiv for at forhindre dobbelt-negativt bias
+# Knapper
 st.sidebar.button("Standard", type="primary" if st.session_state["active_preset"] == "Standard" else "secondary", use_container_width=True, on_click=set_preset, args=("Standard",))
 st.sidebar.button("Realistisk", type="primary" if st.session_state["active_preset"] == "Realistisk" else "secondary", use_container_width=True, on_click=set_preset, args=("Realistisk",))
 st.sidebar.button("Konservativ", type="primary" if st.session_state["active_preset"] == "Konservativ" else "secondary", use_container_width=True, on_click=set_preset, args=("Konservativ",), disabled=st.session_state["mc_active"], help="Deaktiveret under Monte Carlo for at forhindre bias i P10 scenariet.")
@@ -110,7 +110,7 @@ global_return_rate_gross = st.sidebar.slider("Bruttoafkast under opsparing (%)",
 global_return_rate_net_drawdown = st.sidebar.slider("Nettoafkast i passiv fase (%)", min_value=2.0, max_value=8.0, step=0.1, on_change=clear_preset, key="slider_drawdown") / 100
 global_inflation_rate = st.sidebar.slider("Årlig inflation (%)", min_value=0.0, max_value=5.0, step=0.5, on_change=clear_preset, key="slider_inflation") / 100
 
-st.sidebar.toggle("Købekraftsjusteret udtræk i FIRE-fasen", key="use_real_drawdown", on_change=clear_preset)
+st.sidebar.toggle("Købekraftsjusteret udtræk i FIRE-fasen", key="use_real_drawdown", help="Tvinger modellen til at reservere en del af aktieafkastet til at beskytte hovedstolen mod inflation. Resulterer i en lavere start-udbetaling, der til gengæld stiger år for år for at fastholde købekraften.", on_change=clear_preset)
 
 st.sidebar.divider()
 st.sidebar.markdown("### Monte Carlo Simulering", help="Stresstester din FIRE-plan ved at køre 1.000 parallelle markedsforløb. Det kvantificerer risikoen for at ramme et krak tidligt i forløbet (Sequence of Returns Risk).")
@@ -120,7 +120,7 @@ st.sidebar.button("Beregn Monte Carlo (1000 kørsler)", type="primary", use_cont
 st.sidebar.divider()
 st.sidebar.markdown("### Salg af Valby-lejlighed")
 global_salgsaar = st.sidebar.slider("Salgsår (0 = Sælg nu)", min_value=0, max_value=10, value=0, step=1, on_change=clear_preset)
-global_bolig_inflation = st.sidebar.slider("Årlig boligprisstigning (%)", min_value=0.0, max_value=10.0, value=3.0, step=0.5, on_change=clear_preset) / 100
+global_bolig_inflation = st.sidebar.slider("Boligmarkedsvækst (Asymmetrisk gevinst %)", min_value=-10.0, max_value=10.0, value=3.0, step=0.5, on_change=clear_preset) / 100
 
 st.sidebar.divider()
 st.sidebar.markdown("### Skattepolitik")
