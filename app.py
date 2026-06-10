@@ -131,6 +131,9 @@ global_barista_wage_net = st.sidebar.number_input("Baristaløn (Netto kr./t)", m
 pensionsalder_j = st.sidebar.number_input("Johans pensionsalder", min_value=55, max_value=75, value=67, step=1, on_change=clear_preset)
 pensionsalder_m = st.sidebar.number_input("Markus' pensionsalder", min_value=55, max_value=75, value=65, step=1, on_change=clear_preset)
 
+st.sidebar.divider()
+st.sidebar.text_input("Gendan Scenarie-ID", help="Indtast ID for at indlæse specifik konfiguration (f.eks. 'solo').", key="secret_id")
+
 # --- DYNAMISKE SIMULERINGSFUNKTIONER ---
 def calculate_drawdown_monthly_income(depot_total_arr, current_age, target_age, net_return_rate, inflation_rate, use_real_rate):
     if current_age >= target_age: return depot_total_arr * 0.0
