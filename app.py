@@ -277,8 +277,8 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
         start_fire_j = sum(v for k, v in st.session_state["budget_j"].items() if k not in ["A_kasse_Fagforening", "Loensikring"]) + bolig_faelles_current
         start_fire_m = sum(v for k, v in st.session_state["budget_m"].items() if k not in ["A_kasse_Fagforening", "Loensikring", "Studielaan"]) + bolig_faelles_current
 
-        skat_line_j = f"**Boligskat (egen andel):** {f'{int(boligskat_md / 2):,}'.replace(',', '.')} kr./md. " if boligskat_md > 0 and actual_salgsaar == 0 else ""
-        skat_line_m = f"**Boligskat (egen andel):** {f'{int(boligskat_md / 2):,}'.replace(',', '.')} kr./md. " if boligskat_md > 0 and actual_salgsaar == 0 else ""
+        skat_line_j = f"**Boligskat (egen andel):** {f'{int(boligskat_md / 2):,}'.replace(',', '.')} kr./md.  \n" if boligskat_md > 0 and actual_salgsaar == 0 else ""
+        skat_line_m = f"**Boligskat (egen andel):** {f'{int(boligskat_md / 2):,}'.replace(',', '.')} kr./md.  \n" if boligskat_md > 0 and actual_salgsaar == 0 else ""
 
         with col_j:
             st.subheader(f"JOHAN")
@@ -584,7 +584,7 @@ def simulate_solo_fire_plan(scenario_name, boligpris, udbetaling_j, ydelse_defau
         with col_inp:
             udb_str = f"{faktisk_udbetaling_j/1e6:g}".replace('.', ',')
             st.markdown(
-                f"<p style='margin-bottom: 60px; margin-top: 0; line-height: 1.3;'>"
+                f"<p style='margin-bottom: 15px; margin-top: 0; line-height: 1.3;'>"
                 f"Mål: {int(cash_pct)}% udb. ({udb_str}M) | {int(loan_pct)}% lån</p>", 
                 unsafe_allow_html=True
             )
