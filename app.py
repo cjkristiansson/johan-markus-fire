@@ -156,6 +156,7 @@ def get_emoji_status(barista_hours):
 def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_m, ydelse_default, ydelse_key, ejerudgifter_total, bolig_solgt, boligskat_md):
     pal_tax, weeks_per_month, age_j, age_m = 0.153, 4.33, 41, 32
     ydelse_key_clean = ydelse_key.replace("solo_", "")
+    ejerudgifter_input = st.session_state.get(f"ejer_{ydelse_key_clean}", 3500)
     aktiver_oml = st.session_state.get(f"aktiver_oml_{ydelse_key_clean}", False)
     oml_aar = st.session_state.get(f"oml_aar_{ydelse_key_clean}", 5)
     oml_rente = st.session_state.get(f"oml_rente_{ydelse_key_clean}", 4.0) / 100
@@ -202,7 +203,7 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
         base_frie_j = st.session_state["basis_frie_j"] + (cash_j - faktisk_udbetaling_j)
         base_frie_m = st.session_state["basis_frie_m"] + (cash_m - faktisk_udbetaling_m)
         
-        bolig_faelles_current = (ydelse_default + ejerudgifter_total + boligskat_md) / 2
+        bolig_faelles_current = (ydelse_default + ejerudgifter_input + boligskat_md) / 2
         restgaeld_start = boligpris - (faktisk_udbetaling_j + faktisk_udbetaling_m)
         
         locked_frivaerdi_j = 0.0
@@ -256,14 +257,15 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
 
         with col_inp:
             st.markdown(
-                f"<p style='margin-bottom: 60px; margin-top: 0; line-height: 1.3;'>"
+                f"<p style='margin-bottom: 15px; margin-top: 0; line-height: 1.3;'>"
                 f"Mål: {int(ui_cash_pct)}% kontantudbetaling ({f'{int(target_total_udb):,}'.replace(',', '.')} kr.) | {int(ui_loan_pct)}% lån</p>", 
                 unsafe_allow_html=True
             )
+            ejerudgifter_input = st.number_input("Ejerudgifter", value=3500, step=100, key=f"ejer_{ydelse_key_clean}", on_change=clear_preset)
             realkreditydelse_netto = st.number_input("Realkreditydelse", value=ydelse_default, step=100, key=ydelse_key, on_change=clear_preset)
 
         if actual_salgsaar == 0:
-            bolig_faelles_current = (realkreditydelse_netto + ejerudgifter_total + boligskat_md) / 2
+            bolig_faelles_current = (realkreditydelse_netto + ejerudgifter_input + boligskat_md) / 2
 
         budget_j_total = sum(st.session_state["budget_j"].values())
         budget_m_total = sum(st.session_state["budget_m"].values())
@@ -304,7 +306,7 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
         oprindelig_rente_mnd = 0.04 / 12
 
     if is_mc:
-        with st.expander("Sådan læser du Monte Carlo-resultaterne", expanded=False):
+        with st.expander("❓ Sådan læser du Monte Carlo-resultaterne", expanded=False):
             st.markdown("""
             **P10 (Worst-Case Formue & Indkomst):** Den 10. percentil. Ud af 1.000 simulerede virkeligheder er dette det 100. dårligste. Det betyder, at I med 90 % statistisk sikkerhed vil have *flere* penge end dette, selv hvis markedet underpræsterer massivt i de tidlige år.
             
@@ -349,7 +351,7 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
                 ny_lån_ydelse = ny_hovedstol * mnd_rente_ny
                 
             renter_md = (ny_hovedstol * oml_rente) / 12
-            netto_bolig_faelles = (ny_lån_ydelse + ejerudgifter_total + boligskat_md - (renter_md * 0.256)) / 2
+            netto_bolig_faelles = (ny_lån_ydelse + ejerudgifter_input + boligskat_md - (renter_md * 0.256)) / 2
             
             diff_faelles = bolig_faelles_current - netto_bolig_faelles
             start_fire_j -= diff_faelles; start_fire_m -= diff_faelles
@@ -390,7 +392,7 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
                     depot_free_m += max(0, locked_frivaerdi_m - fakt_udb_m)
                     
                     ny_ydelse = realkreditydelse_netto * (maal_pris / boligpris)
-                    ny_ejerudgifter = ejerudgifter_total * ((1 + global_inflation_rate)**year)
+                    ny_ejerudgifter = ejerudgifter_input * ((1 + global_inflation_rate)**year)
                     ny_boligskat = boligskat_md * ((1 + global_inflation_rate)**year)
                     ny_bolig_faelles = (ny_ydelse + ny_ejerudgifter + ny_boligskat) / 2
                     
@@ -522,6 +524,7 @@ def simulate_solo_fire_plan(scenario_name, boligpris, udbetaling_j, ydelse_defau
     
     s_key = f"solo_{ydelse_key}"
     ydelse_key_clean = s_key.replace("solo_", "")
+    ejerudgifter_input = st.session_state.get(f"ejer_{ydelse_key_clean}", 3500)
     aktiver_oml = st.session_state.get(f"aktiver_oml_{ydelse_key_clean}", False)
     oml_aar = st.session_state.get(f"oml_aar_{ydelse_key_clean}", 5)
     oml_rente = st.session_state.get(f"oml_rente_{ydelse_key_clean}", 4.0) / 100
@@ -548,7 +551,7 @@ def simulate_solo_fire_plan(scenario_name, boligpris, udbetaling_j, ydelse_defau
 
     if actual_salgsaar == 0:
         base_frie_j = st.session_state["basis_frie_j"] + (cash_j - faktisk_udbetaling_j)
-        bolig_total_current = ydelse_default + ejerudgifter_total + boligskat_md
+        bolig_total_current = ydelse_default + ejerudgifter_input + boligskat_md
         restgaeld_start = boligpris - faktisk_udbetaling_j
         locked_frivaerdi_j = 0.0
     else:
@@ -579,14 +582,15 @@ def simulate_solo_fire_plan(scenario_name, boligpris, udbetaling_j, ydelse_defau
 
         with col_inp:
             st.markdown(
-                f"<p style='margin-bottom: 105px; margin-top: 0; line-height: 1.3;'>"
+                f"<p style='margin-bottom: 60px; margin-top: 0; line-height: 1.3;'>"
                 f"{int(cash_pct)}% kontantudbetaling ({f'{int(faktisk_udbetaling_j):,}'.replace(',', '.')} kr.) | {int(loan_pct)}% lån</p>", 
                 unsafe_allow_html=True
             )
+            ejerudgifter_input = st.number_input("Ejerudgifter", value=3500, step=100, key=f"ejer_{ydelse_key_clean}", on_change=clear_preset)
             realkreditydelse_netto = st.number_input("Realkreditydelse", value=ydelse_default, step=100, key=ydelse_key, on_change=clear_preset)
 
         if actual_salgsaar == 0:
-            bolig_total_current = realkreditydelse_netto + ejerudgifter_total + boligskat_md
+            bolig_total_current = realkreditydelse_netto + ejerudgifter_input + boligskat_md
 
         solo_budget_j = st.session_state["budget_j"].copy()
         solo_budget_j["Mad"] = 3000
@@ -616,7 +620,7 @@ def simulate_solo_fire_plan(scenario_name, boligpris, udbetaling_j, ydelse_defau
         oprindelig_rente_mnd = 0.04 / 12
 
     if is_mc:
-        with st.expander("Sådan læser du Monte Carlo-resultaterne", expanded=False):
+        with st.expander("❓ Sådan læser du Monte Carlo-resultaterne", expanded=False):
             st.markdown("""
             **P10 (Worst-Case Formue & Indkomst):** Den 10. percentil. Ud af 1.000 simulerede virkeligheder er dette det 100. dårligste. Det betyder, at du med 90 % statistisk sikkerhed vil have *flere* penge end dette, selv hvis markedet underpræsterer massivt.
             
@@ -654,7 +658,7 @@ def simulate_solo_fire_plan(scenario_name, boligpris, udbetaling_j, ydelse_defau
             else: ny_lån_ydelse = ny_hovedstol * mnd_rente_ny
                 
             renter_md = (ny_hovedstol * oml_rente) / 12
-            netto_bolig_total = ny_lån_ydelse + ejerudgifter_total + boligskat_md - (renter_md * 0.256)
+            netto_bolig_total = ny_lån_ydelse + ejerudgifter_input + boligskat_md - (renter_md * 0.256)
             diff_bolig = bolig_total_current - netto_bolig_total
             start_fire_j -= diff_bolig; start_inv_md_j += diff_bolig
             bolig_total_current = netto_bolig_total
@@ -679,7 +683,7 @@ def simulate_solo_fire_plan(scenario_name, boligpris, udbetaling_j, ydelse_defau
                     depot_free_j += max(0, locked_frivaerdi_j - fakt_udb_j)
                     
                     ny_ydelse = realkreditydelse_netto * (maal_pris / boligpris)
-                    ny_ejerudgifter = ejerudgifter_total * ((1 + global_inflation_rate)**year)
+                    ny_ejerudgifter = ejerudgifter_input * ((1 + global_inflation_rate)**year)
                     ny_boligskat = boligskat_md * ((1 + global_inflation_rate)**year)
                     ny_bolig_total = ny_ydelse + ny_ejerudgifter + ny_boligskat
                     
