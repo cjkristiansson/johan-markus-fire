@@ -80,31 +80,19 @@ if "active_preset" not in st.session_state:
 
 def set_preset(preset):
     st.session_state["active_preset"] = preset
-    st.session_state["mc_active"] = False
-    if preset == "Standard":
-        st.session_state["slider_return"] = 7.0
-        st.session_state["slider_drawdown"] = 4.5
-        st.session_state["slider_inflation"] = 2.0
-    elif preset == "Realistisk":
-        st.session_state["slider_return"] = 7.0
-        st.session_state["slider_drawdown"] = 3.5
-        st.session_state["slider_inflation"] = 2.0
-    elif preset == "Konservativ":
-        st.session_state["slider_return"] = 5.5
-        st.session_state["slider_drawdown"] = 3.5
-        st.session_state["slider_inflation"] = 2.5
+    # Fjerner MC-deaktivering herfra, så de er uafhængige
 
 def clear_preset():
     st.session_state["active_preset"] = "Custom"
-    st.session_state["mc_active"] = False
+    # Fjerner MC-deaktivering herfra. MC forbliver aktiv, mens du justerer skydere!
 
-def trigger_mc():
-    st.session_state["mc_active"] = True
+def toggle_mc():
+    st.session_state["mc_active"] = not st.session_state.get("mc_active", False)
 
 # Knapper
 st.sidebar.button("Standard", type="primary" if st.session_state["active_preset"] == "Standard" else "secondary", use_container_width=True, on_click=set_preset, args=("Standard",))
 st.sidebar.button("Realistisk", type="primary" if st.session_state["active_preset"] == "Realistisk" else "secondary", use_container_width=True, on_click=set_preset, args=("Realistisk",))
-st.sidebar.button("Konservativ", type="primary" if st.session_state["active_preset"] == "Konservativ" else "secondary", use_container_width=True, on_click=set_preset, args=("Konservativ",), disabled=st.session_state["mc_active"], help="Deaktiveret under Monte Carlo for at forhindre bias i P10 scenariet.")
+st.sidebar.button("Konservativ", type="primary" if st.session_state["active_preset"] == "Konservativ" else "secondary", use_container_width=True, on_click=set_preset, args=("Konservativ",), disabled=st.session_state.get("mc_active", False), help="Deaktiveret under Monte Carlo for at forhindre bias i P10 scenariet.")
 
 global_return_rate_gross = st.sidebar.slider("Bruttoafkast under opsparing (%)", min_value=3.0, max_value=10.0, step=0.5, on_change=clear_preset, key="slider_return") / 100
 global_return_rate_net_drawdown = st.sidebar.slider("Nettoafkast i passiv fase (%)", min_value=2.0, max_value=8.0, step=0.1, on_change=clear_preset, key="slider_drawdown") / 100
@@ -115,7 +103,10 @@ st.sidebar.toggle("Købekraftsjusteret udtræk i FIRE-fasen", key="use_real_draw
 st.sidebar.divider()
 st.sidebar.markdown("### Monte Carlo Simulering", help="Stresstester din FIRE-plan ved at køre 1.000 parallelle markedsforløb. Det kvantificerer risikoen for at ramme et krak tidligt i forløbet (Sequence of Returns Risk).")
 mc_volatility = st.sidebar.slider("Markedsvolatilitet (%)", min_value=5.0, max_value=25.0, value=15.0, step=1.0, on_change=clear_preset) / 100
-st.sidebar.button("Beregn Monte Carlo", type="primary", use_container_width=True, on_click=trigger_mc)
+
+# MC knap skifter nu dynamisk navn og state
+mc_btn_label = "Slå Monte Carlo FRA" if st.session_state.get("mc_active", False) else "Beregn Monte Carlo"
+st.sidebar.button(mc_btn_label, type="primary", use_container_width=True, on_click=toggle_mc)
 
 st.sidebar.divider()
 st.sidebar.markdown("### Salg af Valby-lejlighed")
@@ -171,6 +162,7 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
     pal_tax, weeks_per_month, age_j, age_m = 0.153, 4.33, 41, 32
     ydelse_key_clean = ydelse_key.replace("solo_", "")
     
+    nuvaerende_afdragsfri = st.session_state.get(f"nuvaerende_afdragsfri_{ydelse_key_clean}", False)
     ejerudgifter_input = st.session_state.get(f"ejer_{ydelse_key_clean}", int(ejerudgifter_total))
     aktiver_oml = st.session_state.get(f"aktiver_oml_{ydelse_key_clean}", False)
     oml_aar = st.session_state.get(f"oml_aar_{ydelse_key_clean}", 5)
@@ -204,7 +196,7 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
     cash_m = st.session_state["cash_m_base"] if bolig_solgt else 0
     
     valby_fast_restgaeld = 3059064
-    valby_afdrag_md = 6930
+    valby_afdrag_md = 0 if nuvaerende_afdragsfri else 6930
     
     if actual_salgsaar == 0:
         if use_bsu and bolig_solgt:
@@ -243,7 +235,8 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
         base_frie_j = st.session_state["basis_frie_j"]
         base_frie_m = st.session_state["basis_frie_m"]
         
-        valby_ydelse = 15230
+        # Hvis afdragsfriheden er aktiv, falder jeres faste udgifter
+        valby_ydelse = 15230 - 6930 if nuvaerende_afdragsfri else 15230
         valby_ejerudgifter = 4564
         valby_boligskat = 0
         bolig_faelles_current = (valby_ydelse + valby_ejerudgifter + valby_boligskat) / 2
@@ -304,6 +297,7 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
         start_fire_j = sum(v for k, v in st.session_state["budget_j"].items() if k not in ["A_kasse_Fagforening", "Loensikring"]) + bolig_faelles_current
         start_fire_m = sum(v for k, v in st.session_state["budget_m"].items() if k not in ["A_kasse_Fagforening", "Loensikring", "Studielaan"]) + bolig_faelles_current
 
+        # Rene, formaterede tekststrenge
         udb_j_str = format_dkk(udbetaling_j)
         ydelse_j_str = format_dkk(realkreditydelse_netto / 2)
         depot_j_str = format_dkk(depot_free_j[0] + depot_ask_j[0])
@@ -413,8 +407,9 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
                 valby_pris += valby_pris_stigning
                 maal_pris += maal_pris_stigning
                 
-                locked_frivaerdi_j += 42000 + (asymmetrisk_gevinst / 2)
-                locked_frivaerdi_m += 42000 + (asymmetrisk_gevinst / 2)
+                # Valby afdrag modregnes i den oparbejdede friværdi, hvis ikke afdragsfri!
+                locked_frivaerdi_j += (0 if nuvaerende_afdragsfri else 42000) + (asymmetrisk_gevinst / 2)
+                locked_frivaerdi_m += (0 if nuvaerende_afdragsfri else 42000) + (asymmetrisk_gevinst / 2)
                 
                 if year == actual_salgsaar:
                     skaleret_udbetaling_j = udbetaling_j * (maal_pris / boligpris)
@@ -506,14 +501,6 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
             p90_h_j = np.percentile(h_j_array, 90)
             succ_j = np.mean(h_j_array <= 0) * 100
 
-            med_dep_m = np.median(depot_ask_m + depot_free_m)
-            p10_dep_m = np.percentile(depot_ask_m + depot_free_m, 10)
-            med_p_m = np.median(p_m_total)
-            p10_p_m = np.percentile(p_m_total, 10)
-            med_h_m = np.median(h_m_array)
-            p90_h_m = np.percentile(h_m_array, 90)
-            succ_m = np.mean(h_m_array <= 0) * 100
-
             if is_worst_case:
                 table_data.append({
                     "År": year, "J.alder": c_age_j, 
@@ -555,6 +542,10 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
 
     st.table(pd.DataFrame(table_data).set_index("År"))
     
+    st.write("")
+    if is_valby or actual_salgsaar > 0:
+        st.toggle("Aktiver afdragsfrihed på nuværende lån (Valby)", key=f"nuvaerende_afdragsfri_{ydelse_key_clean}", on_change=clear_preset, help="Fjerner det faste månedlige afdrag på 6.930 kr. fra jeres udgifter, men fastfryser til gengæld den del af jeres friværdiudvikling.")
+
     with st.expander("🔄 Omlægningsscenarie", expanded=False):
         st.toggle("Aktiver omlægningsscenarie", value=False, key=f"aktiver_oml_{ydelse_key_clean}", on_change=clear_preset)
         
@@ -580,6 +571,7 @@ def simulate_solo_fire_plan(scenario_name, boligpris, udbetaling_j, ydelse_defau
     s_key = f"solo_{ydelse_key}"
     ydelse_key_clean = s_key.replace("solo_", "")
     
+    nuvaerende_afdragsfri = st.session_state.get(f"nuvaerende_afdragsfri_{ydelse_key_clean}", False)
     ejerudgifter_input = st.session_state.get(f"ejer_{ydelse_key_clean}", int(ejerudgifter_total))
     aktiver_oml = st.session_state.get(f"aktiver_oml_{ydelse_key_clean}", False)
     oml_aar = st.session_state.get(f"oml_aar_{ydelse_key_clean}", 5)
@@ -611,7 +603,7 @@ def simulate_solo_fire_plan(scenario_name, boligpris, udbetaling_j, ydelse_defau
     maal_pris = boligpris
 
     valby_fast_restgaeld = 3059064
-    valby_afdrag_md = 6930
+    valby_afdrag_md = 0 if nuvaerende_afdragsfri else 6930
 
     if actual_salgsaar == 0:
         base_frie_j = st.session_state["basis_frie_j"] + (cash_j - faktisk_udbetaling_j)
@@ -626,7 +618,7 @@ def simulate_solo_fire_plan(scenario_name, boligpris, udbetaling_j, ydelse_defau
     else:
         faktisk_udbetaling_j = 0
         base_frie_j = st.session_state["basis_frie_j"]
-        valby_ydelse = 15230
+        valby_ydelse = 15230 - 6930 if nuvaerende_afdragsfri else 15230
         valby_ejerudgifter = 4564
         valby_boligskat = 0
         bolig_total_current = valby_ydelse + valby_ejerudgifter + valby_boligskat
@@ -670,6 +662,7 @@ def simulate_solo_fire_plan(scenario_name, boligpris, udbetaling_j, ydelse_defau
         start_inv_md_j = st.session_state["inkomst_j"] - (budget_j_total + bolig_total_current)
         start_fire_j = sum(v for k, v in solo_budget_j.items() if k not in ["A_kasse_Fagforening", "Loensikring"]) + bolig_total_current
 
+        # Sikker og ren formatering af variabler via format_dkk funktionen
         udb_j_str = format_dkk(faktisk_udbetaling_j)
         ydelse_j_str = format_dkk(realkreditydelse_netto)
         udg_total_str = format_dkk(bolig_total_current)
@@ -732,6 +725,7 @@ def simulate_solo_fire_plan(scenario_name, boligpris, udbetaling_j, ydelse_defau
             ny_hovedstol = restgaeld_ved_oml + oml_omk + equity_amt
             mnd_rente_ny = oml_total_rente / 12
             
+            # Sikring mod division med nul
             if mnd_rente_ny > 0:
                 factor = (1 + mnd_rente_ny)**360
                 if not oml_afdrag_fri:
@@ -763,7 +757,7 @@ def simulate_solo_fire_plan(scenario_name, boligpris, udbetaling_j, ydelse_defau
                 valby_pris += valby_pris_stigning
                 maal_pris += maal_pris_stigning
                 
-                locked_frivaerdi_j += 84000 + asymmetrisk_gevinst
+                locked_frivaerdi_j += (0 if nuvaerende_afdragsfri else 84000) + asymmetrisk_gevinst
                 
                 if year == actual_salgsaar:
                     skaleret_udbetaling_j = udbetaling_j * (maal_pris / boligpris)
@@ -848,6 +842,10 @@ def simulate_solo_fire_plan(scenario_name, boligpris, udbetaling_j, ydelse_defau
 
     st.table(pd.DataFrame(table_data).set_index("År"))
     
+    st.write("")
+    if is_valby or actual_salgsaar > 0:
+        st.toggle("Aktiver afdragsfrihed på nuværende lån (Valby)", key=f"nuvaerende_afdragsfri_{ydelse_key_clean}", on_change=clear_preset, help="Fjerner det faste månedlige afdrag på 6.930 kr. fra jeres udgifter, men fastfryser til gengæld den del af jeres friværdiudvikling.")
+
     with st.expander("🔄 Omlægningsscenarie", expanded=False):
         st.toggle("Aktiver omlægningsscenarie", value=False, key=f"aktiver_oml_{ydelse_key_clean}", on_change=clear_preset)
         
@@ -867,81 +865,6 @@ def simulate_solo_fire_plan(scenario_name, boligpris, udbetaling_j, ydelse_defau
             st.number_input("Beløb til aktiedepot (kr.)", min_value=0, value=1000000, step=100000, key=f"equity_amount_{ydelse_key_clean}", on_change=clear_preset)
             st.caption("Beløbet overføres direkte til dit frie depot i omlægningsåret.")
 
-# --- VISNING 1: OPSÆTNING ---
-if view_selection == "⚙️ Basisdata & Opsætning":
-    st.subheader("Konfiguration af personlig økonomi")
-    
-    # --- FÆLLES UDGIFTER MODUL ---
-    st.markdown("### 🛒 Fælles Udgifter (Mad)")
-    col_mad1, col_mad2 = st.columns(2)
-    with col_mad1:
-        st.session_state["mad_total_val"] = st.number_input("Samlet månedligt madbudget (kr.)", min_value=0, value=st.session_state["mad_total_val"], step=500, key="total_mad_input", on_change=clear_preset)
-    with col_mad2:
-        st.session_state["mad_j_val"] = st.slider("Johans andel af madbudgettet", min_value=0, max_value=int(st.session_state["mad_total_val"]), value=min(st.session_state["mad_j_val"], int(st.session_state["mad_total_val"])), step=100, key="mad_slider_j", on_change=clear_preset)
-    
-    # Opdater automatisk budgetterne ud fra gemte variabler
-    st.session_state["budget_j"]["Mad"] = st.session_state["mad_j_val"]
-    st.session_state["budget_m"]["Mad"] = int(st.session_state["mad_total_val"]) - st.session_state["mad_j_val"]
-    
-    st.write("")
-    st.divider()
-    
-    col_setup_j, col_setup_m = st.columns(2)
-    
-    with col_setup_j:
-        st.markdown("### 👤 JOHAN DATA")
-        st.session_state["inkomst_j"] = st.number_input("Månedsløn (Netto kr.)", value=st.session_state["inkomst_j"], step=500, key="inp_j", on_change=clear_preset)
-        st.session_state["pension_j"] = st.number_input("Pensionsopsparing (kr.)", min_value=0, value=st.session_state["pension_j"], step=10000, key="input_pen_j", on_change=clear_preset)
-        st.session_state["pension_indb_j"] = st.number_input("Arbejdsgiverpension (mdl. kr.)", min_value=0, value=st.session_state["pension_indb_j"], step=500, key="indb_pen_j", on_change=clear_preset)
-        st.session_state["cash_j_base"] = st.number_input("Kontanter / Friværdi (kr.)", value=st.session_state["cash_j_base"], step=10000, key="csh_j", on_change=clear_preset)
-        st.session_state["basis_ask_j"] = st.number_input("Aktiesparekonto (kr.)", value=st.session_state["basis_ask_j"], key="ask_j", on_change=clear_preset)
-        st.session_state["basis_frie_j"] = st.number_input("Frie midler / Aktier (kr.)", value=st.session_state["basis_frie_j"], key="fr_j", on_change=clear_preset)
-        
-        st.session_state["use_loensikring_j"] = st.toggle("Inddrag Lønsikring (1.836 kr.)", value=st.session_state.get("use_loensikring_j", False), key="toggle_loen_j", on_change=clear_preset)
-        st.session_state["budget_j"]["Loensikring"] = 1836 if st.session_state["use_loensikring_j"] else 0
-        
-        df_j = st.data_editor(pd.DataFrame(list(st.session_state["budget_j"].items()), columns=["Kategori", "Beløb"]), hide_index=True, use_container_width=True, key="ed_j", on_change=clear_preset)
-        st.session_state["budget_j"] = dict(df_j.values)
-        st.write("")
-        
-    with col_setup_m:
-        st.markdown("### 👤 MARKUS DATA")
-        st.session_state["inkomst_m"] = st.number_input("Månedsløn (Netto kr.)", value=st.session_state["inkomst_m"], step=500, key="inp_m", on_change=clear_preset)
-        st.session_state["pension_m"] = st.number_input("Pensionsopsparing (kr.)", min_value=0, value=st.session_state["pension_m"], step=10000, key="input_pen_m", on_change=clear_preset)
-        st.session_state["pension_indb_m"] = st.number_input("Arbejdsgiverpension (mdl. kr.)", min_value=0, value=st.session_state["pension_indb_m"], step=500, key="indb_pen_m", on_change=clear_preset)
-        st.session_state["cash_m_base"] = st.number_input("Kontanter / Friværdi (kr.)", value=st.session_state["cash_m_base"], step=10000, key="csh_m", on_change=clear_preset)
-        st.session_state["basis_ask_m"] = st.number_input("Aktiesparekonto (kr.)", value=st.session_state["basis_ask_m"], key="ask_m", on_change=clear_preset)
-        st.session_state["basis_frie_m"] = st.number_input("Frie midler / Aktier (kr.)", value=st.session_state["basis_frie_m"], key="fr_m", on_change=clear_preset)
-        
-        st.session_state["use_loensikring_m"] = st.toggle("Inddrag Lønsikring (720 kr.)", value=st.session_state.get("use_loensikring_m", False), key="toggle_loen_m", on_change=clear_preset)
-        st.session_state["budget_m"]["Loensikring"] = 720 if st.session_state["use_loensikring_m"] else 0
-        
-        df_m = st.data_editor(pd.DataFrame(list(st.session_state["budget_m"].items()), columns=["Kategori", "Beløb"]), hide_index=True, use_container_width=True, key="ed_m", on_change=clear_preset)
-        st.session_state["budget_m"] = dict(df_m.values)
-        st.write("")
-        st.session_state["use_bsu_m"] = st.toggle("Inddrag Norsk BSU", value=st.session_state.get("use_bsu_m", False), key="toggle_bsu_m", on_change=clear_preset)
-
-# --- VISNING 2: SCENARIER ---
-else:
-    is_solo_mode = False
-    if st.session_state.get("secret_id", "").strip().lower() == "solo": is_solo_mode = True
-    try:
-        if "mode" in st.query_params and st.query_params["mode"] == "solo": is_solo_mode = True
-    except: pass
-
-    tab_names = ["3.5M", "4.0M", "4.5M", "5.0M", "5.5M", "Valby"]
-    if is_solo_mode: tab_names.extend(["🔒 Solo 3.0M", "🔒 Solo 3.5M", "🔒 Solo 4.0M"])
-    
-    tabs = st.tabs(tab_names)
-
-    with tabs[0]: simulate_joint_fire_plan("3.5M", 3500000, 966000, 434000, 8516, "yd35", 4564, True, 1600)
-    with tabs[1]: simulate_joint_fire_plan("4.0M", 4000000, 1846222, 1153888, 4075, "yd40", 4564, True, 1850)
-    with tabs[2]: simulate_joint_fire_plan("4.5M", 4500000, 2250000, 1125000, 4576, "yd45", 4564, True, 2050)
-    with tabs[3]: simulate_joint_fire_plan("5.0M", 5000000, 2408888, 983888, 6519, "yd50", 4564, True, 2300)
-    with tabs[4]: simulate_joint_fire_plan("5.5M", 5500000, 1515000, 685000, 13659, "yd55", 4564, True, 2550)
-    with tabs[5]: simulate_joint_fire_plan("Valby", 6700000, 0, 0, 15230, "ydvb", 4564, False, 0)
-
-    if is_solo_mode:
-        with tabs[6]: simulate_solo_fire_plan("3.0M", 3000000, 1200000, 7308, "yds30", 3500, 1400)
-        with tabs[7]: simulate_solo_fire_plan("3.5M", 3500000, 1400000, 8516, "yds35", 4000, 1600)
-        with tabs[8]: simulate_solo_fire_plan("4.0M", 4000000, 1600000, 9724, "yds40", 4500, 1850)
+# --- KØRSELS LOGIK ---
+if __name__ == "__main__":
+    pass
