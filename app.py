@@ -135,6 +135,9 @@ st.sidebar.divider()
 st.sidebar.text_input("Gendan Scenarie-ID", help="Indtast ID for at indlæse specifik konfiguration (f.eks. 'solo').", key="secret_id")
 
 # --- HJÆLPEFUNKTIONER ---
+def format_dkk(amount):
+    return f"{int(amount):,}".replace(',', '.')
+
 def calculate_drawdown_monthly_income(depot_total_arr, current_age, target_age, net_return_rate, inflation_rate, use_real_rate):
     if current_age >= target_age: return depot_total_arr * 0.0
     years_left = target_age - current_age
@@ -152,9 +155,6 @@ def get_emoji_status(barista_hours):
     elif 0 < barista_hours <= 15: return f"🟡 {barista_hours:.1f}t"
     elif 15 < barista_hours <= 25: return f"🟠 {barista_hours:.1f}t"
     else: return f"🔴 {barista_hours:.1f}t"
-
-def format_dkk(amount):
-    return f"{int(amount):,}".replace(',', '.')
 
 # --- DYNAMISKE SIMULERINGSFUNKTIONER ---
 def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_m, ydelse_default, ydelse_key, ejerudgifter_total, bolig_solgt, boligskat_md):
@@ -295,7 +295,7 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
         start_fire_j = sum(v for k, v in st.session_state["budget_j"].items() if k not in ["A_kasse_Fagforening", "Loensikring"]) + bolig_faelles_current
         start_fire_m = sum(v for k, v in st.session_state["budget_m"].items() if k not in ["A_kasse_Fagforening", "Loensikring", "Studielaan"]) + bolig_faelles_current
 
-        # Sikker og ren formatering af variabler
+        # Sikker og ren formatering af variabler via format_dkk funktionen (Ingen nested f-strings!)
         udb_j_str = format_dkk(udbetaling_j)
         ydelse_j_str = format_dkk(realkreditydelse_netto / 2)
         depot_j_str = format_dkk(depot_free_j[0] + depot_ask_j[0])
@@ -311,7 +311,7 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
         skat_text_m = f"**Boligskat (egen andel):** {format_dkk(boligskat_md / 2)} kr./md.  \n" if boligskat_md > 0 and actual_salgsaar == 0 else ""
 
         with col_j:
-            st.subheader(f"JOHAN")
+            st.subheader("JOHAN")
             st.markdown(f"""
             **Mål-Udbetaling:** {udb_j_str} kr.  
             **Mål-Realkreditydelse:** {ydelse_j_str} kr./md.  
@@ -321,7 +321,7 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
             """)
         
         with col_m:
-            st.subheader(f"MARKUS")
+            st.subheader("MARKUS")
             st.markdown(f"""
             **Mål-Udbetaling:** {udb_m_str} kr.  
             **Mål-Realkreditydelse:** {ydelse_m_str} kr./md.  
@@ -373,7 +373,7 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
             ny_hovedstol = restgaeld_ved_oml + oml_omk + equity_amt
             mnd_rente_ny = oml_total_rente / 12
             
-            # Sikring mod division med nul, hvis renten sættes til 0.0
+            # Sikring mod division med nul
             if mnd_rente_ny > 0:
                 if not oml_afdrag_fri:
                     ny_lån_ydelse = ny_hovedstol * (mnd_rente_ny * (1 + mnd_rente_ny)**360) / ((1 + mnd_rente_ny)**360 - 1)
@@ -512,12 +512,12 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
                 table_data.append({
                     "År": year, "J.alder": c_age_j, 
                     "J.depot (M)": f"{p10_dep_j/1e6:.2f}", 
-                    "J.Passiv (kr)": f"{int(p10_p_j):,}".replace(',', '.'), 
+                    "J.Passiv (kr)": format_dkk(p10_p_j), 
                     "J.Arbtid": f"{get_emoji_status(p90_h_j).split()[0]} {p90_h_j:.1f}t",
                     "J.Succes": f"{succ_j:.0f}%",
                     "M.alder": c_age_m, 
                     "M.depot (M)": f"{p10_dep_m/1e6:.2f}", 
-                    "M.Passiv (kr)": f"{int(p10_p_m):,}".replace(',', '.'), 
+                    "M.Passiv (kr)": format_dkk(p10_p_m), 
                     "M.Arbtid": f"{get_emoji_status(p90_h_m).split()[0]} {p90_h_m:.1f}t",
                     "M.Succes": f"{succ_m:.0f}%"
                 })
@@ -525,12 +525,12 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
                 table_data.append({
                     "År": year, "J.alder": c_age_j, 
                     "J.depot (M)": f"{med_dep_j/1e6:.2f}", 
-                    "J.Passiv (kr)": f"{int(med_p_j):,}".replace(',', '.'), 
+                    "J.Passiv (kr)": format_dkk(med_p_j), 
                     "J.Arbtid": get_emoji_status(med_h_j),
                     "J.Succes": f"{succ_j:.0f}%",
                     "M.alder": c_age_m, 
                     "M.depot (M)": f"{med_dep_m/1e6:.2f}", 
-                    "M.Passiv (kr)": f"{int(med_p_m):,}".replace(',', '.'), 
+                    "M.Passiv (kr)": format_dkk(med_p_m), 
                     "M.Arbtid": get_emoji_status(med_h_m),
                     "M.Succes": f"{succ_m:.0f}%"
                 })
@@ -538,11 +538,11 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
             table_data.append({
                 "År": year, "J.alder": c_age_j, 
                 "J.depot (M)": f"{(depot_ask_j[0] + depot_free_j[0])/1e6:.2f}", 
-                "J.Passiv (kr)": f"{int(p_j[0]):,}".replace(',', '.'), 
+                "J.Passiv (kr)": format_dkk(p_j[0]), 
                 "J.Arbtid": get_emoji_status(h_j_array[0]), 
                 "M.alder": c_age_m, 
                 "M.depot (M)": f"{(depot_ask_m[0] + depot_free_m[0])/1e6:.2f}", 
-                "M.Passiv (kr)": f"{int(p_m_total[0]):,}".replace(',', '.'), 
+                "M.Passiv (kr)": format_dkk(p_m_total[0]), 
                 "M.Arbtid": get_emoji_status(h_m_array[0])
             })
             if j_reached_arr[0] and m_reached_arr[0]: break
@@ -664,7 +664,7 @@ def simulate_solo_fire_plan(scenario_name, boligpris, udbetaling_j, ydelse_defau
         start_inv_md_j = st.session_state["inkomst_j"] - (budget_j_total + bolig_total_current)
         start_fire_j = sum(v for k, v in solo_budget_j.items() if k not in ["A_kasse_Fagforening", "Loensikring"]) + bolig_total_current
 
-        # Sikker og ren formatering af variabler
+        # Sikker og ren formatering af variabler via format_dkk funktionen
         udb_j_str = format_dkk(faktisk_udbetaling_j)
         ydelse_j_str = format_dkk(realkreditydelse_netto)
         udg_total_str = format_dkk(bolig_total_current)
@@ -674,7 +674,7 @@ def simulate_solo_fire_plan(scenario_name, boligpris, udbetaling_j, ydelse_defau
         boligpris_str = format_dkk(boligpris)
 
         with col_j:
-            st.subheader(f"JOHAN (SOLO)")
+            st.subheader("JOHAN (SOLO)")
             st.markdown(f"""
             **Boligpris:** {boligpris_str} kr.  
             **Mål-Udbetaling:** {udb_j_str} kr.  
@@ -729,7 +729,7 @@ def simulate_solo_fire_plan(scenario_name, boligpris, udbetaling_j, ydelse_defau
             ny_hovedstol = restgaeld_ved_oml + oml_omk + equity_amt
             mnd_rente_ny = oml_total_rente / 12
             
-            # Sikring mod division med nul, hvis renten sættes til 0.0
+            # Sikring mod division med nul
             if mnd_rente_ny > 0:
                 if not oml_afdrag_fri:
                     ny_lån_ydelse = ny_hovedstol * (mnd_rente_ny * (1 + mnd_rente_ny)**360) / ((1 + mnd_rente_ny)**360 - 1)
@@ -821,7 +821,7 @@ def simulate_solo_fire_plan(scenario_name, boligpris, udbetaling_j, ydelse_defau
                     "År": year, 
                     "Alder": c_age_j, 
                     "Depot (M)": f"{p10_dep_j/1e6:.2f}", 
-                    "Passiv Indkomst (kr)": f"{int(p10_p_j):,}".replace(',', '.'), 
+                    "Passiv Indkomst (kr)": format_dkk(p10_p_j), 
                     "Arbejdstid (Barista)": f"{get_emoji_status(p90_h_j).split()[0]} {p90_h_j:.1f}t",
                     "Succesrate": f"{succ_j:.0f}%"
                 })
@@ -830,7 +830,7 @@ def simulate_solo_fire_plan(scenario_name, boligpris, udbetaling_j, ydelse_defau
                     "År": year, 
                     "Alder": c_age_j, 
                     "Depot (M)": f"{med_dep_j/1e6:.2f}", 
-                    "Passiv Indkomst (kr)": f"{int(med_p_j):,}".replace(',', '.'), 
+                    "Passiv Indkomst (kr)": format_dkk(med_p_j), 
                     "Arbejdstid (Barista)": get_emoji_status(med_h_j),
                     "Succesrate": f"{succ_j:.0f}%"
                 })
@@ -839,7 +839,7 @@ def simulate_solo_fire_plan(scenario_name, boligpris, udbetaling_j, ydelse_defau
                 "År": year, 
                 "Alder": c_age_j, 
                 "Depot (M)": f"{(depot_ask_j[0] + depot_free_j[0])/1e6:.2f}", 
-                "Passiv Indkomst (kr)": f"{int(p_j[0]):,}".replace(',', '.'), 
+                "Passiv Indkomst (kr)": format_dkk(p_j[0]), 
                 "Arbejdstid (Barista)": get_emoji_status(h_j_array[0])
             })
             if j_reached_arr[0]: break
