@@ -101,8 +101,6 @@ st.sidebar.toggle("Købekraftsjusteret udtræk i FIRE-fasen", key="use_real_draw
 st.sidebar.divider()
 st.sidebar.markdown("### Monte Carlo Simulering", help="Stresstester din FIRE-plan ved at køre 1.000 parallelle markedsforløb. Det kvantificerer risikoen for at ramme et krak tidligt i forløbet (Sequence of Returns Risk).")
 mc_volatility = st.sidebar.slider("Markedsvolatilitet (%)", min_value=5.0, max_value=25.0, value=15.0, step=1.0, on_change=clear_preset) / 100
-
-# MC knap skifter nu dynamisk navn og state
 mc_btn_label = "Slå Monte Carlo FRA" if st.session_state.get("mc_active", False) else "Beregn Monte Carlo"
 st.sidebar.button(mc_btn_label, type="primary", use_container_width=True, on_click=toggle_mc)
 
@@ -196,6 +194,32 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
     valby_fast_restgaeld = 3059064
     valby_afdrag_md = 0 if nuvaerende_afdragsfri else 6930
     
+    with st.expander("🏠 Vis økonomiske detaljer & lån", expanded=False):
+        if actual_salgsaar > 0:
+            st.info(f"⏳ **Salg udskudt til År {actual_salgsaar}.** Jeres nuværende Valby-friværdi er låst i mursten indtil da. De viste tal nedenfor afspejler jeres ønskede målbolig og jeres nuværende frie likviditet i År 0.")
+            
+        col_j, col_m, col_inp = st.columns([0.41, 0.41, 0.18], vertical_alignment="bottom")
+
+        target_total_udb = udbetaling_j + udbetaling_m
+        ui_cash_pct = (target_total_udb / boligpris * 100) if boligpris > 0 else 0
+        ui_loan_pct = 100 - ui_cash_pct
+
+        with col_inp:
+            udb_str = f"{target_total_udb/1e6:g}".replace('.', ',')
+            st.markdown(
+                f"<p style='margin-bottom: 15px; margin-top: 0; line-height: 1.3;'>"
+                f"Mål: {int(ui_cash_pct)}% udb. ({udb_str}M) | {int(ui_loan_pct)}% lån</p>", 
+                unsafe_allow_html=True
+            )
+            ejerudgifter_input = st.number_input("Ejerudgifter", value=int(ejerudgifter_total), step=100, key=f"ejer_{ydelse_key_clean}", on_change=clear_preset)
+            realkreditydelse_netto = st.number_input("Realkreditydelse", value=ydelse_default, step=100, key=ydelse_key, on_change=clear_preset)
+
+            # --- DET ER HER FIXET LIGGER: VI TRÆKKER AFDRAGET FRA INPUT-FELTET NÅR MAN ER I VALBY ---
+            effektiv_realkreditydelse = realkreditydelse_netto
+            if is_valby and nuvaerende_afdragsfri:
+                effektiv_realkreditydelse = max(0, realkreditydelse_netto - 6930)
+                st.markdown("<p style='font-size: 0.8em; color: gray; margin-top: -10px;'>* Reduceret pga. afdragsfrihed</p>", unsafe_allow_html=True)
+
     if actual_salgsaar == 0:
         if use_bsu and bolig_solgt:
             cash_m += bsu_amount
@@ -216,7 +240,7 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
         base_frie_j = st.session_state["basis_frie_j"] + (cash_j - faktisk_udbetaling_j)
         base_frie_m = st.session_state["basis_frie_m"] + (cash_m - faktisk_udbetaling_m)
         
-        bolig_faelles_current = (ydelse_default + ejerudgifter_input + boligskat_md) / 2
+        bolig_faelles_current = (effektiv_realkreditydelse + ejerudgifter_input + boligskat_md) / 2
         
         if is_valby:
             restgaeld_start = valby_fast_restgaeld
@@ -252,10 +276,6 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
     j_reached_arr = np.zeros(n_sims, dtype=bool)
     m_reached_arr = np.zeros(n_sims, dtype=bool)
 
-    target_total_udb = udbetaling_j + udbetaling_m
-    ui_cash_pct = (target_total_udb / boligpris * 100) if boligpris > 0 else 0
-    ui_loan_pct = 100 - ui_cash_pct
-
     space_j_init = np.maximum(0, ask_base_limit - depot_ask_j)
     move_j = np.minimum(space_j_init, np.maximum(0, depot_free_j))
     depot_ask_j += move_j
@@ -266,25 +286,7 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
     depot_ask_m += move_m
     depot_free_m -= move_m
 
-    with st.expander("🏠 Vis økonomiske detaljer & lån", expanded=False):
-        if actual_salgsaar > 0:
-            st.info(f"⏳ **Salg udskudt til År {actual_salgsaar}.** Jeres nuværende Valby-friværdi er låst i mursten indtil da. De viste tal nedenfor afspejler jeres ønskede målbolig og jeres nuværende frie likviditet i År 0.")
-            
-        col_j, col_m, col_inp = st.columns([0.41, 0.41, 0.18], vertical_alignment="bottom")
-
-        with col_inp:
-            udb_str = f"{target_total_udb/1e6:g}".replace('.', ',')
-            st.markdown(
-                f"<p style='margin-bottom: 15px; margin-top: 0; line-height: 1.3;'>"
-                f"Mål: {int(ui_cash_pct)}% udb. ({udb_str}M) | {int(ui_loan_pct)}% lån</p>", 
-                unsafe_allow_html=True
-            )
-            ejerudgifter_input = st.number_input("Ejerudgifter", value=int(ejerudgifter_total), step=100, key=f"ejer_{ydelse_key_clean}", on_change=clear_preset)
-            realkreditydelse_netto = st.number_input("Realkreditydelse", value=ydelse_default, step=100, key=ydelse_key, on_change=clear_preset)
-
-        if actual_salgsaar == 0:
-            bolig_faelles_current = (realkreditydelse_netto + ejerudgifter_input + boligskat_md) / 2
-
+    with col_inp:
         budget_j_total = sum(st.session_state["budget_j"].values())
         budget_m_total = sum(st.session_state["budget_m"].values())
 
@@ -294,40 +296,40 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
         start_fire_j = sum(v for k, v in st.session_state["budget_j"].items() if k not in ["A_kasse_Fagforening", "Loensikring"]) + bolig_faelles_current
         start_fire_m = sum(v for k, v in st.session_state["budget_m"].items() if k not in ["A_kasse_Fagforening", "Loensikring", "Studielaan"]) + bolig_faelles_current
 
-        # Rene, formaterede tekststrenge
+        # Sikker formatering
         udb_j_str = format_dkk(udbetaling_j)
-        ydelse_j_str = format_dkk(realkreditydelse_netto / 2)
+        ydelse_j_str = format_dkk(effektiv_realkreditydelse / 2)
         depot_j_str = format_dkk(depot_free_j[0] + depot_ask_j[0])
         inv_md_j_str = format_dkk(start_inv_md_j)
         fire_j_str = format_dkk(start_fire_j)
         skat_text_j = f"**Boligskat (egen andel):** {format_dkk(boligskat_md / 2)} kr./md.  \n" if boligskat_md > 0 and actual_salgsaar == 0 else ""
 
         udb_m_str = format_dkk(udbetaling_m)
-        ydelse_m_str = format_dkk(realkreditydelse_netto / 2)
+        ydelse_m_str = format_dkk(effektiv_realkreditydelse / 2)
         depot_m_str = format_dkk(depot_free_m[0] + depot_ask_m[0])
         inv_md_m_str = format_dkk(start_inv_md_m)
         fire_m_str = format_dkk(start_fire_m)
         skat_text_m = f"**Boligskat (egen andel):** {format_dkk(boligskat_md / 2)} kr./md.  \n" if boligskat_md > 0 and actual_salgsaar == 0 else ""
 
-        with col_j:
-            st.subheader("JOHAN")
-            st.markdown(f"""
-            **Mål-Udbetaling:** {udb_j_str} kr.  
-            **Mål-Realkreditydelse:** {ydelse_j_str} kr./md.  
-            {skat_text_j}**Startdepot (År 0):** {depot_j_str} kr.  
-            **Mdl. opsparing (År 0):** {inv_md_j_str} kr.  
-            **Mdl. Udgifter (År 0):** {fire_j_str} kr./md.
-            """)
-        
-        with col_m:
-            st.subheader("MARKUS")
-            st.markdown(f"""
-            **Mål-Udbetaling:** {udb_m_str} kr.  
-            **Mål-Realkreditydelse:** {ydelse_m_str} kr./md.  
-            {skat_text_m}**Startdepot (År 0):** {depot_m_str} kr.  
-            **Mdl. opsparing (År 0):** {inv_md_m_str} kr.  
-            **Mdl. Udgifter (År 0):** {fire_m_str} kr./md.
-            """)
+    with col_j:
+        st.subheader("JOHAN")
+        st.markdown(f"""
+        **Mål-Udbetaling:** {udb_j_str} kr.  
+        **Mål-Realkreditydelse:** {ydelse_j_str} kr./md.  
+        {skat_text_j}**Startdepot (År 0):** {depot_j_str} kr.  
+        **Mdl. opsparing (År 0):** {inv_md_j_str} kr.  
+        **Mdl. Udgifter (År 0):** {fire_j_str} kr./md.
+        """)
+    
+    with col_m:
+        st.subheader("MARKUS")
+        st.markdown(f"""
+        **Mål-Udbetaling:** {udb_m_str} kr.  
+        **Mål-Realkreditydelse:** {ydelse_m_str} kr./md.  
+        {skat_text_m}**Startdepot (År 0):** {depot_m_str} kr.  
+        **Mdl. opsparing (År 0):** {inv_md_m_str} kr.  
+        **Mdl. Udgifter (År 0):** {fire_m_str} kr./md.
+        """)
 
     oprindelig_rente_mnd = 0.04 / 12
 
@@ -359,7 +361,6 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
         c_age_j, c_age_m = age_j + year, age_m + year
         current_ret = market_returns[year]
         
-        # Omlægningsscenarie Logik
         if aktiver_oml and year == oml_aar and boligpris > 0 and oml_aar > actual_salgsaar:
             if is_valby:
                 afdraget_beloeb = valby_afdrag_md * 12 * oml_aar
@@ -371,7 +372,6 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
             ny_hovedstol = restgaeld_ved_oml + oml_omk + equity_amt
             mnd_rente_ny = oml_total_rente / 12
             
-            # Sikring mod division med nul
             if mnd_rente_ny > 0:
                 factor = (1 + mnd_rente_ny)**360
                 if not oml_afdrag_fri:
@@ -405,7 +405,6 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
                 valby_pris += valby_pris_stigning
                 maal_pris += maal_pris_stigning
                 
-                # Valby afdrag modregnes i den oparbejdede friværdi, hvis ikke afdragsfri!
                 locked_frivaerdi_j += (0 if nuvaerende_afdragsfri else 42000) + (asymmetrisk_gevinst / 2)
                 locked_frivaerdi_m += (0 if nuvaerende_afdragsfri else 42000) + (asymmetrisk_gevinst / 2)
                 
@@ -577,9 +576,7 @@ def simulate_solo_fire_plan(scenario_name, boligpris, udbetaling_j, ydelse_defau
     s_key = f"solo_{ydelse_key}"
     ydelse_key_clean = s_key.replace("solo_", "")
     
-    # MANGLENDE VARIABEL TILFØJET HER FOR AT FORHINDRE CRASH
     nuvaerende_afdragsfri = st.session_state.get(f"nuvaerende_afdragsfri_{ydelse_key_clean}", False)
-    
     ejerudgifter_input = st.session_state.get(f"ejer_{ydelse_key_clean}", int(ejerudgifter_total))
     aktiver_oml = st.session_state.get(f"aktiver_oml_{ydelse_key_clean}", False)
     oml_aar = st.session_state.get(f"oml_aar_{ydelse_key_clean}", 5)
@@ -613,9 +610,30 @@ def simulate_solo_fire_plan(scenario_name, boligpris, udbetaling_j, ydelse_defau
     valby_fast_restgaeld = 3059064
     valby_afdrag_md = 0 if nuvaerende_afdragsfri else 6930
 
+    with st.expander("⚙️ Vis økonomiske detaljer & lån", expanded=False):
+        if actual_salgsaar > 0:
+            st.info(f"⏳ **Salg udskudt til År {actual_salgsaar}.** Jeres nuværende Valby-friværdi er låst i mursten indtil da. De viste tal nedenfor afspejler den ønskede målbolig og din nuværende frie likviditet i År 0.")
+            
+        col_j, col_m, col_inp = st.columns([0.41, 0.41, 0.18], vertical_alignment="bottom")
+
+        with col_inp:
+            udb_str = f"{faktisk_udbetaling_j/1e6:g}".replace('.', ',')
+            st.markdown(
+                f"<p style='margin-bottom: 15px; margin-top: 0; line-height: 1.3;'>"
+                f"Mål: {int(cash_pct)}% udb. ({udb_str}M) | {int(loan_pct)}% lån</p>", 
+                unsafe_allow_html=True
+            )
+            ejerudgifter_input = st.number_input("Ejerudgifter", value=int(ejerudgifter_total), step=100, key=f"ejer_{ydelse_key_clean}", on_change=clear_preset)
+            realkreditydelse_netto = st.number_input("Realkreditydelse", value=ydelse_default, step=100, key=ydelse_key, on_change=clear_preset)
+
+            effektiv_realkreditydelse = realkreditydelse_netto
+            if is_valby and nuvaerende_afdragsfri:
+                effektiv_realkreditydelse = max(0, realkreditydelse_netto - 6930)
+                st.markdown("<p style='font-size: 0.8em; color: gray; margin-top: -10px;'>* Reduceret pga. afdragsfrihed</p>", unsafe_allow_html=True)
+
     if actual_salgsaar == 0:
         base_frie_j = st.session_state["basis_frie_j"] + (cash_j - faktisk_udbetaling_j)
-        bolig_total_current = ydelse_default + ejerudgifter_input + boligskat_md
+        bolig_total_current = effektiv_realkreditydelse + ejerudgifter_input + boligskat_md
         
         if is_valby:
             restgaeld_start = valby_fast_restgaeld
@@ -643,50 +661,31 @@ def simulate_solo_fire_plan(scenario_name, boligpris, udbetaling_j, ydelse_defau
     depot_ask_j += move_j
     depot_free_j -= move_j
 
-    with st.expander("⚙️ Vis økonomiske detaljer & lån", expanded=False):
-        if actual_salgsaar > 0:
-            st.info(f"⏳ **Salg udskudt til År {actual_salgsaar}.** Jeres nuværende Valby-friværdi er låst i mursten indtil da. De viste tal nedenfor afspejler den ønskede målbolig og din nuværende frie likviditet i År 0.")
-            
-        col_j, col_m, col_inp = st.columns([0.41, 0.41, 0.18], vertical_alignment="bottom")
-
-        with col_inp:
-            udb_str = f"{faktisk_udbetaling_j/1e6:g}".replace('.', ',')
-            st.markdown(
-                f"<p style='margin-bottom: 15px; margin-top: 0; line-height: 1.3;'>"
-                f"Mål: {int(cash_pct)}% udb. ({udb_str}M) | {int(loan_pct)}% lån</p>", 
-                unsafe_allow_html=True
-            )
-            ejerudgifter_input = st.number_input("Ejerudgifter", value=int(ejerudgifter_total), step=100, key=f"ejer_{ydelse_key_clean}", on_change=clear_preset)
-            realkreditydelse_netto = st.number_input("Realkreditydelse", value=ydelse_default, step=100, key=ydelse_key, on_change=clear_preset)
-
-        if actual_salgsaar == 0:
-            bolig_total_current = realkreditydelse_netto + ejerudgifter_input + boligskat_md
-
+    with col_inp:
         solo_budget_j = st.session_state["budget_j"].copy()
         solo_budget_j["Mad"] = 3000
-
         budget_j_total = sum(solo_budget_j.values())
         
         start_inv_md_j = st.session_state["inkomst_j"] - (budget_j_total + bolig_total_current)
         start_fire_j = sum(v for k, v in solo_budget_j.items() if k not in ["A_kasse_Fagforening", "Loensikring"]) + bolig_total_current
 
         udb_j_str = format_dkk(faktisk_udbetaling_j)
-        ydelse_j_str = format_dkk(realkreditydelse_netto)
+        ydelse_j_str = format_dkk(effektiv_realkreditydelse)
         udg_total_str = format_dkk(bolig_total_current)
         depot_j_str = format_dkk(depot_free_j[0] + depot_ask_j[0])
         inv_md_j_str = format_dkk(start_inv_md_j)
         fire_j_str = format_dkk(start_fire_j)
         boligpris_str = format_dkk(boligpris)
 
-        with col_j:
-            st.subheader("JOHAN (SOLO)")
-            st.markdown(f"""
-            **Boligpris:** {boligpris_str} kr.  
-            **Mål-Udbetaling:** {udb_j_str} kr.  
-            **Boligudgifter total:** {udg_total_str} kr./md.  \n**Startdepot (År 0):** {depot_j_str} kr.  
-            **Mdl. opsparing:** {inv_md_j_str} kr.  
-            **Mdl. Udgifter:** {fire_j_str} kr./md.
-            """)
+    with col_j:
+        st.subheader("JOHAN (SOLO)")
+        st.markdown(f"""
+        **Boligpris:** {boligpris_str} kr.  
+        **Mål-Udbetaling:** {udb_j_str} kr.  
+        **Boligudgifter total:** {udg_total_str} kr./md.  \n**Startdepot (År 0):** {depot_j_str} kr.  
+        **Mdl. opsparing:** {inv_md_j_str} kr.  
+        **Mdl. Udgifter:** {fire_j_str} kr./md.
+        """)
             
     st.write("")
 
@@ -870,7 +869,6 @@ def simulate_solo_fire_plan(scenario_name, boligpris, udbetaling_j, ydelse_defau
         if st.session_state.get(f"use_equity_{ydelse_key_clean}", False):
             st.number_input("Beløb til aktiedepot (kr.)", min_value=0, value=1000000, step=100000, key=f"equity_amount_{ydelse_key_clean}", on_change=clear_preset)
             st.caption("Beløbet overføres direkte til dit frie depot i omlægningsåret.")
-
 
 # --- KØRSELS LOGIK ---
 if view_selection == "⚙️ Basisdata & Opsætning":
