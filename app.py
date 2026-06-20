@@ -871,6 +871,7 @@ def simulate_solo_fire_plan(scenario_name, boligpris, udbetaling_j, ydelse_defau
             st.number_input("Beløb til aktiedepot (kr.)", min_value=0, value=1000000, step=100000, key=f"equity_amount_{ydelse_key_clean}", on_change=clear_preset)
             st.caption("Beløbet overføres direkte til dit frie depot i omlægningsåret.")
 
+
 # --- KØRSELS LOGIK ---
 if view_selection == "⚙️ Basisdata & Opsætning":
     st.subheader("Konfiguration af personlig økonomi")
@@ -947,4 +948,4 @@ else:
     if is_solo_mode:
         with tabs[6]: simulate_solo_fire_plan("3.0M", 3000000, 1200000, 7308, "yds30", 3500, 1400)
         with tabs[7]: simulate_solo_fire_plan("3.5M", 3500000, 1400000, 8516, "yds35", 4000, 1600)
-        with tabs[8]: simulate_solo_fire_plan("4.0M", 4000000, 1600000, 9724, "yds40", 4500, 1850
+        with tabs[8]: simulate_solo_fire_plan("4.0M", 4000000, 1600000, 9724, "yds40", 4500, 1850)
