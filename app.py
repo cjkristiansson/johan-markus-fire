@@ -186,6 +186,7 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
     use_ask_500k = st.session_state.get("use_ask_500k", False)
     ask_base_limit = 500000 if use_ask_500k else 174000
 
+    # MC Logik
     is_mc = st.session_state.get("mc_active", False)
     n_sims = 1000 if is_mc else 1
     vol = mc_volatility if is_mc else 0.0
@@ -352,6 +353,7 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
         mc_view = st.radio(
             "Vælg Monte Carlo Visning",
             options=["P10 (Worst-case scenarie)", "Median (Forventet scenarie)"],
+            index=0,
             horizontal=True,
             key=f"mc_view_joint_{ydelse_key_clean}",
             label_visibility="collapsed"
@@ -366,6 +368,7 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
         c_age_j, c_age_m = age_j + year, age_m + year
         current_ret = market_returns[year]
         
+        # Omlægningsscenarie Logik
         if aktiver_oml and year == oml_aar and boligpris > 0 and oml_aar > actual_salgsaar:
             if is_valby:
                 afdraget_beloeb = valby_afdrag_md * 12 * oml_aar
@@ -702,6 +705,7 @@ def simulate_solo_fire_plan(scenario_name, boligpris, udbetaling_j, ydelse_defau
         mc_view = st.radio(
             "Vælg Monte Carlo Visning",
             options=["P10 (Worst-case scenarie)", "Median (Forventet scenarie)"],
+            index=0,
             horizontal=True,
             key=f"mc_view_solo_{ydelse_key_clean}",
             label_visibility="collapsed"
@@ -862,3 +866,82 @@ def simulate_solo_fire_plan(scenario_name, boligpris, udbetaling_j, ydelse_defau
         if st.session_state.get(f"use_equity_{ydelse_key_clean}", False):
             st.number_input("Beløb til aktiedepot (kr.)", min_value=0, value=1000000, step=100000, key=f"equity_amount_{ydelse_key_clean}", on_change=clear_preset)
             st.caption("Beløbet overføres direkte til dit frie depot i omlægningsåret.")
+
+# --- VISNING 1: OPSÆTNING ---
+if view_selection == "⚙️ Basisdata & Opsætning":
+    st.subheader("Konfiguration af personlig økonomi")
+    
+    # --- FÆLLES UDGIFTER MODUL ---
+    st.markdown("### 🛒 Fælles Udgifter (Mad)")
+    col_mad1, col_mad2 = st.columns(2)
+    with col_mad1:
+        st.session_state["mad_total_val"] = st.number_input("Samlet månedligt madbudget (kr.)", min_value=0, value=st.session_state["mad_total_val"], step=500, key="total_mad_input", on_change=clear_preset)
+    with col_mad2:
+        st.session_state["mad_j_val"] = st.slider("Johans andel af madbudgettet", min_value=0, max_value=int(st.session_state["mad_total_val"]), value=min(st.session_state["mad_j_val"], int(st.session_state["mad_total_val"])), step=100, key="mad_slider_j", on_change=clear_preset)
+    
+    # Opdater automatisk budgetterne ud fra gemte variabler
+    st.session_state["budget_j"]["Mad"] = st.session_state["mad_j_val"]
+    st.session_state["budget_m"]["Mad"] = int(st.session_state["mad_total_val"]) - st.session_state["mad_j_val"]
+    
+    st.write("")
+    st.divider()
+    
+    col_setup_j, col_setup_m = st.columns(2)
+    
+    with col_setup_j:
+        st.markdown("### 👤 JOHAN DATA")
+        st.session_state["inkomst_j"] = st.number_input("Månedsløn (Netto kr.)", value=st.session_state["inkomst_j"], step=500, key="inp_j", on_change=clear_preset)
+        st.session_state["pension_j"] = st.number_input("Pensionsopsparing (kr.)", min_value=0, value=st.session_state["pension_j"], step=10000, key="input_pen_j", on_change=clear_preset)
+        st.session_state["pension_indb_j"] = st.number_input("Arbejdsgiverpension (mdl. kr.)", min_value=0, value=st.session_state["pension_indb_j"], step=500, key="indb_pen_j", on_change=clear_preset)
+        st.session_state["cash_j_base"] = st.number_input("Kontanter / Friværdi (kr.)", value=st.session_state["cash_j_base"], step=10000, key="csh_j", on_change=clear_preset)
+        st.session_state["basis_ask_j"] = st.number_input("Aktiesparekonto (kr.)", value=st.session_state["basis_ask_j"], key="ask_j", on_change=clear_preset)
+        st.session_state["basis_frie_j"] = st.number_input("Frie midler / Aktier (kr.)", value=st.session_state["basis_frie_j"], key="fr_j", on_change=clear_preset)
+        
+        st.session_state["use_loensikring_j"] = st.toggle("Inddrag Lønsikring (1.836 kr.)", value=st.session_state.get("use_loensikring_j", False), key="toggle_loen_j", on_change=clear_preset)
+        st.session_state["budget_j"]["Loensikring"] = 1836 if st.session_state["use_loensikring_j"] else 0
+        
+        df_j = st.data_editor(pd.DataFrame(list(st.session_state["budget_j"].items()), columns=["Kategori", "Beløb"]), hide_index=True, use_container_width=True, key="ed_j", on_change=clear_preset)
+        st.session_state["budget_j"] = dict(df_j.values)
+        st.write("")
+        
+    with col_setup_m:
+        st.markdown("### 👤 MARKUS DATA")
+        st.session_state["inkomst_m"] = st.number_input("Månedsløn (Netto kr.)", value=st.session_state["inkomst_m"], step=500, key="inp_m", on_change=clear_preset)
+        st.session_state["pension_m"] = st.number_input("Pensionsopsparing (kr.)", min_value=0, value=st.session_state["pension_m"], step=10000, key="input_pen_m", on_change=clear_preset)
+        st.session_state["pension_indb_m"] = st.number_input("Arbejdsgiverpension (mdl. kr.)", min_value=0, value=st.session_state["pension_indb_m"], step=500, key="indb_pen_m", on_change=clear_preset)
+        st.session_state["cash_m_base"] = st.number_input("Kontanter / Friværdi (kr.)", value=st.session_state["cash_m_base"], step=10000, key="csh_m", on_change=clear_preset)
+        st.session_state["basis_ask_m"] = st.number_input("Aktiesparekonto (kr.)", value=st.session_state["basis_ask_m"], key="ask_m", on_change=clear_preset)
+        st.session_state["basis_frie_m"] = st.number_input("Frie midler / Aktier (kr.)", value=st.session_state["basis_frie_m"], key="fr_m", on_change=clear_preset)
+        
+        st.session_state["use_loensikring_m"] = st.toggle("Inddrag Lønsikring (720 kr.)", value=st.session_state.get("use_loensikring_m", False), key="toggle_loen_m", on_change=clear_preset)
+        st.session_state["budget_m"]["Loensikring"] = 720 if st.session_state["use_loensikring_m"] else 0
+        
+        df_m = st.data_editor(pd.DataFrame(list(st.session_state["budget_m"].items()), columns=["Kategori", "Beløb"]), hide_index=True, use_container_width=True, key="ed_m", on_change=clear_preset)
+        st.session_state["budget_m"] = dict(df_m.values)
+        st.write("")
+        st.session_state["use_bsu_m"] = st.toggle("Inddrag Norsk BSU", value=st.session_state.get("use_bsu_m", False), key="toggle_bsu_m", on_change=clear_preset)
+
+# --- VISNING 2: SCENARIER ---
+else:
+    is_solo_mode = False
+    if st.session_state.get("secret_id", "").strip().lower() == "solo": is_solo_mode = True
+    try:
+        if "mode" in st.query_params and st.query_params["mode"] == "solo": is_solo_mode = True
+    except: pass
+
+    tab_names = ["3.5M", "4.0M", "4.5M", "5.0M", "5.5M", "Valby"]
+    if is_solo_mode: tab_names.extend(["🔒 Solo 3.0M", "🔒 Solo 3.5M", "🔒 Solo 4.0M"])
+    
+    tabs = st.tabs(tab_names)
+
+    with tabs[0]: simulate_joint_fire_plan("3.5M", 3500000, 966000, 434000, 8516, "yd35", 4564, True, 1600)
+    with tabs[1]: simulate_joint_fire_plan("4.0M", 4000000, 1846222, 1153888, 4075, "yd40", 4564, True, 1850)
+    with tabs[2]: simulate_joint_fire_plan("4.5M", 4500000, 2250000, 1125000, 4576, "yd45", 4564, True, 2050)
+    with tabs[3]: simulate_joint_fire_plan("5.0M", 5000000, 2408888, 983888, 6519, "yd50", 4564, True, 2300)
+    with tabs[4]: simulate_joint_fire_plan("5.5M", 5500000, 1515000, 685000, 13659, "yd55", 4564, True, 2550)
+    with tabs[5]: simulate_joint_fire_plan("Valby", 6700000, 0, 0, 15230, "ydvb", 4564, False, 0)
+
+    if is_solo_mode:
+        with tabs[6]: simulate_solo_fire_plan("3.0M", 3000000, 1200000, 7308, "yds30", 3500, 1400)
+        with tabs[7]: simulate_solo_fire_plan("3.5M", 3500000, 1400000, 8516, "yds35", 4000, 1600)
+        with tabs[8]: simulate_solo_fire_plan("4.0M", 4000000, 1600000, 9724, "yds40", 4500, 1850)
