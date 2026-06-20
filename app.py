@@ -80,11 +80,9 @@ if "active_preset" not in st.session_state:
 
 def set_preset(preset):
     st.session_state["active_preset"] = preset
-    # Fjerner MC-deaktivering herfra, så de er uafhængige
 
 def clear_preset():
     st.session_state["active_preset"] = "Custom"
-    # Fjerner MC-deaktivering herfra. MC forbliver aktiv, mens du justerer skydere!
 
 def toggle_mc():
     st.session_state["mc_active"] = not st.session_state.get("mc_active", False)
@@ -103,8 +101,6 @@ st.sidebar.toggle("Købekraftsjusteret udtræk i FIRE-fasen", key="use_real_draw
 st.sidebar.divider()
 st.sidebar.markdown("### Monte Carlo Simulering", help="Stresstester din FIRE-plan ved at køre 1.000 parallelle markedsforløb. Det kvantificerer risikoen for at ramme et krak tidligt i forløbet (Sequence of Returns Risk).")
 mc_volatility = st.sidebar.slider("Markedsvolatilitet (%)", min_value=5.0, max_value=25.0, value=15.0, step=1.0, on_change=clear_preset) / 100
-
-# MC knap skifter nu dynamisk navn og state
 mc_btn_label = "Slå Monte Carlo FRA" if st.session_state.get("mc_active", False) else "Beregn Monte Carlo"
 st.sidebar.button(mc_btn_label, type="primary", use_container_width=True, on_click=toggle_mc)
 
@@ -235,7 +231,6 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
         base_frie_j = st.session_state["basis_frie_j"]
         base_frie_m = st.session_state["basis_frie_m"]
         
-        # Hvis afdragsfriheden er aktiv, falder jeres faste udgifter
         valby_ydelse = 15230 - 6930 if nuvaerende_afdragsfri else 15230
         valby_ejerudgifter = 4564
         valby_boligskat = 0
@@ -297,7 +292,6 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
         start_fire_j = sum(v for k, v in st.session_state["budget_j"].items() if k not in ["A_kasse_Fagforening", "Loensikring"]) + bolig_faelles_current
         start_fire_m = sum(v for k, v in st.session_state["budget_m"].items() if k not in ["A_kasse_Fagforening", "Loensikring", "Studielaan"]) + bolig_faelles_current
 
-        # Rene, formaterede tekststrenge
         udb_j_str = format_dkk(udbetaling_j)
         ydelse_j_str = format_dkk(realkreditydelse_netto / 2)
         depot_j_str = format_dkk(depot_free_j[0] + depot_ask_j[0])
@@ -501,6 +495,14 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
             p90_h_j = np.percentile(h_j_array, 90)
             succ_j = np.mean(h_j_array <= 0) * 100
 
+            med_dep_m = np.median(depot_ask_m + depot_free_m)
+            p10_dep_m = np.percentile(depot_ask_m + depot_free_m, 10)
+            med_p_m = np.median(p_m_total)
+            p10_p_m = np.percentile(p_m_total, 10)
+            med_h_m = np.median(h_m_array)
+            p90_h_m = np.percentile(h_m_array, 90)
+            succ_m = np.mean(h_m_array <= 0) * 100
+
             if is_worst_case:
                 table_data.append({
                     "År": year, "J.alder": c_age_j, 
@@ -571,7 +573,9 @@ def simulate_solo_fire_plan(scenario_name, boligpris, udbetaling_j, ydelse_defau
     s_key = f"solo_{ydelse_key}"
     ydelse_key_clean = s_key.replace("solo_", "")
     
+    # KORREKT TILFØJELSE TIL SOLO-FUNKTION:
     nuvaerende_afdragsfri = st.session_state.get(f"nuvaerende_afdragsfri_{ydelse_key_clean}", False)
+    
     ejerudgifter_input = st.session_state.get(f"ejer_{ydelse_key_clean}", int(ejerudgifter_total))
     aktiver_oml = st.session_state.get(f"aktiver_oml_{ydelse_key_clean}", False)
     oml_aar = st.session_state.get(f"oml_aar_{ydelse_key_clean}", 5)
@@ -662,7 +666,6 @@ def simulate_solo_fire_plan(scenario_name, boligpris, udbetaling_j, ydelse_defau
         start_inv_md_j = st.session_state["inkomst_j"] - (budget_j_total + bolig_total_current)
         start_fire_j = sum(v for k, v in solo_budget_j.items() if k not in ["A_kasse_Fagforening", "Loensikring"]) + bolig_total_current
 
-        # Sikker og ren formatering af variabler via format_dkk funktionen
         udb_j_str = format_dkk(faktisk_udbetaling_j)
         ydelse_j_str = format_dkk(realkreditydelse_netto)
         udg_total_str = format_dkk(bolig_total_current)
@@ -725,7 +728,6 @@ def simulate_solo_fire_plan(scenario_name, boligpris, udbetaling_j, ydelse_defau
             ny_hovedstol = restgaeld_ved_oml + oml_omk + equity_amt
             mnd_rente_ny = oml_total_rente / 12
             
-            # Sikring mod division med nul
             if mnd_rente_ny > 0:
                 factor = (1 + mnd_rente_ny)**360
                 if not oml_afdrag_fri:
@@ -866,5 +868,5 @@ def simulate_solo_fire_plan(scenario_name, boligpris, udbetaling_j, ydelse_defau
             st.caption("Beløbet overføres direkte til dit frie depot i omlægningsåret.")
 
 # --- KØRSELS LOGIK ---
-if __name__ == "__main__":
-    pass
+if view_selection == "⚙️ Basisdata & Opsætning":
+    pass # Indholdet er ovenfor
