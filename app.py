@@ -183,6 +183,10 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
     cash_j = st.session_state["cash_j_base"] if bolig_solgt else 0
     cash_m = st.session_state["cash_m_base"] if bolig_solgt else 0
     
+    # Korrekt identifikation af Valby-startgæld
+    valby_fast_restgaeld = 3059064
+    valby_afdrag_md = 6930
+    
     if actual_salgsaar == 0:
         if use_bsu and bolig_solgt:
             cash_m += bsu_amount
@@ -204,7 +208,11 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
         base_frie_m = st.session_state["basis_frie_m"] + (cash_m - faktisk_udbetaling_m)
         
         bolig_faelles_current = (ydelse_default + ejerudgifter_input + boligskat_md) / 2
-        restgaeld_start = boligpris - (faktisk_udbetaling_j + faktisk_udbetaling_m)
+        
+        if is_valby:
+            restgaeld_start = valby_fast_restgaeld
+        else:
+            restgaeld_start = boligpris - (faktisk_udbetaling_j + faktisk_udbetaling_m)
         
         locked_frivaerdi_j = 0.0
         locked_frivaerdi_m = 0.0
@@ -220,7 +228,7 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
         valby_ejerudgifter = 4564
         valby_boligskat = 0
         bolig_faelles_current = (valby_ydelse + valby_ejerudgifter + valby_boligskat) / 2
-        restgaeld_start = 0 
+        restgaeld_start = valby_fast_restgaeld
         
         locked_frivaerdi_j = float(cash_j)
         locked_frivaerdi_m = float(cash_m)
@@ -284,8 +292,7 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
             st.subheader(f"JOHAN")
             st.markdown(f"""
             **Mål-Udbetaling:** {f'{int(udbetaling_j):,}'.replace(',', '.')} kr.  
-            **Mål-Realkreditydelse:** {f'{int(realkreditydelse_netto / 2):,}'.replace(',', '.')} kr./md.  
-            {skat_line_j}**Startdepot (År 0):** {f'{int(depot_free_j[0] + depot_ask_j[0]):,}'.replace(',', '.')} kr.  
+            **Mål-Realkreditydelse:** {f'{int(realkreditydelse_netto / 2):,}'.replace(',', '.')} kr./md.  \n{skat_line_j}**Startdepot (År 0):** {f'{int(depot_free_j[0] + depot_ask_j[0]):,}'.replace(',', '.')} kr.  
             **Mdl. opsparing (År 0):** {f'{int(start_inv_md_j):,}'.replace(',', '.')} kr.  
             **Mdl. Udgifter (År 0):** {f'{int(start_fire_j):,}'.replace(',', '.')} kr./md.
             """)
@@ -294,17 +301,12 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
             st.subheader(f"MARKUS")
             st.markdown(f"""
             **Mål-Udbetaling:** {f'{int(udbetaling_m):,}'.replace(',', '.')} kr.  
-            **Mål-Realkreditydelse:** {f'{int(realkreditydelse_netto / 2):,}'.replace(',', '.')} kr./md.  
-            {skat_line_m}**Startdepot (År 0):** {f'{int(depot_free_m[0] + depot_ask_m[0]):,}'.replace(',', '.')} kr.  
+            **Mål-Realkreditydelse:** {f'{int(realkreditydelse_netto / 2):,}'.replace(',', '.')} kr./md.  \n{skat_line_m}**Startdepot (År 0):** {f'{int(depot_free_m[0] + depot_ask_m[0]):,}'.replace(',', '.')} kr.  
             **Mdl. opsparing (År 0):** {f'{int(start_inv_md_m):,}'.replace(',', '.')} kr.  
             **Mdl. Udgifter (År 0):** {f'{int(start_fire_m):,}'.replace(',', '.')} kr./md.
             """)
 
-    if "Valby" in scenario_name:
-        oprindelig_rente_mnd = 0.024 / 12
-        start_afdrag_mnd = 6929
-    else:
-        oprindelig_rente_mnd = 0.04 / 12
+    oprindelig_rente_mnd = 0.04 / 12
 
     if is_mc:
         with st.expander("❓ Sådan læser du Monte Carlo-resultaterne", expanded=False):
@@ -335,12 +337,14 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
         c_age_j, c_age_m = age_j + year, age_m + year
         current_ret = market_returns[year]
         
+        # Omlægningsscenarie Logik
         if aktiver_oml and year == oml_aar and boligpris > 0 and oml_aar > actual_salgsaar:
-            mdr_gaaet = (oml_aar - actual_salgsaar) * 12
-            if "Valby" in scenario_name:
-                afdraget_beloeb = start_afdrag_mnd * (((1 + oprindelig_rente_mnd)**mdr_gaaet - 1) / oprindelig_rente_mnd)
+            if is_valby:
+                # Træk det præcise beløb vi har afdraget fra restgælden
+                afdraget_beloeb = valby_afdrag_md * 12 * oml_aar
                 restgaeld_ved_oml = max(0, restgaeld_start - afdraget_beloeb)
             else:
+                mdr_gaaet = (oml_aar - actual_salgsaar) * 12
                 restgaeld_ved_oml = restgaeld_start * ((1 + oprindelig_rente_mnd)**360 - (1 + oprindelig_rente_mnd)**mdr_gaaet) / ((1 + oprindelig_rente_mnd)**360 - 1)
             
             ny_hovedstol = restgaeld_ved_oml + oml_omk
@@ -352,7 +356,11 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
                 ny_lån_ydelse = ny_hovedstol * mnd_rente_ny
                 
             renter_md = (ny_hovedstol * oml_rente) / 12
-            netto_bolig_faelles = (ny_lån_ydelse + ejerudgifter_input + boligskat_md - (renter_md * 0.256)) / 2
+            
+            # Brug ejerudgifter_input for alle scenarier undtagen når man er i Valby FØR salg, hvor Valby udgifterne gælder.
+            current_ejerudgifter = 4564 if (is_valby and year <= actual_salgsaar) else ejerudgifter_input
+            
+            netto_bolig_faelles = (ny_lån_ydelse + current_ejerudgifter + boligskat_md - (renter_md * 0.256)) / 2
             
             diff_faelles = bolig_faelles_current - netto_bolig_faelles
             start_fire_j -= diff_faelles; start_fire_m -= diff_faelles
@@ -370,6 +378,7 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
                 valby_pris += valby_pris_stigning
                 maal_pris += maal_pris_stigning
                 
+                # Valby har højere faste afdrag (84.000 om året modregnes friværdien)
                 locked_frivaerdi_j += 42000 + (asymmetrisk_gevinst / 2)
                 locked_frivaerdi_m += 42000 + (asymmetrisk_gevinst / 2)
                 
@@ -388,6 +397,9 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
                     fakt_udb_m = skaleret_udbetaling_m - mangler_m
                     udb_j_tot = skaleret_udbetaling_j + mangler_m
                     fakt_udb_j = udb_j_tot - max(0, udb_j_tot - locked_frivaerdi_j)
+                    
+                    if fakt_udb_j > locked_frivaerdi_j and n_sims == 1:
+                        st.error(f"⚠️ I År {year} overstiger den fremskrevne udbetaling friværdien i {scenario_name} scenariet.")
                     
                     depot_free_j += max(0, locked_frivaerdi_j - fakt_udb_j)
                     depot_free_m += max(0, locked_frivaerdi_m - fakt_udb_m)
@@ -550,10 +562,18 @@ def simulate_solo_fire_plan(scenario_name, boligpris, udbetaling_j, ydelse_defau
     valby_pris = 6700000
     maal_pris = boligpris
 
+    valby_fast_restgaeld = 3059064
+    valby_afdrag_md = 6930
+
     if actual_salgsaar == 0:
         base_frie_j = st.session_state["basis_frie_j"] + (cash_j - faktisk_udbetaling_j)
         bolig_total_current = ydelse_default + ejerudgifter_input + boligskat_md
-        restgaeld_start = boligpris - faktisk_udbetaling_j
+        
+        if is_valby:
+            restgaeld_start = valby_fast_restgaeld
+        else:
+            restgaeld_start = boligpris - faktisk_udbetaling_j
+            
         locked_frivaerdi_j = 0.0
     else:
         faktisk_udbetaling_j = 0
@@ -562,7 +582,7 @@ def simulate_solo_fire_plan(scenario_name, boligpris, udbetaling_j, ydelse_defau
         valby_ejerudgifter = 4564
         valby_boligskat = 0
         bolig_total_current = valby_ydelse + valby_ejerudgifter + valby_boligskat
-        restgaeld_start = 0
+        restgaeld_start = valby_fast_restgaeld
         locked_frivaerdi_j = float(cash_j)
 
     depot_free_j = np.full(n_sims, base_frie_j, dtype=float)
@@ -607,19 +627,14 @@ def simulate_solo_fire_plan(scenario_name, boligpris, udbetaling_j, ydelse_defau
             st.markdown(f"""
             **Boligpris:** {f'{int(boligpris):,}'.replace(',', '.')} kr.  
             **Mål-Udbetaling:** {f'{int(faktisk_udbetaling_j):,}'.replace(',', '.')} kr.  
-            **Boligudgifter total:** {f'{int(bolig_total_current):,}'.replace(',', '.')} kr./md.  
-            **Startdepot (År 0):** {f'{int(depot_free_j[0] + depot_ask_j[0]):,}'.replace(',', '.')} kr.  
+            **Boligudgifter total:** {f'{int(bolig_total_current):,}'.replace(',', '.')} kr./md.  \n**Startdepot (År 0):** {f'{int(depot_free_j[0] + depot_ask_j[0]):,}'.replace(',', '.')} kr.  
             **Mdl. opsparing:** {f'{int(start_inv_md_j):,}'.replace(',', '.')} kr.  
             **Mdl. Udgifter:** {f'{int(start_fire_j):,}'.replace(',', '.')} kr./md.
             """)
             
     st.write("")
 
-    if "Valby" in scenario_name:
-        oprindelig_rente_mnd = 0.024 / 12
-        start_afdrag_mnd = 6929
-    else:
-        oprindelig_rente_mnd = 0.04 / 12
+    oprindelig_rente_mnd = 0.04 / 12
 
     if is_mc:
         with st.expander("❓ Sådan læser du Monte Carlo-resultaterne", expanded=False):
@@ -651,8 +666,13 @@ def simulate_solo_fire_plan(scenario_name, boligpris, udbetaling_j, ydelse_defau
         current_ret = market_returns[year]
         
         if aktiver_oml and year == oml_aar and boligpris > 0 and oml_aar > actual_salgsaar:
-            mdr_gaaet = (oml_aar - actual_salgsaar) * 12
-            restgaeld_ved_oml = restgaeld_start * ((1 + oprindelig_rente_mnd)**360 - (1 + oprindelig_rente_mnd)**mdr_gaaet) / ((1 + oprindelig_rente_mnd)**360 - 1)
+            if is_valby:
+                afdraget_beloeb = valby_afdrag_md * 12 * oml_aar
+                restgaeld_ved_oml = max(0, restgaeld_start - afdraget_beloeb)
+            else:
+                mdr_gaaet = (oml_aar - actual_salgsaar) * 12
+                restgaeld_ved_oml = restgaeld_start * ((1 + oprindelig_rente_mnd)**360 - (1 + oprindelig_rente_mnd)**mdr_gaaet) / ((1 + oprindelig_rente_mnd)**360 - 1)
+            
             ny_hovedstol = restgaeld_ved_oml + oml_omk
             mnd_rente_ny = oml_rente / 12
             
@@ -660,7 +680,10 @@ def simulate_solo_fire_plan(scenario_name, boligpris, udbetaling_j, ydelse_defau
             else: ny_lån_ydelse = ny_hovedstol * mnd_rente_ny
                 
             renter_md = (ny_hovedstol * oml_rente) / 12
-            netto_bolig_total = ny_lån_ydelse + ejerudgifter_input + boligskat_md - (renter_md * 0.256)
+            
+            current_ejerudgifter = 4564 if (is_valby and year <= actual_salgsaar) else ejerudgifter_input
+            netto_bolig_total = ny_lån_ydelse + current_ejerudgifter + boligskat_md - (renter_md * 0.256)
+            
             diff_bolig = bolig_total_current - netto_bolig_total
             start_fire_j -= diff_bolig; start_inv_md_j += diff_bolig
             bolig_total_current = netto_bolig_total
