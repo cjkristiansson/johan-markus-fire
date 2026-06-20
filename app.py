@@ -256,9 +256,10 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
         col_j, col_m, col_inp = st.columns([0.41, 0.41, 0.18], vertical_alignment="bottom")
 
         with col_inp:
+            udb_str = f"{target_total_udb/1e6:g}".replace('.', ',')
             st.markdown(
                 f"<p style='margin-bottom: 15px; margin-top: 0; line-height: 1.3;'>"
-                f"Mål: {int(ui_cash_pct)}% kontantudbetaling ({f'{int(target_total_udb):,}'.replace(',', '.')} kr.) | {int(ui_loan_pct)}% lån</p>", 
+                f"Mål: {int(ui_cash_pct)}% udb. ({udb_str}M) | {int(ui_loan_pct)}% lån</p>", 
                 unsafe_allow_html=True
             )
             ejerudgifter_input = st.number_input("Ejerudgifter", value=3500, step=100, key=f"ejer_{ydelse_key_clean}", on_change=clear_preset)
@@ -581,9 +582,10 @@ def simulate_solo_fire_plan(scenario_name, boligpris, udbetaling_j, ydelse_defau
         col_j, col_m, col_inp = st.columns([0.41, 0.41, 0.18], vertical_alignment="bottom")
 
         with col_inp:
+            udb_str = f"{faktisk_udbetaling_j/1e6:g}".replace('.', ',')
             st.markdown(
                 f"<p style='margin-bottom: 60px; margin-top: 0; line-height: 1.3;'>"
-                f"{int(cash_pct)}% kontantudbetaling ({f'{int(faktisk_udbetaling_j):,}'.replace(',', '.')} kr.) | {int(loan_pct)}% lån</p>", 
+                f"Mål: {int(cash_pct)}% udb. ({udb_str}M) | {int(loan_pct)}% lån</p>", 
                 unsafe_allow_html=True
             )
             ejerudgifter_input = st.number_input("Ejerudgifter", value=3500, step=100, key=f"ejer_{ydelse_key_clean}", on_change=clear_preset)
