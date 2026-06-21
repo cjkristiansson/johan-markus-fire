@@ -257,7 +257,7 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
         base_frie_m = st.session_state["basis_frie_m"]
         
         valby_ydelse = 15230 - 6930 if nuvaerende_afdragsfri else 15230
-        valby_ejerudgifter = 4564
+        valby_ejerudgifter = 3600
         valby_boligskat = 0
         bolig_faelles_current = (valby_ydelse + valby_ejerudgifter + valby_boligskat) / 2
         restgaeld_start = valby_fast_restgaeld
