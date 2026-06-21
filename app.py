@@ -391,7 +391,7 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
                 
             renter_md = (ny_hovedstol * oml_total_rente) / 12
             
-            current_ejerudgifter = 4564 * ((1 + global_inflation_rate)**year) if (is_valby and year <= actual_salgsaar) else ejerudgifter_input * ((1 + global_inflation_rate)**year)
+            current_ejerudgifter = 3650 * ((1 + global_inflation_rate)**year) if (is_valby and year <= actual_salgsaar) else ejerudgifter_input * ((1 + global_inflation_rate)**year)
             current_boligskat = boligskat_md * ((1 + global_inflation_rate)**year)
             
             netto_bolig_total_nu = ny_lån_ydelse + current_ejerudgifter + current_boligskat - (renter_md * 0.256)
@@ -1003,12 +1003,12 @@ else:
     
     tabs = st.tabs(tab_names)
 
-    with tabs[0]: simulate_joint_fire_plan("3.5M", 3500000, 966000, 434000, 8516, "yd35", 4564, True, 1600)
-    with tabs[1]: simulate_joint_fire_plan("4.0M", 4000000, 1846222, 1153888, 4075, "yd40", 4564, True, 1850)
-    with tabs[2]: simulate_joint_fire_plan("4.5M", 4500000, 2250000, 1125000, 4576, "yd45", 4564, True, 2050)
-    with tabs[3]: simulate_joint_fire_plan("5.0M", 5000000, 2408888, 983888, 6519, "yd50", 4564, True, 2300)
-    with tabs[4]: simulate_joint_fire_plan("5.5M", 5500000, 1515000, 685000, 13659, "yd55", 4564, True, 2550)
-    with tabs[5]: simulate_joint_fire_plan("Valby", 6700000, 0, 0, 15230, "ydvb", 4564, False, 0)
+    with tabs[0]: simulate_joint_fire_plan("3.5M", 3500000, 966000, 434000, 8516, "yd35", 3650, True, 1600)
+    with tabs[1]: simulate_joint_fire_plan("4.0M", 4000000, 1846222, 1153888, 4075, "yd40", 3650, True, 1850)
+    with tabs[2]: simulate_joint_fire_plan("4.5M", 4500000, 2250000, 1125000, 4576, "yd45", 3650, True, 2050)
+    with tabs[3]: simulate_joint_fire_plan("5.0M", 5000000, 2408888, 983888, 6519, "yd50", 3650, True, 2300)
+    with tabs[4]: simulate_joint_fire_plan("5.5M", 5500000, 1515000, 685000, 13659, "yd55", 3650, True, 2550)
+    with tabs[5]: simulate_joint_fire_plan("Valby", 6700000, 0, 0, 15230, "ydvb", 3650, False, 0)
 
     if is_solo_mode:
         with tabs[6]: simulate_solo_fire_plan("3.0M", 3000000, 1200000, 7308, "yds30", 3500, 1400)
