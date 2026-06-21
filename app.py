@@ -681,7 +681,7 @@ def simulate_solo_fire_plan(scenario_name, boligpris, udbetaling_j, ydelse_defau
         faktisk_udbetaling_j = 0
         base_frie_j = st.session_state["basis_frie_j"]
         valby_ydelse = 15230 - 6930 if nuvaerende_afdragsfri else 15230
-        valby_ejerudgifter = 4564
+        valby_ejerudgifter = 3650
         valby_boligskat = 0
         bolig_total_current = valby_ydelse + valby_ejerudgifter + valby_boligskat
         restgaeld_start = valby_fast_restgaeld
