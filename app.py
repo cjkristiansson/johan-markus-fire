@@ -318,7 +318,7 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
         st.subheader("MARKUS")
         st.markdown(f"""
         **Mål-Udbetaling:** {udb_m_str} kr.  
-        **Realkredit (egen andel):** {ydelse_j_str} kr./md.  
+        **Realkredit (egen andel):** {ydelse_m_str} kr./md.  
         **Ejerudgifter (egen andel):** {ejer_j_str} kr./md.  
         **Startdepot (År 0):** {depot_m_str} kr.  
         **Mdl. opsparing (År 0):** {inv_md_m_str} kr.  
@@ -326,7 +326,7 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
         """)
 
     # --- UI: PLACERING OVER TABEL (Ejerudgift & Toggle) ---
-    st.write("")
+    st.markdown("<div style='margin-top: -15px;'></div>", unsafe_allow_html=True)
     col_spacer, col_tog, col_ejer = st.columns([0.5, 0.3, 0.2], vertical_alignment="bottom")
     with col_tog:
         st.toggle("Ejerudgift ekskl. 2024-skat", key=f"mangler_skat_{ydelse_key_clean}", on_change=clear_preset)
@@ -631,7 +631,7 @@ def simulate_solo_fire_plan(scenario_name, boligpris, udbetaling_j, ydelse_defau
         """)
 
     # --- UI: PLACERING OVER TABEL (Ejerudgift & Toggle) ---
-    st.write("")
+    st.markdown("<div style='margin-top: -15px;'></div>", unsafe_allow_html=True)
     col_spacer, col_tog, col_ejer = st.columns([0.5, 0.3, 0.2], vertical_alignment="bottom")
     with col_tog:
         st.toggle("Ejerudgift ekskl. 2024-skat", key=f"mangler_skat_{ydelse_key_clean}", on_change=clear_preset)
@@ -639,7 +639,7 @@ def simulate_solo_fire_plan(scenario_name, boligpris, udbetaling_j, ydelse_defau
             st.markdown(f"<div style='font-size: 0.8em; color: gray; margin-top: -10px; margin-bottom: 5px;'>ℹ️ +{skat_tillaeg} kr./md. tilføjet</div>", unsafe_allow_html=True)
     with col_ejer:
         st.number_input("Ejerudgift (kr./md.)", value=int(ejerudgifter_standard), step=100, key=f"ejer_{ydelse_key_clean}", on_change=clear_preset)
-
+            
     if is_mc:
         mc_view = st.radio("Vælg Monte Carlo Visning", options=["P10 (Worst-case scenarie)", "Median (Forventet scenarie)"], index=0, horizontal=True, key=f"mc_view_solo_{ydelse_key_clean}", label_visibility="collapsed")
         is_worst_case = (mc_view == "P10 (Worst-case scenarie)")
