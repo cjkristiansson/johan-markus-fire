@@ -299,6 +299,8 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
         fire_j_str = format_dkk(start_fire_j)
 
         udb_m_str = format_dkk(udbetaling_m)
+        ydelse_m_str = format_dkk(effektiv_realkreditydelse / 2)
+        ejer_m_str = format_dkk(effektiv_ejerudgift / 2)
         depot_m_str = format_dkk(depot_free_m[0] + depot_ask_m[0])
         inv_md_m_str = format_dkk(start_inv_md_m)
         fire_m_str = format_dkk(start_fire_m)
@@ -319,7 +321,7 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
         st.markdown(f"""
         **Mål-Udbetaling:** {udb_m_str} kr.  
         **Realkredit (egen andel):** {ydelse_m_str} kr./md.  
-        **Ejerudgifter (egen andel):** {ejer_j_str} kr./md.  
+        **Ejerudgifter (egen andel):** {ejer_m_str} kr./md.  
         **Startdepot (År 0):** {depot_m_str} kr.  
         **Mdl. opsparing (År 0):** {inv_md_m_str} kr.  
         **Mdl. Udgifter (År 0):** {fire_m_str} kr./md.
