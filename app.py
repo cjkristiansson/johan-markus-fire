@@ -101,8 +101,6 @@ st.sidebar.toggle("Købekraftsjusteret udtræk i FIRE-fasen", key="use_real_draw
 st.sidebar.divider()
 st.sidebar.markdown("### Monte Carlo Simulering", help="Stresstester din FIRE-plan ved at køre 1.000 parallelle markedsforløb. Det kvantificerer risikoen for at ramme et krak tidligt i forløbet (Sequence of Returns Risk).")
 mc_volatility = st.sidebar.slider("Markedsvolatilitet (%)", min_value=5.0, max_value=25.0, value=15.0, step=1.0, on_change=clear_preset) / 100
-
-# MC knap skifter nu dynamisk navn og state
 mc_btn_label = "Slå Monte Carlo FRA" if st.session_state.get("mc_active", False) else "Beregn Monte Carlo"
 st.sidebar.button(mc_btn_label, type="primary", use_container_width=True, on_click=toggle_mc)
 
@@ -216,11 +214,6 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
             udb_str = f"{target_total_udb/1e6:g}".replace('.', ',')
             st.markdown(f"<p style='margin-bottom: 15px; margin-top: 0; line-height: 1.3;'>Mål: {int(ui_cash_pct)}% udb. ({udb_str}M) | {int(ui_loan_pct)}% lån</p>", unsafe_allow_html=True)
             
-            ejerudgifter_input = st.number_input("Ejerudgifter", value=int(ejerudgifter_standard), step=100, key=f"ejer_{ydelse_key_clean}", on_change=clear_preset)
-            st.toggle("Ejerudgift inkluderer ikke 2024-boligskat", key=f"mangler_skat_{ydelse_key_clean}", on_change=clear_preset)
-            if mangler_skat and boligpris > 0:
-                st.caption(f"ℹ️ Tilføjer automatisk estimeret skat: +{skat_tillaeg} kr./md.")
-                
             realkreditydelse_netto = st.number_input("Realkreditydelse", value=ydelse_default, step=100, key=ydelse_key, on_change=clear_preset)
 
             effektiv_realkreditydelse = realkreditydelse_netto
@@ -241,6 +234,9 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
         faktisk_udbetaling_m = udbetaling_m - mangler_m
         udbetaling_j_total = udbetaling_j + mangler_m
         faktisk_udbetaling_j = udbetaling_j_total - max(0, udbetaling_j_total - cash_j)
+
+        if max(0, udbetaling_j_total - cash_j) > 0 and n_sims == 1:
+            st.error("⚠️ ADVARSEL: Udbetalingen overstiger jeres likviditet.")
 
         base_frie_j = st.session_state["basis_frie_j"] + (cash_j - faktisk_udbetaling_j)
         base_frie_m = st.session_state["basis_frie_m"] + (cash_m - faktisk_udbetaling_m)
@@ -328,6 +324,16 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
         **Mdl. opsparing (År 0):** {inv_md_m_str} kr.  
         **Mdl. Udgifter (År 0):** {fire_m_str} kr./md.
         """)
+
+    # --- UI: PLACERING OVER TABEL (Ejerudgift & Toggle) ---
+    st.write("")
+    col_spacer, col_tog, col_ejer = st.columns([0.5, 0.3, 0.2], vertical_alignment="bottom")
+    with col_tog:
+        st.toggle("Ejerudgift ekskl. 2024-skat", key=f"mangler_skat_{ydelse_key_clean}", on_change=clear_preset)
+        if st.session_state.get(f"mangler_skat_{ydelse_key_clean}", False) and boligpris > 0:
+            st.markdown(f"<div style='font-size: 0.8em; color: gray; margin-top: -10px; margin-bottom: 5px;'>ℹ️ +{skat_tillaeg} kr./md. tilføjet</div>", unsafe_allow_html=True)
+    with col_ejer:
+        st.number_input("Ejerudgift (kr./md.)", value=int(ejerudgifter_standard), step=100, key=f"ejer_{ydelse_key_clean}", on_change=clear_preset)
 
     if is_mc:
         mc_view = st.radio("Vælg Monte Carlo Visning", options=["P10 (Worst-case scenarie)", "Median (Forventet scenarie)"], index=0, horizontal=True, key=f"mc_view_joint_{ydelse_key_clean}", label_visibility="collapsed")
@@ -566,11 +572,6 @@ def simulate_solo_fire_plan(scenario_name, boligpris, udbetaling_j, ydelse_defau
         with col_inp:
             udb_str = f"{faktisk_udbetaling_j/1e6:g}".replace('.', ',')
             st.markdown(f"<p style='margin-bottom: 15px; margin-top: 0; line-height: 1.3;'>Mål: {int(cash_pct)}% udb. ({udb_str}M) | {int(loan_pct)}% lån</p>", unsafe_allow_html=True)
-            
-            ejerudgifter_input = st.number_input("Ejerudgifter", value=int(ejerudgifter_standard), step=100, key=f"ejer_{ydelse_key_clean}", on_change=clear_preset)
-            st.toggle("Ejerudgift inkluderer ikke 2024-boligskat", key=f"mangler_skat_{ydelse_key_clean}", on_change=clear_preset)
-            if mangler_skat and boligpris > 0:
-                st.caption(f"ℹ️ Tilføjer automatisk estimeret skat: +{skat_tillaeg} kr./md.")
                 
             realkreditydelse_netto = st.number_input("Realkreditydelse", value=ydelse_default, step=100, key=ydelse_key, on_change=clear_preset)
 
@@ -628,7 +629,17 @@ def simulate_solo_fire_plan(scenario_name, boligpris, udbetaling_j, ydelse_defau
         **Mdl. opsparing:** {inv_md_j_str} kr.  
         **Mdl. Udgifter:** {fire_j_str} kr./md.
         """)
-            
+
+    # --- UI: PLACERING OVER TABEL (Ejerudgift & Toggle) ---
+    st.write("")
+    col_spacer, col_tog, col_ejer = st.columns([0.5, 0.3, 0.2], vertical_alignment="bottom")
+    with col_tog:
+        st.toggle("Ejerudgift ekskl. 2024-skat", key=f"mangler_skat_{ydelse_key_clean}", on_change=clear_preset)
+        if st.session_state.get(f"mangler_skat_{ydelse_key_clean}", False) and boligpris > 0:
+            st.markdown(f"<div style='font-size: 0.8em; color: gray; margin-top: -10px; margin-bottom: 5px;'>ℹ️ +{skat_tillaeg} kr./md. tilføjet</div>", unsafe_allow_html=True)
+    with col_ejer:
+        st.number_input("Ejerudgift (kr./md.)", value=int(ejerudgifter_standard), step=100, key=f"ejer_{ydelse_key_clean}", on_change=clear_preset)
+
     if is_mc:
         mc_view = st.radio("Vælg Monte Carlo Visning", options=["P10 (Worst-case scenarie)", "Median (Forventet scenarie)"], index=0, horizontal=True, key=f"mc_view_solo_{ydelse_key_clean}", label_visibility="collapsed")
         is_worst_case = (mc_view == "P10 (Worst-case scenarie)")
@@ -835,7 +846,6 @@ else:
     
     tabs = st.tabs(tab_names)
 
-    # Alle eksterne scenarier har nu 4500 kr som ejerudgift baseline, Valby har præcis 3374 kr.
     with tabs[0]: simulate_joint_fire_plan("3.5M", 3500000, 966000, 434000, 8516, "yd35", 4500, True)
     with tabs[1]: simulate_joint_fire_plan("4.0M", 4000000, 1846222, 1153888, 4075, "yd40", 4500, True)
     with tabs[2]: simulate_joint_fire_plan("4.5M", 4500000, 2250000, 1125000, 4576, "yd45", 4500, True)
