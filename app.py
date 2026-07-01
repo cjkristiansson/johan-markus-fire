@@ -41,6 +41,9 @@ if "mad_total_val" not in st.session_state: st.session_state["mad_total_val"] = 
 if "mad_j_val" not in st.session_state: st.session_state["mad_j_val"] = 4500
 if "mc_active" not in st.session_state: st.session_state["mc_active"] = False
 
+# Valby Pris Input
+if "valby_pris_input" not in st.session_state: st.session_state["valby_pris_input"] = 6600000
+
 # Personlige budgetter
 if "budget_j" not in st.session_state:
     st.session_state["budget_j"] = {"Studielaan": 0, "Mad": st.session_state["mad_j_val"], "Ferie": 1500, "Renovering": 1000, "A_kasse_Fagforening": 672, "Loensikring": 0, "Puregym": 279, "Transport": 730, "Telefon": 100, "Spotify_Cloud": 100, "Charity": 100, "Frisoer": 450, "Toej": 1200, "Oevrig": 3000}
@@ -162,7 +165,6 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
     ejerudgifter_input = st.session_state.get(f"ejer_{ydelse_key_clean}", int(ejerudgifter_standard))
     mangler_skat = st.session_state.get(f"mangler_skat_{ydelse_key_clean}", False)
     
-    # Beregn automatisk 2024 boligskat hvis togglen aktiveres (0.55% af boligprisen årligt divideret med 12)
     skat_tillaeg = int((boligpris * 0.0055) / 12) if mangler_skat else 0
     effektiv_ejerudgift = ejerudgifter_input + skat_tillaeg
 
@@ -188,7 +190,9 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
 
     is_valby = "Valby" in scenario_name
     actual_salgsaar = 0 if is_valby else global_salgsaar
-    valby_pris = 6700000
+    
+    # Dynamisk Valby Pris
+    valby_pris = st.session_state.get("valby_pris_input", 6600000)
     maal_pris = boligpris
 
     use_bsu = st.session_state.get("use_bsu_m", False)
@@ -559,7 +563,9 @@ def simulate_solo_fire_plan(scenario_name, boligpris, udbetaling_j, ydelse_defau
 
     is_valby = "Valby" in scenario_name
     actual_salgsaar = 0 if is_valby else global_salgsaar
-    valby_pris = 6700000
+    
+    # Dynamisk Valby Pris
+    valby_pris = st.session_state.get("valby_pris_input", 6600000)
     maal_pris = boligpris
 
     valby_fast_restgaeld = 3059064
@@ -793,13 +799,15 @@ def simulate_solo_fire_plan(scenario_name, boligpris, udbetaling_j, ydelse_defau
 if view_selection == "⚙️ Basisdata & Opsætning":
     st.subheader("Konfiguration af personlig økonomi")
     
-    st.markdown("### 🛒 Fælles Udgifter (Mad)")
-    col_mad1, col_mad2 = st.columns(2)
+    st.markdown("### 🛒 Fælles Udgifter & Nuværende Bolig")
+    col_mad1, col_mad2, col_valby = st.columns(3)
     with col_mad1:
         st.session_state["mad_total_val"] = st.number_input("Samlet månedligt madbudget (kr.)", min_value=0, value=st.session_state["mad_total_val"], step=500, key="total_mad_input", on_change=clear_preset)
     with col_mad2:
         st.session_state["mad_j_val"] = st.slider("Johans andel af madbudgettet", min_value=0, max_value=int(st.session_state["mad_total_val"]), value=min(st.session_state["mad_j_val"], int(st.session_state["mad_total_val"])), step=100, key="mad_slider_j", on_change=clear_preset)
-    
+    with col_valby:
+        st.session_state["valby_pris_input"] = st.number_input("Nuværende boligværdi (Valby kr.)", min_value=0, value=st.session_state["valby_pris_input"], step=50000, key="valby_pris_inp", on_change=clear_preset)
+        
     st.session_state["budget_j"]["Mad"] = st.session_state["mad_j_val"]
     st.session_state["budget_m"]["Mad"] = int(st.session_state["mad_total_val"]) - st.session_state["mad_j_val"]
     
