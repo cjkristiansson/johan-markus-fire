@@ -331,21 +331,24 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
         **Mdl. Udgifter (År 0):** {fire_m_str} kr./md.
         """)
 
-    # --- UI: PLACERING OVER TABEL (Ejerudgift & Toggle) ---
+    # --- UI: PLACERING OVER TABEL (Ejerudgift & Toggle & MC) ---
     st.markdown("<div style='margin-top: -15px;'></div>", unsafe_allow_html=True)
-    col_spacer, col_tog, col_ejer = st.columns([0.5, 0.3, 0.2], vertical_alignment="bottom")
+    col_mc, col_tog, col_ejer = st.columns([0.5, 0.3, 0.2], vertical_alignment="bottom")
+    
+    with col_mc:
+        if is_mc:
+            mc_view = st.radio("Vælg Monte Carlo Visning", options=["P10 (Worst-case scenarie)", "Median (Forventet scenarie)"], index=1, horizontal=True, key=f"mc_view_joint_{ydelse_key_clean}", label_visibility="collapsed")
+            is_worst_case = (mc_view == "P10 (Worst-case scenarie)")
+        else:
+            is_worst_case = False
+            
     with col_tog:
         st.toggle("Ejerudgift ekskl. 2024-skat", key=f"mangler_skat_{ydelse_key_clean}", on_change=clear_preset)
         if st.session_state.get(f"mangler_skat_{ydelse_key_clean}", False) and boligpris > 0:
             st.markdown(f"<div style='font-size: 0.8em; color: gray; margin-top: -10px; margin-bottom: 5px;'>ℹ️ +{skat_tillaeg} kr./md. tilføjet</div>", unsafe_allow_html=True)
+            
     with col_ejer:
         st.number_input("Ejerudgift (kr./md.)", value=int(ejerudgifter_standard), step=100, key=f"ejer_{ydelse_key_clean}", on_change=clear_preset)
-
-    if is_mc:
-        mc_view = st.radio("Vælg Monte Carlo Visning", options=["P10 (Worst-case scenarie)", "Median (Forventet scenarie)"], index=1, horizontal=True, key=f"mc_view_joint_{ydelse_key_clean}", label_visibility="collapsed")
-        is_worst_case = (mc_view == "P10 (Worst-case scenarie)")
-    else:
-        is_worst_case = False
 
     table_data = []
     
@@ -638,21 +641,24 @@ def simulate_solo_fire_plan(scenario_name, boligpris, udbetaling_j, ydelse_defau
         **Mdl. Udgifter:** {fire_j_str} kr./md.
         """)
 
-    # --- UI: PLACERING OVER TABEL (Ejerudgift & Toggle) ---
+    # --- UI: PLACERING OVER TABEL (Ejerudgift & Toggle & MC) ---
     st.markdown("<div style='margin-top: -15px;'></div>", unsafe_allow_html=True)
-    col_spacer, col_tog, col_ejer = st.columns([0.5, 0.3, 0.2], vertical_alignment="bottom")
+    col_mc, col_tog, col_ejer = st.columns([0.5, 0.3, 0.2], vertical_alignment="bottom")
+    
+    with col_mc:
+        if is_mc:
+            mc_view = st.radio("Vælg Monte Carlo Visning", options=["P10 (Worst-case scenarie)", "Median (Forventet scenarie)"], index=1, horizontal=True, key=f"mc_view_solo_{ydelse_key_clean}", label_visibility="collapsed")
+            is_worst_case = (mc_view == "P10 (Worst-case scenarie)")
+        else:
+            is_worst_case = False
+
     with col_tog:
         st.toggle("Ejerudgift ekskl. 2024-skat", key=f"mangler_skat_{ydelse_key_clean}", on_change=clear_preset)
         if st.session_state.get(f"mangler_skat_{ydelse_key_clean}", False) and boligpris > 0:
             st.markdown(f"<div style='font-size: 0.8em; color: gray; margin-top: -10px; margin-bottom: 5px;'>ℹ️ +{skat_tillaeg} kr./md. tilføjet</div>", unsafe_allow_html=True)
+            
     with col_ejer:
         st.number_input("Ejerudgift (kr./md.)", value=int(ejerudgifter_standard), step=100, key=f"ejer_{ydelse_key_clean}", on_change=clear_preset)
-            
-    if is_mc:
-        mc_view = st.radio("Vælg Monte Carlo Visning", options=["P10 (Worst-case scenarie)", "Median (Forventet scenarie)"], index=1, horizontal=True, key=f"mc_view_solo_{ydelse_key_clean}", label_visibility="collapsed")
-        is_worst_case = (mc_view == "P10 (Worst-case scenarie)")
-    else:
-        is_worst_case = False
 
     table_data = []
     
