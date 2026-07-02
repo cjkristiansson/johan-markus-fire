@@ -266,11 +266,26 @@ div[data-baseweb="tab-list"] button[aria-selected="true"] p {
         border-top: none !important;
     }
 
-    /* Tving labels frem (Gælder overalt: Main og Sidebar) */
-    label[data-testid="stWidgetLabel"],
-    label[data-testid="stWidgetLabel"] div,
-    label[data-testid="stWidgetLabel"] p,
-    label[data-testid="stWidgetLabel"] span {
+    /* Tving labels frem (Gælder overalt: Main og Sidebar - Nu udvidet til divs) */
+    [data-testid="stWidgetLabel"],
+    [data-testid="stWidgetLabel"] div,
+    [data-testid="stWidgetLabel"] p,
+    [data-testid="stWidgetLabel"] span {
+        color: #e5e7eb !important;
+    }
+
+    /* --- SLIDERS (Tekst, min/max, nuværende værdi) --- */
+    [data-testid="stSlider"] p,
+    [data-testid="stSlider"] span,
+    [data-testid="stThumbValue"],
+    [data-testid="stTickBarMin"],
+    [data-testid="stTickBarMax"] {
+        color: #e5e7eb !important;
+    }
+
+    /* --- TOGGLE TEKST EKSTRA SIKRING --- */
+    [data-testid="stToggle"] p,
+    [data-testid="stToggle"] span {
         color: #e5e7eb !important;
     }
 
@@ -330,7 +345,7 @@ div[data-baseweb="tab-list"] button[aria-selected="true"] p {
         color: #e5e7eb !important;
     }
 
-    /* --- TOGGLES --- */
+    /* --- TOGGLES (Baggrund og Ikon) --- */
     /* Inaktiv baggrund - gjort markant lysere for at adskille sig fra den sorte baggrund */
     [data-testid="stToggle"] div[data-baseweb="checkbox"] > div:first-child {
         background-color: #625f5c !important; 
