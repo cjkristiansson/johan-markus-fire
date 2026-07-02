@@ -381,4 +381,49 @@ div[data-baseweb="tab-list"] button[aria-selected="true"] p {
     [data-testid="stTable"] tbody tr:hover td {
         background-color: #2a2826 !important;
     }
+
+    /* --- TILFØJET TIL DARK MODE UI FIXES --- */
+    /* Input felter (Baggrund og Tekst) */
+    div[data-baseweb="input"],
+    div[data-baseweb="base-input"],
+    div[data-baseweb="number-input"] {
+        background-color: #2a2826 !important;
+        border-color: #4a4744 !important;
+    }
+    div[data-baseweb="input"] input,
+    div[data-baseweb="base-input"] input,
+    div[data-baseweb="number-input"] input {
+        color: #f3f4f6 !important;
+        -webkit-text-fill-color: #f3f4f6 !important;
+        background-color: transparent !important;
+    }
+
+    /* Toggles & Checkboxes (Tekst og Labels) */
+    [data-testid="stWidgetLabel"] p,
+    [data-testid="stWidgetLabel"] span {
+        color: #e5e7eb !important;
+    }
+
+    /* Toggle Track (Inaktiv slider) */
+    div[data-testid="stToggle"] div[data-baseweb="checkbox"] > div:first-child {
+        background-color: #4a4744 !important; 
+    }
+    
+    /* Toggle Track (Aktiv slider - bruger primaryColor fra config.toml) */
+    div[data-testid="stToggle"] div[data-baseweb="checkbox"] > div:first-child[data-checked="true"] {
+        background-color: #F25C84 !important; 
+    }
+
+    /* Toggle Thumb (Cirklen) */
+    div[data-testid="stToggle"] div[data-baseweb="checkbox"] > div:first-child > div {
+        background-color: #e5e7eb !important;
+    }
+
+    /* Sidebar Chevron (Ikon til at folde menuen ud/ind) */
+    [data-testid="stSidebarCollapseButton"],
+    [data-testid="stSidebarCollapseButton"] svg {
+        color: #e5e7eb !important;
+        stroke: #e5e7eb !important;
+        fill: #e5e7eb !important;
+    }
 }
