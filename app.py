@@ -39,7 +39,7 @@ if "use_real_drawdown" not in st.session_state: st.session_state["use_real_drawd
 if "use_ask_500k" not in st.session_state: st.session_state["use_ask_500k"] = False
 if "mad_total_val" not in st.session_state: st.session_state["mad_total_val"] = 6000
 if "mad_j_val" not in st.session_state: st.session_state["mad_j_val"] = 4500
-if "mc_active" not in st.session_state: st.session_state["mc_active"] = False
+if "mc_active" not in st.session_state: st.session_state["mc_active"] = True
 
 # Valby Pris Input
 if "valby_pris_input" not in st.session_state: st.session_state["valby_pris_input"] = 6600000
@@ -342,7 +342,7 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
         st.number_input("Ejerudgift (kr./md.)", value=int(ejerudgifter_standard), step=100, key=f"ejer_{ydelse_key_clean}", on_change=clear_preset)
 
     if is_mc:
-        mc_view = st.radio("Vælg Monte Carlo Visning", options=["P10 (Worst-case scenarie)", "Median (Forventet scenarie)"], index=0, horizontal=True, key=f"mc_view_joint_{ydelse_key_clean}", label_visibility="collapsed")
+        mc_view = st.radio("Vælg Monte Carlo Visning", options=["P10 (Worst-case scenarie)", "Median (Forventet scenarie)"], index=1, horizontal=True, key=f"mc_view_joint_{ydelse_key_clean}", label_visibility="collapsed")
         is_worst_case = (mc_view == "P10 (Worst-case scenarie)")
     else:
         is_worst_case = False
@@ -649,7 +649,7 @@ def simulate_solo_fire_plan(scenario_name, boligpris, udbetaling_j, ydelse_defau
         st.number_input("Ejerudgift (kr./md.)", value=int(ejerudgifter_standard), step=100, key=f"ejer_{ydelse_key_clean}", on_change=clear_preset)
             
     if is_mc:
-        mc_view = st.radio("Vælg Monte Carlo Visning", options=["P10 (Worst-case scenarie)", "Median (Forventet scenarie)"], index=0, horizontal=True, key=f"mc_view_solo_{ydelse_key_clean}", label_visibility="collapsed")
+        mc_view = st.radio("Vælg Monte Carlo Visning", options=["P10 (Worst-case scenarie)", "Median (Forventet scenarie)"], index=1, horizontal=True, key=f"mc_view_solo_{ydelse_key_clean}", label_visibility="collapsed")
         is_worst_case = (mc_view == "P10 (Worst-case scenarie)")
     else:
         is_worst_case = False
