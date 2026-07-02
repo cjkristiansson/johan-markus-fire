@@ -244,7 +244,9 @@ div[data-baseweb="tab-list"] button[aria-selected="true"] p {
     background-color: #ebdccc !important;
 }
 
-/* --- DARK MODE OVERRIDES --- */
+/* ========================================================= */
+/* --- DARK MODE OVERRIDES ---                               */
+/* ========================================================= */
 @media (prefers-color-scheme: dark) {
     /* Base Container & Header */
     html, body, [class*="css"], .stApp {
@@ -266,7 +268,26 @@ div[data-baseweb="tab-list"] button[aria-selected="true"] p {
         border-top: none !important;
     }
 
-    /* Tving labels frem (Gælder overalt: Main og Sidebar - Nu udvidet til divs) */
+    /* --- PILLS (Navigation) --- */
+    [data-testid="stBaseButton-pills"] {
+        background-color: #2a2826 !important;
+        border: 1px solid #4a4744 !important;
+    }
+    [data-testid="stBaseButton-pills"] p,
+    [data-testid="stBaseButton-pills"] span {
+        color: #d1d5db !important;
+    }
+    
+    [data-testid="stBaseButton-pillsActive"] {
+        background-color: #f3f4f6 !important;
+        border: 1px solid #f3f4f6 !important;
+    }
+    [data-testid="stBaseButton-pillsActive"] p,
+    [data-testid="stBaseButton-pillsActive"] span {
+        color: #1c1b1a !important;
+    }
+
+    /* Tving labels frem (Gælder overalt: Main og Sidebar) */
     [data-testid="stWidgetLabel"],
     [data-testid="stWidgetLabel"] div,
     [data-testid="stWidgetLabel"] p,
@@ -283,10 +304,16 @@ div[data-baseweb="tab-list"] button[aria-selected="true"] p {
         color: #e5e7eb !important;
     }
 
-    /* --- TOGGLE TEKST EKSTRA SIKRING --- */
+    /* --- TOGGLES TEKST EKSTRA SIKRING --- */
+    /* Rammer indholdet uanset om Streamlit bruger en div, p, span eller specifik baseweb-komponent */
+    [data-testid="stToggle"] *,
     [data-testid="stToggle"] p,
-    [data-testid="stToggle"] span {
+    [data-testid="stToggle"] span,
+    div[data-baseweb="checkbox"] p,
+    div[data-baseweb="checkbox"] span,
+    div[data-baseweb="checkbox"] div {
         color: #e5e7eb !important;
+        -webkit-text-fill-color: #e5e7eb !important;
     }
 
     /* --- RADIO BUTTONS (Main & Sidebar) --- */
@@ -328,11 +355,9 @@ div[data-baseweb="tab-list"] button[aria-selected="true"] p {
     }
 
     /* --- TOOLTIPS --- */
-    /* Hover-ikonet (spørgsmålstegnet) */
     [data-testid="stTooltipIcon"] svg {
         stroke: #a09d98 !important;
     }
-    /* Selve popover-boksen. Streamlit injicerer disse i bunden af <body> */
     div[data-baseweb="tooltip"] > div,
     div[data-baseweb="popover"] > div,
     .stTooltipContent {
@@ -346,17 +371,14 @@ div[data-baseweb="tab-list"] button[aria-selected="true"] p {
     }
 
     /* --- TOGGLES (Baggrund og Ikon) --- */
-    /* Inaktiv baggrund - gjort markant lysere for at adskille sig fra den sorte baggrund */
     [data-testid="stToggle"] div[data-baseweb="checkbox"] > div:first-child {
         background-color: #625f5c !important; 
         border: 1px solid #7a7772 !important;
     }
-    /* Aktiv baggrund (Bruger primærfarven fra din TOML) */
     [data-testid="stToggle"] label[data-checked="true"] > div:first-child {
         background-color: #F25C84 !important; 
         border: 1px solid #F25C84 !important;
     }
-    /* Toggle Thumb (Cirklen) */
     [data-testid="stToggle"] div[data-baseweb="checkbox"] > div:first-child > div {
         background-color: #ffffff !important;
     }
@@ -370,6 +392,9 @@ div[data-baseweb="tab-list"] button[aria-selected="true"] p {
     [data-testid="stSidebar"] .stButton button {
         background-color: #2a2826 !important;
         border: 1px solid #4a4744 !important;
+    }
+    [data-testid="stSidebar"] .stButton button p,
+    [data-testid="stSidebar"] .stButton button span {
         color: #d1d5db !important;
     }
     [data-testid="stSidebar"] .stButton button:hover {
@@ -379,9 +404,9 @@ div[data-baseweb="tab-list"] button[aria-selected="true"] p {
     [data-testid="stSidebar"] .stButton button[kind="primary"] {
         background-color: #f3f4f6 !important; 
         border-color: #f3f4f6 !important;
-        color: #1c1b1a !important; 
     }
-    [data-testid="stSidebar"] .stButton button[kind="primary"] p {
+    [data-testid="stSidebar"] .stButton button[kind="primary"] p,
+    [data-testid="stSidebar"] .stButton button[kind="primary"] span {
         color: #1c1b1a !important; 
     }
 
