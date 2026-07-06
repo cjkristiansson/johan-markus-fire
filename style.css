@@ -1,7 +1,7 @@
 /* Import Spectral (overskrift) og Belleza (brødtekst) */
 @import url('https://fonts.googleapis.com/css2?family=Belleza&family=Spectral:ital,wght@0,400;0,600;0,700;1,400&display=swap');
 
-/* --- LAYOUT JUSTERING --- */
+/* --- LAYOUT JUSTERING & MOBIL FIXES --- */
 .stMain .block-container {
     padding-top: 3rem !important; 
 }
@@ -21,6 +21,16 @@
     
     .stMain [data-testid="stHorizontalBlock"]:first-of-type {
         gap: 0rem !important;
+    }
+
+    /* MOBIL FIX: Skub Ejerudgift-toggle længere ned væk fra MC Radio buttons */
+    [data-testid="stRadio"] {
+        margin-bottom: 2rem !important; 
+    }
+    
+    /* MOBIL FIX: Sørg for at P10 og Median radio buttons holdes tæt sammen */
+    div[role="radiogroup"] {
+        gap: 12px !important;
     }
 }
 
