@@ -111,6 +111,7 @@ st.sidebar.divider()
 st.sidebar.markdown("### Salg af Valby-lejlighed")
 global_salgsaar = st.sidebar.slider("Salgsår (0 = Sælg nu)", min_value=0, max_value=10, value=0, step=1, on_change=clear_preset)
 global_bolig_inflation = st.sidebar.slider("Boligmarkedsvækst (Asymmetrisk gevinst %)", min_value=-10.0, max_value=10.0, value=3.0, step=0.5, on_change=clear_preset) / 100
+global_salgsomkostninger = st.sidebar.number_input("Salgsomkostninger (kr.)", min_value=0, max_value=500000, value=150000, step=10000, on_change=clear_preset, help="Mæglersalær, bankgebyrer, tinglysning mm. Trækkes fra provenuet ved salg.")
 
 st.sidebar.divider()
 st.sidebar.markdown("### Skattepolitik")
@@ -200,6 +201,11 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
     
     cash_j = st.session_state["cash_j_base"] if bolig_solgt else 0
     cash_m = st.session_state["cash_m_base"] if bolig_solgt else 0
+
+    # TRÆK SALGSOMKOSTNINGER FRA VED ØJEBLIKKELIGT SALG
+    if bolig_solgt and actual_salgsaar == 0:
+        cash_j = max(0, cash_j - (global_salgsomkostninger / 2))
+        cash_m = max(0, cash_m - (global_salgsomkostninger / 2))
     
     valby_fast_restgaeld = 3059064
     valby_afdrag_md = 0 if nuvaerende_afdragsfri else 6930
@@ -262,8 +268,8 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
         bolig_faelles_current = (valby_ydelse + 3374) / 2
         restgaeld_start = valby_fast_restgaeld
         
-        locked_frivaerdi_j = float(cash_j)
-        locked_frivaerdi_m = float(cash_m)
+        locked_frivaerdi_j = float(st.session_state["cash_j_base"])
+        locked_frivaerdi_m = float(st.session_state["cash_m_base"])
 
     depot_free_j = np.full(n_sims, base_frie_j, dtype=float)
     depot_free_m = np.full(n_sims, base_frie_m, dtype=float)
@@ -423,6 +429,10 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
                 locked_frivaerdi_m += (valby_afdrag_md * 12 / 2) + (asymmetrisk_gevinst / 2)
                 
                 if year == actual_salgsaar:
+                    # TRÆK SALGSOMKOSTNINGER FRA FØR KAPITAL FRIGIVES TIL INVESTERING
+                    locked_frivaerdi_j = max(0, locked_frivaerdi_j - (global_salgsomkostninger / 2))
+                    locked_frivaerdi_m = max(0, locked_frivaerdi_m - (global_salgsomkostninger / 2))
+
                     skaleret_udbetaling_j = udbetaling_j * (maal_pris / boligpris)
                     skaleret_udbetaling_m = udbetaling_m * (maal_pris / boligpris)
                     
@@ -559,13 +569,18 @@ def simulate_solo_fire_plan(scenario_name, boligpris, udbetaling_j, ydelse_defau
     vol = mc_volatility if is_mc else 0.0
     market_returns = np.random.normal(loc=global_return_rate_gross, scale=vol, size=(26, n_sims))
 
+    is_valby = "Valby" in scenario_name
+    actual_salgsaar = 0 if is_valby else global_salgsaar
+    
     cash_j = st.session_state["cash_j_base"]
+    
+    # TRÆK SALGSOMKOSTNINGER FRA VED ØJEBLIKKELIGT SALG (SOLO)
+    if not is_valby and actual_salgsaar == 0:
+        cash_j = max(0, cash_j - global_salgsomkostninger)
+
     faktisk_udbetaling_j = min(udbetaling_j, cash_j)
     cash_pct = (faktisk_udbetaling_j / boligpris * 100) if boligpris > 0 else 0
     loan_pct = 100 - cash_pct
-
-    is_valby = "Valby" in scenario_name
-    actual_salgsaar = 0 if is_valby else global_salgsaar
     
     # Dynamisk Valby Pris
     valby_pris = st.session_state.get("valby_pris_input", 6600000)
@@ -602,7 +617,7 @@ def simulate_solo_fire_plan(scenario_name, boligpris, udbetaling_j, ydelse_defau
         valby_ydelse = 15230 - 6930 if nuvaerende_afdragsfri else 15230
         bolig_total_current = valby_ydelse + 3374
         restgaeld_start = valby_fast_restgaeld
-        locked_frivaerdi_j = float(cash_j)
+        locked_frivaerdi_j = float(st.session_state["cash_j_base"])
 
     depot_free_j = np.full(n_sims, base_frie_j, dtype=float)
     depot_ask_j = np.full(n_sims, st.session_state["basis_ask_j"], dtype=float)
@@ -730,6 +745,9 @@ def simulate_solo_fire_plan(scenario_name, boligpris, udbetaling_j, ydelse_defau
                 locked_frivaerdi_j += (valby_afdrag_md * 12) + asymmetrisk_gevinst
                 
                 if year == actual_salgsaar:
+                    # TRÆK SALGSOMKOSTNINGER FRA FØR KAPITAL FRIGIVES TIL INVESTERING
+                    locked_frivaerdi_j = max(0, locked_frivaerdi_j - global_salgsomkostninger)
+                    
                     skaleret_udbetaling_j = udbetaling_j * (maal_pris / boligpris)
                     fakt_udb_j = min(skaleret_udbetaling_j, locked_frivaerdi_j)
                     depot_free_j += max(0, locked_frivaerdi_j - fakt_udb_j)
