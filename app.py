@@ -213,29 +213,6 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
 
     effektiv_realkreditydelse = ydelse_default
 
-    # LÅNETYPE SELECTOR (PLACERET OVER ALT ANDET FOR NYE BOLIGER)
-    if not is_valby:
-        st.markdown("<div style='margin-bottom: 10px;'></div>", unsafe_allow_html=True)
-        col_lt1, col_lt2 = st.columns([0.4, 0.6], vertical_alignment="bottom")
-        with col_lt1:
-            loan_type = st.radio("🏦 Lånetype for ny bolig:", ["Standard lån (Manuel)", "FlexLife (Auto 30 år afdragsfri)"], horizontal=True, key=f"lt_{ydelse_key_clean}")
-        
-        with col_lt2:
-            if loan_type == "FlexLife (Auto 30 år afdragsfri)":
-                if ui_loan_pct <= 60.1:
-                    loan_amt = boligpris - target_total_udb
-                    brutto_md = (loan_amt * (0.04 + 0.01)) / 12  # 4% rente, 1% bidrag
-                    effektiv_realkreditydelse = brutto_md * (1 - 0.256) # 25.6% skattefradrag
-                    st.success(f"✓ FlexLife nettoydelse: **{format_dkk(effektiv_realkreditydelse)} kr./md.** (Fast 4% rente, 1% bidrag)")
-                else:
-                    st.error(f"⚠️ FlexLife kræver max 60% belåning. (Jeres er {ui_loan_pct:.1f}%). Indtast manuelt:")
-                    effektiv_realkreditydelse = st.number_input("Manuel realkreditydelse", value=ydelse_default, step=100, key=ydelse_key, on_change=clear_preset, label_visibility="collapsed")
-            else:
-                effektiv_realkreditydelse = st.number_input("Manuel realkreditydelse (kr./md.)", value=ydelse_default, step=100, key=ydelse_key, on_change=clear_preset)
-    else:
-        # VALBY BEHOLDER SITT MANUELLE INPUT I EXPANDEREN
-        pass
-
     with st.expander("🏠 Vis økonomiske detaljer & lån", expanded=False):
         if actual_salgsaar > 0:
             st.info(f"⏳ **Salg udskudt til År {actual_salgsaar}.** Jeres nuværende Valby-friværdi er låst i mursten indtil da.")
@@ -252,6 +229,26 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
                 if nuvaerende_afdragsfri:
                     effektiv_realkreditydelse = max(0, realkreditydelse_netto - 6930)
                     st.markdown("<p style='font-size: 0.8em; color: gray; margin-top: -10px;'>* Reduceret pga. afdragsfrihed</p>", unsafe_allow_html=True)
+
+    # LÅNETYPE SELECTOR PLACERET UNDER EXPANDER
+    if not is_valby:
+        st.markdown("<div style='margin-bottom: 5px;'></div>", unsafe_allow_html=True)
+        col_lt1, col_lt2 = st.columns([0.45, 0.55], vertical_alignment="center")
+        with col_lt1:
+            loan_type = st.radio("hidden_label", ["Standard lån (Manuel)", "FlexLife (Auto 30 år afdragsfri)"], horizontal=True, key=f"lt_{ydelse_key_clean}", label_visibility="collapsed")
+        
+        with col_lt2:
+            if loan_type == "FlexLife (Auto 30 år afdragsfri)":
+                if ui_loan_pct <= 60.1:
+                    loan_amt = boligpris - target_total_udb
+                    brutto_md = (loan_amt * (0.04 + 0.01)) / 12
+                    effektiv_realkreditydelse = brutto_md * (1 - 0.256)
+                    st.success(f"✓ FlexLife nettoydelse: **{format_dkk(effektiv_realkreditydelse)} kr./md.** (Fast 4% rente, 1% bidrag)")
+                else:
+                    st.error(f"⚠️ FlexLife kræver max 60% belåning. (Jeres er {ui_loan_pct:.1f}%). Indtast manuelt:")
+                    effektiv_realkreditydelse = st.number_input("Manuel ydelse (kr./md.)", value=ydelse_default, step=100, key=ydelse_key, on_change=clear_preset, label_visibility="collapsed")
+            else:
+                effektiv_realkreditydelse = st.number_input("Manuel ydelse (kr./md.)", value=ydelse_default, step=100, key=ydelse_key, on_change=clear_preset, label_visibility="collapsed")
 
     if actual_salgsaar == 0:
         if use_bsu and bolig_solgt:
@@ -610,30 +607,7 @@ def simulate_solo_fire_plan(scenario_name, boligpris, udbetaling_j, ydelse_defau
 
     effektiv_realkreditydelse = ydelse_default
 
-    # LÅNETYPE SELECTOR (PLACERET OVER ALT ANDET FOR NYE BOLIGER)
-    if not is_valby:
-        st.markdown("<div style='margin-bottom: 10px;'></div>", unsafe_allow_html=True)
-        col_lt1, col_lt2 = st.columns([0.4, 0.6], vertical_alignment="bottom")
-        with col_lt1:
-            loan_type = st.radio("🏦 Lånetype for ny bolig:", ["Standard lån (Manuel)", "FlexLife (Auto 30 år afdragsfri)"], horizontal=True, key=f"lt_{ydelse_key_clean}")
-        
-        with col_lt2:
-            if loan_type == "FlexLife (Auto 30 år afdragsfri)":
-                if ui_loan_pct <= 60.1:
-                    loan_amt = boligpris - faktisk_udbetaling_j
-                    brutto_md = (loan_amt * (0.04 + 0.01)) / 12
-                    effektiv_realkreditydelse = brutto_md * (1 - 0.256)
-                    st.success(f"✓ FlexLife nettoydelse: **{format_dkk(effektiv_realkreditydelse)} kr./md.** (Fast 4% rente, 1% bidrag)")
-                else:
-                    st.error(f"⚠️ FlexLife kræver max 60% belåning. (Jeres er {ui_loan_pct:.1f}%). Indtast manuelt:")
-                    effektiv_realkreditydelse = st.number_input("Manuel realkreditydelse", value=ydelse_default, step=100, key=ydelse_key, on_change=clear_preset, label_visibility="collapsed")
-            else:
-                effektiv_realkreditydelse = st.number_input("Manuel realkreditydelse (kr./md.)", value=ydelse_default, step=100, key=ydelse_key, on_change=clear_preset)
-    else:
-        # VALBY BEHOLDER SITT MANUELLE INPUT I EXPANDEREN
-        pass
-
-    with st.expander("🏠 Vis økonomiske detaljer & lån", expanded=False):
+    with st.expander("⚙️ Vis økonomiske detaljer & lån", expanded=False):
         if actual_salgsaar > 0:
             st.info(f"⏳ **Salg udskudt til År {actual_salgsaar}.** Jeres nuværende Valby-friværdi er låst i mursten indtil da.")
             
@@ -649,6 +623,26 @@ def simulate_solo_fire_plan(scenario_name, boligpris, udbetaling_j, ydelse_defau
                 if nuvaerende_afdragsfri:
                     effektiv_realkreditydelse = max(0, realkreditydelse_netto - 6930)
                     st.markdown("<p style='font-size: 0.8em; color: gray; margin-top: -10px;'>* Reduceret pga. afdragsfrihed</p>", unsafe_allow_html=True)
+
+    # LÅNETYPE SELECTOR PLACERET UNDER EXPANDER
+    if not is_valby:
+        st.markdown("<div style='margin-bottom: 5px;'></div>", unsafe_allow_html=True)
+        col_lt1, col_lt2 = st.columns([0.45, 0.55], vertical_alignment="center")
+        with col_lt1:
+            loan_type = st.radio("hidden_label", ["Standard lån (Manuel)", "FlexLife (Auto 30 år afdragsfri)"], horizontal=True, key=f"lt_{ydelse_key_clean}", label_visibility="collapsed")
+        
+        with col_lt2:
+            if loan_type == "FlexLife (Auto 30 år afdragsfri)":
+                if ui_loan_pct <= 60.1:
+                    loan_amt = boligpris - faktisk_udbetaling_j
+                    brutto_md = (loan_amt * (0.04 + 0.01)) / 12
+                    effektiv_realkreditydelse = brutto_md * (1 - 0.256)
+                    st.success(f"✓ FlexLife nettoydelse: **{format_dkk(effektiv_realkreditydelse)} kr./md.** (Fast 4% rente, 1% bidrag)")
+                else:
+                    st.error(f"⚠️ FlexLife kræver max 60% belåning. (Jeres er {ui_loan_pct:.1f}%). Indtast manuelt:")
+                    effektiv_realkreditydelse = st.number_input("Manuel ydelse (kr./md.)", value=ydelse_default, step=100, key=ydelse_key, on_change=clear_preset, label_visibility="collapsed")
+            else:
+                effektiv_realkreditydelse = st.number_input("Manuel ydelse (kr./md.)", value=ydelse_default, step=100, key=ydelse_key, on_change=clear_preset, label_visibility="collapsed")
 
     if actual_salgsaar == 0:
         base_frie_j = st.session_state["basis_frie_j"] + (cash_j - faktisk_udbetaling_j)
