@@ -183,7 +183,6 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
     use_ask_500k = st.session_state.get("use_ask_500k", False)
     ask_base_limit = 500000 if use_ask_500k else 174000
 
-    # MC Logik
     is_mc = st.session_state.get("mc_active", False)
     n_sims = 1000 if is_mc else 1
     vol = mc_volatility if is_mc else 0.0
@@ -192,7 +191,6 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
     is_valby = "Valby" in scenario_name
     actual_salgsaar = 0 if is_valby else global_salgsaar
     
-    # Dynamisk Valby Pris
     valby_pris = st.session_state.get("valby_pris_input", 6600000)
     maal_pris = boligpris
 
@@ -202,7 +200,6 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
     cash_j = st.session_state["cash_j_base"] if bolig_solgt else 0
     cash_m = st.session_state["cash_m_base"] if bolig_solgt else 0
 
-    # TRÆK SALGSOMKOSTNINGER FRA VED ØJEBLIKKELIGT SALG
     if bolig_solgt and actual_salgsaar == 0:
         cash_j = max(0, cash_j - (global_salgsomkostninger / 2))
         cash_m = max(0, cash_m - (global_salgsomkostninger / 2))
@@ -210,26 +207,51 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
     valby_fast_restgaeld = 3059064
     valby_afdrag_md = 0 if nuvaerende_afdragsfri else 6930
     
+    target_total_udb = udbetaling_j + udbetaling_m
+    ui_cash_pct = (target_total_udb / boligpris * 100) if boligpris > 0 else 0
+    ui_loan_pct = 100 - ui_cash_pct
+
+    effektiv_realkreditydelse = ydelse_default
+
+    # LÅNETYPE SELECTOR (PLACERET OVER ALT ANDET FOR NYE BOLIGER)
+    if not is_valby:
+        st.markdown("<div style='margin-bottom: 10px;'></div>", unsafe_allow_html=True)
+        col_lt1, col_lt2 = st.columns([0.4, 0.6], vertical_alignment="bottom")
+        with col_lt1:
+            loan_type = st.radio("🏦 Lånetype for ny bolig:", ["Standard lån (Manuel)", "FlexLife (Auto 30 år afdragsfri)"], horizontal=True, key=f"lt_{ydelse_key_clean}")
+        
+        with col_lt2:
+            if loan_type == "FlexLife (Auto 30 år afdragsfri)":
+                if ui_loan_pct <= 60.1:
+                    loan_amt = boligpris - target_total_udb
+                    brutto_md = (loan_amt * (0.04 + 0.01)) / 12  # 4% rente, 1% bidrag
+                    effektiv_realkreditydelse = brutto_md * (1 - 0.256) # 25.6% skattefradrag
+                    st.success(f"✓ FlexLife nettoydelse: **{format_dkk(effektiv_realkreditydelse)} kr./md.** (Fast 4% rente, 1% bidrag)")
+                else:
+                    st.error(f"⚠️ FlexLife kræver max 60% belåning. (Jeres er {ui_loan_pct:.1f}%). Indtast manuelt:")
+                    effektiv_realkreditydelse = st.number_input("Manuel realkreditydelse", value=ydelse_default, step=100, key=ydelse_key, on_change=clear_preset, label_visibility="collapsed")
+            else:
+                effektiv_realkreditydelse = st.number_input("Manuel realkreditydelse (kr./md.)", value=ydelse_default, step=100, key=ydelse_key, on_change=clear_preset)
+    else:
+        # VALBY BEHOLDER SITT MANUELLE INPUT I EXPANDEREN
+        pass
+
     with st.expander("🏠 Vis økonomiske detaljer & lån", expanded=False):
         if actual_salgsaar > 0:
             st.info(f"⏳ **Salg udskudt til År {actual_salgsaar}.** Jeres nuværende Valby-friværdi er låst i mursten indtil da.")
             
         col_j, col_m, col_inp = st.columns([0.41, 0.41, 0.18], vertical_alignment="bottom")
 
-        target_total_udb = udbetaling_j + udbetaling_m
-        ui_cash_pct = (target_total_udb / boligpris * 100) if boligpris > 0 else 0
-        ui_loan_pct = 100 - ui_cash_pct
-
         with col_inp:
             udb_str = f"{target_total_udb/1e6:g}".replace('.', ',')
-            st.markdown(f"<p style='margin-bottom: 15px; margin-top: 0; line-height: 1.3;'>Mål: {int(ui_cash_pct)}% udb. ({udb_str}M) | {int(ui_loan_pct)}% lån</p>", unsafe_allow_html=True)
+            st.markdown(f"<p style='margin-bottom: 15px; margin-top: 0; line-height: 1.3;'>Mål: {int(ui_cash_pct)}% udb. ({udb_str}M) <br> {int(ui_loan_pct)}% lån</p>", unsafe_allow_html=True)
             
-            realkreditydelse_netto = st.number_input("Realkreditydelse", value=ydelse_default, step=100, key=ydelse_key, on_change=clear_preset)
-
-            effektiv_realkreditydelse = realkreditydelse_netto
-            if is_valby and nuvaerende_afdragsfri:
-                effektiv_realkreditydelse = max(0, realkreditydelse_netto - 6930)
-                st.markdown("<p style='font-size: 0.8em; color: gray; margin-top: -10px;'>* Reduceret pga. afdragsfrihed</p>", unsafe_allow_html=True)
+            if is_valby:
+                realkreditydelse_netto = st.number_input("Realkreditydelse", value=ydelse_default, step=100, key=ydelse_key, on_change=clear_preset)
+                effektiv_realkreditydelse = realkreditydelse_netto
+                if nuvaerende_afdragsfri:
+                    effektiv_realkreditydelse = max(0, realkreditydelse_netto - 6930)
+                    st.markdown("<p style='font-size: 0.8em; color: gray; margin-top: -10px;'>* Reduceret pga. afdragsfrihed</p>", unsafe_allow_html=True)
 
     if actual_salgsaar == 0:
         if use_bsu and bolig_solgt:
@@ -429,7 +451,6 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
                 locked_frivaerdi_m += (valby_afdrag_md * 12 / 2) + (asymmetrisk_gevinst / 2)
                 
                 if year == actual_salgsaar:
-                    # TRÆK SALGSOMKOSTNINGER FRA FØR KAPITAL FRIGIVES TIL INVESTERING
                     locked_frivaerdi_j = max(0, locked_frivaerdi_j - (global_salgsomkostninger / 2))
                     locked_frivaerdi_m = max(0, locked_frivaerdi_m - (global_salgsomkostninger / 2))
 
@@ -574,22 +595,45 @@ def simulate_solo_fire_plan(scenario_name, boligpris, udbetaling_j, ydelse_defau
     
     cash_j = st.session_state["cash_j_base"]
     
-    # TRÆK SALGSOMKOSTNINGER FRA VED ØJEBLIKKELIGT SALG (SOLO)
     if not is_valby and actual_salgsaar == 0:
         cash_j = max(0, cash_j - global_salgsomkostninger)
 
     faktisk_udbetaling_j = min(udbetaling_j, cash_j)
-    cash_pct = (faktisk_udbetaling_j / boligpris * 100) if boligpris > 0 else 0
-    loan_pct = 100 - cash_pct
+    ui_cash_pct = (faktisk_udbetaling_j / boligpris * 100) if boligpris > 0 else 0
+    ui_loan_pct = 100 - ui_cash_pct
     
-    # Dynamisk Valby Pris
     valby_pris = st.session_state.get("valby_pris_input", 6600000)
     maal_pris = boligpris
 
     valby_fast_restgaeld = 3059064
     valby_afdrag_md = 0 if nuvaerende_afdragsfri else 6930
 
-    with st.expander("⚙️ Vis økonomiske detaljer & lån", expanded=False):
+    effektiv_realkreditydelse = ydelse_default
+
+    # LÅNETYPE SELECTOR (PLACERET OVER ALT ANDET FOR NYE BOLIGER)
+    if not is_valby:
+        st.markdown("<div style='margin-bottom: 10px;'></div>", unsafe_allow_html=True)
+        col_lt1, col_lt2 = st.columns([0.4, 0.6], vertical_alignment="bottom")
+        with col_lt1:
+            loan_type = st.radio("🏦 Lånetype for ny bolig:", ["Standard lån (Manuel)", "FlexLife (Auto 30 år afdragsfri)"], horizontal=True, key=f"lt_{ydelse_key_clean}")
+        
+        with col_lt2:
+            if loan_type == "FlexLife (Auto 30 år afdragsfri)":
+                if ui_loan_pct <= 60.1:
+                    loan_amt = boligpris - faktisk_udbetaling_j
+                    brutto_md = (loan_amt * (0.04 + 0.01)) / 12
+                    effektiv_realkreditydelse = brutto_md * (1 - 0.256)
+                    st.success(f"✓ FlexLife nettoydelse: **{format_dkk(effektiv_realkreditydelse)} kr./md.** (Fast 4% rente, 1% bidrag)")
+                else:
+                    st.error(f"⚠️ FlexLife kræver max 60% belåning. (Jeres er {ui_loan_pct:.1f}%). Indtast manuelt:")
+                    effektiv_realkreditydelse = st.number_input("Manuel realkreditydelse", value=ydelse_default, step=100, key=ydelse_key, on_change=clear_preset, label_visibility="collapsed")
+            else:
+                effektiv_realkreditydelse = st.number_input("Manuel realkreditydelse (kr./md.)", value=ydelse_default, step=100, key=ydelse_key, on_change=clear_preset)
+    else:
+        # VALBY BEHOLDER SITT MANUELLE INPUT I EXPANDEREN
+        pass
+
+    with st.expander("🏠 Vis økonomiske detaljer & lån", expanded=False):
         if actual_salgsaar > 0:
             st.info(f"⏳ **Salg udskudt til År {actual_salgsaar}.** Jeres nuværende Valby-friværdi er låst i mursten indtil da.")
             
@@ -597,14 +641,14 @@ def simulate_solo_fire_plan(scenario_name, boligpris, udbetaling_j, ydelse_defau
 
         with col_inp:
             udb_str = f"{faktisk_udbetaling_j/1e6:g}".replace('.', ',')
-            st.markdown(f"<p style='margin-bottom: 15px; margin-top: 0; line-height: 1.3;'>Mål: {int(cash_pct)}% udb. ({udb_str}M) | {int(loan_pct)}% lån</p>", unsafe_allow_html=True)
-                
-            realkreditydelse_netto = st.number_input("Realkreditydelse", value=ydelse_default, step=100, key=ydelse_key, on_change=clear_preset)
-
-            effektiv_realkreditydelse = realkreditydelse_netto
-            if is_valby and nuvaerende_afdragsfri:
-                effektiv_realkreditydelse = max(0, realkreditydelse_netto - 6930)
-                st.markdown("<p style='font-size: 0.8em; color: gray; margin-top: -10px;'>* Reduceret pga. afdragsfrihed</p>", unsafe_allow_html=True)
+            st.markdown(f"<p style='margin-bottom: 15px; margin-top: 0; line-height: 1.3;'>Mål: {int(ui_cash_pct)}% udb. ({udb_str}M) <br> {int(ui_loan_pct)}% lån</p>", unsafe_allow_html=True)
+            
+            if is_valby:
+                realkreditydelse_netto = st.number_input("Realkreditydelse", value=ydelse_default, step=100, key=ydelse_key, on_change=clear_preset)
+                effektiv_realkreditydelse = realkreditydelse_netto
+                if nuvaerende_afdragsfri:
+                    effektiv_realkreditydelse = max(0, realkreditydelse_netto - 6930)
+                    st.markdown("<p style='font-size: 0.8em; color: gray; margin-top: -10px;'>* Reduceret pga. afdragsfrihed</p>", unsafe_allow_html=True)
 
     if actual_salgsaar == 0:
         base_frie_j = st.session_state["basis_frie_j"] + (cash_j - faktisk_udbetaling_j)
@@ -745,7 +789,6 @@ def simulate_solo_fire_plan(scenario_name, boligpris, udbetaling_j, ydelse_defau
                 locked_frivaerdi_j += (valby_afdrag_md * 12) + asymmetrisk_gevinst
                 
                 if year == actual_salgsaar:
-                    # TRÆK SALGSOMKOSTNINGER FRA FØR KAPITAL FRIGIVES TIL INVESTERING
                     locked_frivaerdi_j = max(0, locked_frivaerdi_j - global_salgsomkostninger)
                     
                     skaleret_udbetaling_j = udbetaling_j * (maal_pris / boligpris)
