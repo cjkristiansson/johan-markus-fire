@@ -268,7 +268,7 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
         base_frie_j = st.session_state["basis_frie_j"] + (cash_j - faktisk_udbetaling_j)
         base_frie_m = st.session_state["basis_frie_m"] + (cash_m - faktisk_udbetaling_m)
         
-        bolig_faelles_current = (effektiv_realkreditydelse +Grid_color) / 2
+        bolig_faelles_current = (effektiv_realkreditydelse + effektiv_ejerudgift) / 2
         restgaeld_start = valby_fast_restgaeld if is_valby else (boligpris - (faktisk_udbetaling_j + faktisk_udbetaling_m))
         
         locked_frivaerdi_j = 0.0
@@ -290,7 +290,7 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
 
     depot_free_j = np.full(n_sims, base_frie_j, dtype=float)
     depot_free_m = np.full(n_sims, base_frie_m, dtype=float)
-    depot_ask_j = np.full(n_sims, st.session_state["basis_ask_m"], dtype=float)
+    depot_ask_j = np.full(n_sims, st.session_state["basis_ask_j"], dtype=float)
     depot_ask_m = np.full(n_sims, st.session_state["basis_ask_m"], dtype=float)
     pension_j_current = np.full(n_sims, st.session_state["pension_j"], dtype=float)
     pension_m_current = np.full(n_sims, st.session_state["pension_m"], dtype=float)
@@ -661,18 +661,25 @@ def simulate_solo_fire_plan(scenario_name, boligpris, udbetaling_j, ydelse_defau
                 if nuvaerende_afdragsfri:
                     effektiv_realkreditydelse = max(0, realkreditydelse_netto - 6930)
                     st.markdown("<p style='font-size: 0.8em; color: gray; margin-top: -10px;'>* Reduceret pga. afdragsfrihed</p>", unsafe_allow_html=True)
-            else:
-                if global_loan_type == "FlexLife (Auto 30 år afdragsfri)":
-                    if ui_loan_pct <= 60.1:
-                        loan_amt = boligpris - faktisk_udbetaling_j
-                        brutto_md = (loan_amt * (0.04 + 0.01)) / 12
-                        effektiv_realkreditydelse = brutto_md * (1 - 0.256)
-                        st.success(f"✓ **FlexLife:** {format_dkk(effektiv_realkreditydelse)} kr./md.")
-                    else:
-                        st.error(f"⚠️ FlexLife afvist (>60% belåning). Indtast manuelt:")
-                        effektiv_realkreditydelse = st.number_input("Manuel ydelse (kr./md.)", value=ydelse_default, step=100, key=ydelse_key, on_change=clear_preset, label_visibility="collapsed")
+
+    if not is_valby:
+        st.markdown("<div style='margin-bottom: 5px;'></div>", unsafe_allow_html=True)
+        col_lt1, col_lt2 = st.columns([0.45, 0.55], vertical_alignment="center")
+        with col_lt1:
+            loan_type = st.radio("hidden_label", ["Standard lån (Manuel)", "FlexLife (Auto 30 år afdragsfri)"], horizontal=True, key=f"lt_{ydelse_key_clean}", label_visibility="collapsed")
+        
+        with col_lt2:
+            if loan_type == "FlexLife (Auto 30 år afdragsfri)":
+                if ui_loan_pct <= 60.1:
+                    loan_amt = boligpris - faktisk_udbetaling_j
+                    brutto_md = (loan_amt * (0.04 + 0.01)) / 12
+                    effektiv_realkreditydelse = brutto_md * (1 - 0.256)
+                    st.success(f"✓ FlexLife nettoydelse: **{format_dkk(effektiv_realkreditydelse)} kr./md.** (Fast 4% rente, 1% bidrag)")
                 else:
+                    st.error(f"⚠️ FlexLife kræver max 60% belåning. (Jeres er {ui_loan_pct:.1f}%). Indtast manuelt:")
                     effektiv_realkreditydelse = st.number_input("Manuel ydelse (kr./md.)", value=ydelse_default, step=100, key=ydelse_key, on_change=clear_preset, label_visibility="collapsed")
+            else:
+                effektiv_realkreditydelse = st.number_input("Manuel ydelse (kr./md.)", value=ydelse_default, step=100, key=ydelse_key, on_change=clear_preset, label_visibility="collapsed")
 
     if actual_salgsaar == 0:
         base_frie_j = st.session_state["basis_frie_j"] + (cash_j - faktisk_udbetaling_j)
