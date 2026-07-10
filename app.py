@@ -1,6 +1,8 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
+import plotly.graph_objects as go
+from plotly.subplots import make_subplots
 
 # Konfiguration
 st.set_page_config(page_title="FIRE Dashboard", layout="wide", initial_sidebar_state="expanded")
@@ -112,6 +114,10 @@ st.sidebar.markdown("### Salg af Valby-lejlighed")
 global_salgsaar = st.sidebar.slider("Salgsår (0 = Sælg nu)", min_value=0, max_value=10, value=0, step=1, on_change=clear_preset)
 global_bolig_inflation = st.sidebar.slider("Boligmarkedsvækst (Asymmetrisk gevinst %)", min_value=-10.0, max_value=10.0, value=3.0, step=0.5, on_change=clear_preset) / 100
 global_salgsomkostninger = st.sidebar.number_input("Salgsomkostninger (kr.)", min_value=0, max_value=500000, value=150000, step=10000, on_change=clear_preset, help="Mæglersalær, bankgebyrer, tinglysning mm. Trækkes fra provenuet ved salg.")
+
+st.sidebar.divider()
+st.sidebar.markdown("### 🏦 Boligfinansiering (Nye boliger)")
+global_loan_type = st.sidebar.radio("Lånetype", ["Standard lån (Manuelt)", "FlexLife (Auto 30 år afdragsfri)"], on_change=clear_preset, label_visibility="collapsed")
 
 st.sidebar.divider()
 st.sidebar.markdown("### Skattepolitik")
@@ -229,26 +235,18 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
                 if nuvaerende_afdragsfri:
                     effektiv_realkreditydelse = max(0, realkreditydelse_netto - 6930)
                     st.markdown("<p style='font-size: 0.8em; color: gray; margin-top: -10px;'>* Reduceret pga. afdragsfrihed</p>", unsafe_allow_html=True)
-
-    # LÅNETYPE SELECTOR PLACERET UNDER EXPANDER
-    if not is_valby:
-        st.markdown("<div style='margin-bottom: 5px;'></div>", unsafe_allow_html=True)
-        col_lt1, col_lt2 = st.columns([0.45, 0.55], vertical_alignment="center")
-        with col_lt1:
-            loan_type = st.radio("hidden_label", ["Standard lån (Manuel)", "FlexLife (Auto 30 år afdragsfri)"], horizontal=True, key=f"lt_{ydelse_key_clean}", label_visibility="collapsed")
-        
-        with col_lt2:
-            if loan_type == "FlexLife (Auto 30 år afdragsfri)":
-                if ui_loan_pct <= 60.1:
-                    loan_amt = boligpris - target_total_udb
-                    brutto_md = (loan_amt * (0.04 + 0.01)) / 12
-                    effektiv_realkreditydelse = brutto_md * (1 - 0.256)
-                    st.success(f"✓ FlexLife nettoydelse: **{format_dkk(effektiv_realkreditydelse)} kr./md.** (Fast 4% rente, 1% bidrag)")
-                else:
-                    st.error(f"⚠️ FlexLife kræver max 60% belåning. (Jeres er {ui_loan_pct:.1f}%). Indtast manuelt:")
-                    effektiv_realkreditydelse = st.number_input("Manuel ydelse (kr./md.)", value=ydelse_default, step=100, key=ydelse_key, on_change=clear_preset, label_visibility="collapsed")
             else:
-                effektiv_realkreditydelse = st.number_input("Manuel ydelse (kr./md.)", value=ydelse_default, step=100, key=ydelse_key, on_change=clear_preset, label_visibility="collapsed")
+                if global_loan_type == "FlexLife (Auto 30 år afdragsfri)":
+                    if ui_loan_pct <= 60.1:
+                        loan_amt = boligpris - target_total_udb
+                        brutto_md = (loan_amt * (0.04 + 0.01)) / 12
+                        effektiv_realkreditydelse = brutto_md * (1 - 0.256)
+                        st.success(f"✓ **FlexLife:** {format_dkk(effektiv_realkreditydelse)} kr./md.")
+                    else:
+                        st.error(f"⚠️ FlexLife afvist (>60% belåning). Indtast manuelt:")
+                        effektiv_realkreditydelse = st.number_input("Manuel ydelse (kr./md.)", value=ydelse_default, step=100, key=ydelse_key, on_change=clear_preset, label_visibility="collapsed")
+                else:
+                    effektiv_realkreditydelse = st.number_input("Manuel ydelse (kr./md.)", value=ydelse_default, step=100, key=ydelse_key, on_change=clear_preset, label_visibility="collapsed")
 
     if actual_salgsaar == 0:
         if use_bsu and bolig_solgt:
@@ -356,7 +354,6 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
         **Mdl. Udgifter (År 0):** {fire_m_str} kr./md.
         """)
 
-    # --- UI: PLACERING OVER TABEL (Ejerudgift & Toggle & MC) ---
     st.markdown("<div style='margin-top: -15px;'></div>", unsafe_allow_html=True)
     col_mc, col_tog, col_ejer = st.columns([0.5, 0.3, 0.2], vertical_alignment="bottom")
     
@@ -376,6 +373,12 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
         st.number_input("Ejerudgift (kr./md.)", value=int(ejerudgifter_standard), step=100, key=f"ejer_{ydelse_key_clean}", on_change=clear_preset)
 
     table_data = []
+    
+    plt_years = []
+    plt_depot_j = []
+    plt_depot_m = []
+    plt_hours_j = []
+    plt_hours_m = []
     
     for year in range(0, 26):
         c_age_j, c_age_m = age_j + year, age_m + year
@@ -527,13 +530,48 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
             succ_m = np.mean(h_m_array <= 0) * 100
 
             if is_worst_case:
+                dep_j_val, dep_m_val = p10_dep_j, p10_dep_m
+                hr_j_val, hr_m_val = p90_h_j, p90_h_m
                 table_data.append({"År": year, "J.alder": c_age_j, "J.depot (M)": f"{p10_dep_j/1e6:.2f}", "J.Passiv (kr)": format_dkk(p10_p_j), "J.Arbtid": f"{get_emoji_status(p90_h_j).split()[0]} {p90_h_j:.1f}t", "J.Succes": f"{succ_j:.0f}%", "M.alder": c_age_m, "M.depot (M)": f"{p10_dep_m/1e6:.2f}", "M.Passiv (kr)": format_dkk(p10_p_m), "M.Arbtid": f"{get_emoji_status(p90_h_m).split()[0]} {p90_h_m:.1f}t", "M.Succes": f"{succ_m:.0f}%"})
             else:
+                dep_j_val, dep_m_val = med_dep_j, med_dep_m
+                hr_j_val, hr_m_val = med_h_j, med_h_m
                 table_data.append({"År": year, "J.alder": c_age_j, "J.depot (M)": f"{med_dep_j/1e6:.2f}", "J.Passiv (kr)": format_dkk(med_p_j), "J.Arbtid": get_emoji_status(med_h_j), "J.Succes": f"{succ_j:.0f}%", "M.alder": c_age_m, "M.depot (M)": f"{med_dep_m/1e6:.2f}", "M.Passiv (kr)": format_dkk(med_p_m), "M.Arbtid": get_emoji_status(med_h_m), "M.Succes": f"{succ_m:.0f}%"})
         else:
-            table_data.append({"År": year, "J.alder": c_age_j, "J.depot (M)": f"{(depot_ask_j[0] + depot_free_j[0])/1e6:.2f}", "J.Passiv (kr)": format_dkk(p_j[0]), "J.Arbtid": get_emoji_status(h_j_array[0]), "M.alder": c_age_m, "M.depot (M)": f"{(depot_ask_m[0] + depot_free_m[0])/1e6:.2f}", "M.Passiv (kr)": format_dkk(p_m_total[0]), "M.Arbtid": get_emoji_status(h_m_array[0])})
-            if j_reached_arr[0] and m_reached_arr[0]: break
+            dep_j_val, dep_m_val = depot_ask_j[0] + depot_free_j[0], depot_ask_m[0] + depot_free_m[0]
+            hr_j_val, hr_m_val = h_j_array[0], h_m_array[0]
+            table_data.append({"År": year, "J.alder": c_age_j, "J.depot (M)": f"{dep_j_val/1e6:.2f}", "J.Passiv (kr)": format_dkk(p_j[0]), "J.Arbtid": get_emoji_status(h_j_array[0]), "M.alder": c_age_m, "M.depot (M)": f"{dep_m_val/1e6:.2f}", "M.Passiv (kr)": format_dkk(p_m_total[0]), "M.Arbtid": get_emoji_status(h_m_array[0])})
 
+        plt_years.append(year)
+        plt_depot_j.append(dep_j_val / 1e6)
+        plt_depot_m.append(dep_m_val / 1e6)
+        plt_hours_j.append(max(0, hr_j_val))
+        plt_hours_m.append(max(0, hr_m_val))
+
+        if n_sims == 1 and j_reached_arr[0] and m_reached_arr[0]: break
+
+    # RENDERING AF PLOTLY GRAF
+    fig = make_subplots(specs=[[{"secondary_y": True}]])
+    fig.add_trace(go.Scatter(x=plt_years, y=plt_depot_j, name="Johans Formue (Mio)", stackgroup='one', fillcolor='rgba(140, 133, 123, 0.6)', line=dict(width=0), hoverinfo='x+y+name'), secondary_y=False)
+    fig.add_trace(go.Scatter(x=plt_years, y=plt_depot_m, name="Markus' Formue (Mio)", stackgroup='one', fillcolor='rgba(181, 174, 159, 0.6)', line=dict(width=0), hoverinfo='x+y+name'), secondary_y=False)
+    fig.add_trace(go.Scatter(x=plt_years, y=plt_hours_j, name="Johan Timer/Uge", mode='lines+markers', line=dict(color='#F25C84', width=3), hoverinfo='x+y+name'), secondary_y=True)
+    fig.add_trace(go.Scatter(x=plt_years, y=plt_hours_m, name="Markus Timer/Uge", mode='lines+markers', line=dict(color='#2c2925', width=3, dash='dot'), hoverinfo='x+y+name'), secondary_y=True)
+
+    fig.update_layout(
+        paper_bgcolor='rgba(0,0,0,0)',
+        plot_bgcolor='rgba(0,0,0,0)',
+        hovermode="x unified",
+        margin=dict(l=0, r=0, t=20, b=10),
+        legend=dict(orientation="h", yanchor="bottom", y=1.05, xanchor="center", x=0.5),
+        font=dict(color="#4a4742")
+    )
+    fig.update_yaxes(title_text="Formue (Mio. kr.)", secondary_y=False, showgrid=True, gridcolor='rgba(200, 200, 200, 0.2)', zeroline=False)
+    fig.update_yaxes(title_text="Barista Timer", secondary_y=True, showgrid=False, zeroline=False, rangemode='tozero')
+    fig.update_xaxes(title_text="År", showgrid=False, zeroline=False)
+
+    st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
+
+    # RENDERING AF TABEL
     st.table(pd.DataFrame(table_data).set_index("År"))
     st.write("")
     
@@ -623,26 +661,18 @@ def simulate_solo_fire_plan(scenario_name, boligpris, udbetaling_j, ydelse_defau
                 if nuvaerende_afdragsfri:
                     effektiv_realkreditydelse = max(0, realkreditydelse_netto - 6930)
                     st.markdown("<p style='font-size: 0.8em; color: gray; margin-top: -10px;'>* Reduceret pga. afdragsfrihed</p>", unsafe_allow_html=True)
-
-    # LÅNETYPE SELECTOR PLACERET UNDER EXPANDER
-    if not is_valby:
-        st.markdown("<div style='margin-bottom: 5px;'></div>", unsafe_allow_html=True)
-        col_lt1, col_lt2 = st.columns([0.45, 0.55], vertical_alignment="center")
-        with col_lt1:
-            loan_type = st.radio("hidden_label", ["Standard lån (Manuel)", "FlexLife (Auto 30 år afdragsfri)"], horizontal=True, key=f"lt_{ydelse_key_clean}", label_visibility="collapsed")
-        
-        with col_lt2:
-            if loan_type == "FlexLife (Auto 30 år afdragsfri)":
-                if ui_loan_pct <= 60.1:
-                    loan_amt = boligpris - faktisk_udbetaling_j
-                    brutto_md = (loan_amt * (0.04 + 0.01)) / 12
-                    effektiv_realkreditydelse = brutto_md * (1 - 0.256)
-                    st.success(f"✓ FlexLife nettoydelse: **{format_dkk(effektiv_realkreditydelse)} kr./md.** (Fast 4% rente, 1% bidrag)")
-                else:
-                    st.error(f"⚠️ FlexLife kræver max 60% belåning. (Jeres er {ui_loan_pct:.1f}%). Indtast manuelt:")
-                    effektiv_realkreditydelse = st.number_input("Manuel ydelse (kr./md.)", value=ydelse_default, step=100, key=ydelse_key, on_change=clear_preset, label_visibility="collapsed")
             else:
-                effektiv_realkreditydelse = st.number_input("Manuel ydelse (kr./md.)", value=ydelse_default, step=100, key=ydelse_key, on_change=clear_preset, label_visibility="collapsed")
+                if global_loan_type == "FlexLife (Auto 30 år afdragsfri)":
+                    if ui_loan_pct <= 60.1:
+                        loan_amt = boligpris - faktisk_udbetaling_j
+                        brutto_md = (loan_amt * (0.04 + 0.01)) / 12
+                        effektiv_realkreditydelse = brutto_md * (1 - 0.256)
+                        st.success(f"✓ **FlexLife:** {format_dkk(effektiv_realkreditydelse)} kr./md.")
+                    else:
+                        st.error(f"⚠️ FlexLife afvist (>60% belåning). Indtast manuelt:")
+                        effektiv_realkreditydelse = st.number_input("Manuel ydelse (kr./md.)", value=ydelse_default, step=100, key=ydelse_key, on_change=clear_preset, label_visibility="collapsed")
+                else:
+                    effektiv_realkreditydelse = st.number_input("Manuel ydelse (kr./md.)", value=ydelse_default, step=100, key=ydelse_key, on_change=clear_preset, label_visibility="collapsed")
 
     if actual_salgsaar == 0:
         base_frie_j = st.session_state["basis_frie_j"] + (cash_j - faktisk_udbetaling_j)
@@ -694,7 +724,6 @@ def simulate_solo_fire_plan(scenario_name, boligpris, udbetaling_j, ydelse_defau
         **Mdl. Udgifter:** {fire_j_str} kr./md.
         """)
 
-    # --- UI: PLACERING OVER TABEL (Ejerudgift & Toggle & MC) ---
     st.markdown("<div style='margin-top: -15px;'></div>", unsafe_allow_html=True)
     col_mc, col_tog, col_ejer = st.columns([0.5, 0.3, 0.2], vertical_alignment="bottom")
     
@@ -714,6 +743,10 @@ def simulate_solo_fire_plan(scenario_name, boligpris, udbetaling_j, ydelse_defau
         st.number_input("Ejerudgift (kr./md.)", value=int(ejerudgifter_standard), step=100, key=f"ejer_{ydelse_key_clean}", on_change=clear_preset)
 
     table_data = []
+    
+    plt_years = []
+    plt_depot_j = []
+    plt_hours_j = []
     
     for year in range(0, 26):
         c_age_j = age_j + year
@@ -827,13 +860,44 @@ def simulate_solo_fire_plan(scenario_name, boligpris, udbetaling_j, ydelse_defau
             succ_j = np.mean(h_j_array <= 0) * 100
 
             if is_worst_case:
+                dep_j_val = p10_dep_j
+                hr_j_val = p90_h_j
                 table_data.append({"År": year, "Alder": c_age_j, "Depot (M)": f"{p10_dep_j/1e6:.2f}", "Passiv Indkomst (kr)": format_dkk(p10_p_j), "Arbejdstid (Barista)": f"{get_emoji_status(p90_h_j).split()[0]} {p90_h_j:.1f}t", "Succesrate": f"{succ_j:.0f}%"})
             else:
+                dep_j_val = med_dep_j
+                hr_j_val = med_h_j
                 table_data.append({"År": year, "Alder": c_age_j, "Depot (M)": f"{med_dep_j/1e6:.2f}", "Passiv Indkomst (kr)": format_dkk(med_p_j), "Arbejdstid (Barista)": get_emoji_status(med_h_j), "Succesrate": f"{succ_j:.0f}%"})
         else:
-            table_data.append({"År": year, "Alder": c_age_j, "Depot (M)": f"{(depot_ask_j[0] + depot_free_j[0])/1e6:.2f}", "Passiv Indkomst (kr)": format_dkk(p_j[0]), "Arbejdstid (Barista)": get_emoji_status(h_j_array[0])})
-            if j_reached_arr[0]: break
+            dep_j_val = depot_ask_j[0] + depot_free_j[0]
+            hr_j_val = h_j_array[0]
+            table_data.append({"År": year, "Alder": c_age_j, "Depot (M)": f"{dep_j_val/1e6:.2f}", "Passiv Indkomst (kr)": format_dkk(p_j[0]), "Arbejdstid (Barista)": get_emoji_status(h_j_array[0])})
+            
+        plt_years.append(year)
+        plt_depot_j.append(dep_j_val / 1e6)
+        plt_hours_j.append(max(0, hr_j_val))
+        
+        if n_sims == 1 and j_reached_arr[0]: break
 
+    # RENDERING AF PLOTLY GRAF (SOLO)
+    fig = make_subplots(specs=[[{"secondary_y": True}]])
+    fig.add_trace(go.Scatter(x=plt_years, y=plt_depot_j, name="Johans Formue (Mio)", stackgroup='one', fillcolor='rgba(140, 133, 123, 0.6)', line=dict(width=0), hoverinfo='x+y+name'), secondary_y=False)
+    fig.add_trace(go.Scatter(x=plt_years, y=plt_hours_j, name="Johan Timer/Uge", mode='lines+markers', line=dict(color='#F25C84', width=3), hoverinfo='x+y+name'), secondary_y=True)
+
+    fig.update_layout(
+        paper_bgcolor='rgba(0,0,0,0)',
+        plot_bgcolor='rgba(0,0,0,0)',
+        hovermode="x unified",
+        margin=dict(l=0, r=0, t=20, b=10),
+        legend=dict(orientation="h", yanchor="bottom", y=1.05, xanchor="center", x=0.5),
+        font=dict(color="#4a4742")
+    )
+    fig.update_yaxes(title_text="Formue (Mio. kr.)", secondary_y=False, showgrid=True, gridcolor='rgba(200, 200, 200, 0.2)', zeroline=False)
+    fig.update_yaxes(title_text="Barista Timer", secondary_y=True, showgrid=False, zeroline=False, rangemode='tozero')
+    fig.update_xaxes(title_text="År", showgrid=False, zeroline=False)
+
+    st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
+
+    # RENDERING AF TABEL
     st.table(pd.DataFrame(table_data).set_index("År"))
     st.write("")
     
