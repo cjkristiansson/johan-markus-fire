@@ -550,6 +550,10 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
 
         if n_sims == 1 and j_reached_arr[0] and m_reached_arr[0]: break
 
+    # RENDERING AF TABEL
+    st.table(pd.DataFrame(table_data).set_index("År"))
+    st.write("")
+
     # RENDERING AF PLOTLY GRAF
     fig = make_subplots(specs=[[{"secondary_y": True}]])
     fig.add_trace(go.Scatter(x=plt_years, y=plt_depot_j, name="Johans Formue (Mio)", stackgroup='one', fillcolor='rgba(140, 133, 123, 0.6)', line=dict(width=0), hoverinfo='x+y+name'), secondary_y=True)
@@ -570,10 +574,6 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
     fig.update_xaxes(title_text="År", showgrid=False, zeroline=False, tickmode='linear', tick0=0, dtick=2, tickfont=dict(size=14, color="#2c2925"), title_font=dict(size=16, color="#2c2925"))
 
     st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
-
-    # RENDERING AF TABEL
-    st.table(pd.DataFrame(table_data).set_index("År"))
-    st.write("")
     
     if is_valby or actual_salgsaar > 0:
         st.markdown("### 🔒 Styring af nuværende Valby lån")
@@ -885,6 +885,10 @@ def simulate_solo_fire_plan(scenario_name, boligpris, udbetaling_j, ydelse_defau
         
         if n_sims == 1 and j_reached_arr[0]: break
 
+    # RENDERING AF TABEL
+    st.table(pd.DataFrame(table_data).set_index("År"))
+    st.write("")
+
     # RENDERING AF PLOTLY GRAF (SOLO)
     fig = make_subplots(specs=[[{"secondary_y": True}]])
     fig.add_trace(go.Scatter(x=plt_years, y=plt_depot_j, name="Johans Formue (Mio)", stackgroup='one', fillcolor='rgba(140, 133, 123, 0.6)', line=dict(width=0), hoverinfo='x+y+name'), secondary_y=True)
@@ -903,10 +907,6 @@ def simulate_solo_fire_plan(scenario_name, boligpris, udbetaling_j, ydelse_defau
     fig.update_xaxes(title_text="År", showgrid=False, zeroline=False, tickmode='linear', tick0=0, dtick=2, tickfont=dict(size=14, color="#2c2925"), title_font=dict(size=16, color="#2c2925"))
 
     st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
-
-    # RENDERING AF TABEL
-    st.table(pd.DataFrame(table_data).set_index("År"))
-    st.write("")
     
     if is_valby or actual_salgsaar > 0:
         st.markdown("### 🔒 Styring af nuværende Valby lån")
