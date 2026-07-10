@@ -116,7 +116,7 @@ global_bolig_inflation = st.sidebar.slider("Boligmarkedsvækst (Asymmetrisk gevi
 global_salgsomkostninger = st.sidebar.number_input("Salgsomkostninger (kr.)", min_value=0, max_value=500000, value=150000, step=10000, on_change=clear_preset, help="Mæglersalær, bankgebyrer, tinglysning mm. Trækkes fra provenuet ved salg.")
 
 st.sidebar.divider()
-st.sidebar.markdown("### 🏦 Boligfinansiering (Nye boliger)")
+st.sidebar.markdown("### Boligfinansiering (Nye boliger)")
 global_loan_type = st.sidebar.radio("Lånetype", ["Standard lån (Manuelt)", "FlexLife (Auto 30 år afdragsfri)"], on_change=clear_preset, label_visibility="collapsed")
 
 st.sidebar.divider()
@@ -552,10 +552,10 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
 
     # RENDERING AF PLOTLY GRAF
     fig = make_subplots(specs=[[{"secondary_y": True}]])
-    fig.add_trace(go.Scatter(x=plt_years, y=plt_depot_j, name="Johans Formue (Mio)", stackgroup='one', fillcolor='rgba(140, 133, 123, 0.6)', line=dict(width=0), hoverinfo='x+y+name'), secondary_y=False)
-    fig.add_trace(go.Scatter(x=plt_years, y=plt_depot_m, name="Markus' Formue (Mio)", stackgroup='one', fillcolor='rgba(181, 174, 159, 0.6)', line=dict(width=0), hoverinfo='x+y+name'), secondary_y=False)
-    fig.add_trace(go.Scatter(x=plt_years, y=plt_hours_j, name="Johan Timer/Uge", mode='lines+markers', line=dict(color='#F25C84', width=3), hoverinfo='x+y+name'), secondary_y=True)
-    fig.add_trace(go.Scatter(x=plt_years, y=plt_hours_m, name="Markus Timer/Uge", mode='lines+markers', line=dict(color='#2c2925', width=3, dash='dot'), hoverinfo='x+y+name'), secondary_y=True)
+    fig.add_trace(go.Scatter(x=plt_years, y=plt_depot_j, name="Johans Formue (Mio)", stackgroup='one', fillcolor='rgba(140, 133, 123, 0.6)', line=dict(width=0), hoverinfo='x+y+name'), secondary_y=True)
+    fig.add_trace(go.Scatter(x=plt_years, y=plt_depot_m, name="Markus' Formue (Mio)", stackgroup='one', fillcolor='rgba(181, 174, 159, 0.6)', line=dict(width=0), hoverinfo='x+y+name'), secondary_y=True)
+    fig.add_trace(go.Scatter(x=plt_years, y=plt_hours_j, name="Johan Timer/Uge", mode='lines+markers', line=dict(color='#F25C84', width=3), hoverinfo='x+y+name'), secondary_y=False)
+    fig.add_trace(go.Scatter(x=plt_years, y=plt_hours_m, name="Markus Timer/Uge", mode='lines+markers', line=dict(color='#2c2925', width=3, dash='dot'), hoverinfo='x+y+name'), secondary_y=False)
 
     fig.update_layout(
         paper_bgcolor='rgba(0,0,0,0)',
@@ -563,11 +563,11 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
         hovermode="x unified",
         margin=dict(l=0, r=0, t=20, b=10),
         legend=dict(orientation="h", yanchor="bottom", y=1.05, xanchor="center", x=0.5),
-        font=dict(color="#4a4742")
+        font=dict(color="#2c2925")
     )
-    fig.update_yaxes(title_text="Formue (Mio. kr.)", secondary_y=False, showgrid=True, gridcolor='rgba(200, 200, 200, 0.2)', zeroline=False)
-    fig.update_yaxes(title_text="Barista Timer", secondary_y=True, showgrid=False, zeroline=False, rangemode='tozero')
-    fig.update_xaxes(title_text="År", showgrid=False, zeroline=False)
+    fig.update_yaxes(title_text="Barista Timer", secondary_y=False, showgrid=True, gridcolor='rgba(200, 200, 200, 0.2)', zeroline=False, rangemode='tozero', tickfont=dict(size=14, color="#2c2925"), title_font=dict(size=16, color="#2c2925"))
+    fig.update_yaxes(title_text="Formue (Mio. kr.)", secondary_y=True, showgrid=False, zeroline=False, tickfont=dict(size=14, color="#2c2925"), title_font=dict(size=16, color="#2c2925"))
+    fig.update_xaxes(title_text="År", showgrid=False, zeroline=False, tickfont=dict(size=14, color="#2c2925"), title_font=dict(size=16, color="#2c2925"))
 
     st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
 
@@ -661,18 +661,26 @@ def simulate_solo_fire_plan(scenario_name, boligpris, udbetaling_j, ydelse_defau
                 if nuvaerende_afdragsfri:
                     effektiv_realkreditydelse = max(0, realkreditydelse_netto - 6930)
                     st.markdown("<p style='font-size: 0.8em; color: gray; margin-top: -10px;'>* Reduceret pga. afdragsfrihed</p>", unsafe_allow_html=True)
-            else:
-                if global_loan_type == "FlexLife (Auto 30 år afdragsfri)":
-                    if ui_loan_pct <= 60.1:
-                        loan_amt = boligpris - faktisk_udbetaling_j
-                        brutto_md = (loan_amt * (0.04 + 0.01)) / 12
-                        effektiv_realkreditydelse = brutto_md * (1 - 0.256)
-                        st.success(f"✓ **FlexLife:** {format_dkk(effektiv_realkreditydelse)} kr./md.")
-                    else:
-                        st.error(f"⚠️ FlexLife afvist (>60% belåning). Indtast manuelt:")
-                        effektiv_realkreditydelse = st.number_input("Manuel ydelse (kr./md.)", value=ydelse_default, step=100, key=ydelse_key, on_change=clear_preset, label_visibility="collapsed")
+
+    # LÅNETYPE SELECTOR PLACERET UNDER EXPANDER
+    if not is_valby:
+        st.markdown("<div style='margin-bottom: 5px;'></div>", unsafe_allow_html=True)
+        col_lt1, col_lt2 = st.columns([0.45, 0.55], vertical_alignment="center")
+        with col_lt1:
+            loan_type = st.radio("hidden_label", ["Standard lån (Manuel)", "FlexLife (Auto 30 år afdragsfri)"], horizontal=True, key=f"lt_{ydelse_key_clean}", label_visibility="collapsed")
+        
+        with col_lt2:
+            if loan_type == "FlexLife (Auto 30 år afdragsfri)":
+                if ui_loan_pct <= 60.1:
+                    loan_amt = boligpris - faktisk_udbetaling_j
+                    brutto_md = (loan_amt * (0.04 + 0.01)) / 12
+                    effektiv_realkreditydelse = brutto_md * (1 - 0.256)
+                    st.success(f"✓ FlexLife nettoydelse: **{format_dkk(effektiv_realkreditydelse)} kr./md.** (Fast 4% rente, 1% bidrag)")
                 else:
+                    st.error(f"⚠️ FlexLife kræver max 60% belåning. (Jeres er {ui_loan_pct:.1f}%). Indtast manuelt:")
                     effektiv_realkreditydelse = st.number_input("Manuel ydelse (kr./md.)", value=ydelse_default, step=100, key=ydelse_key, on_change=clear_preset, label_visibility="collapsed")
+            else:
+                effektiv_realkreditydelse = st.number_input("Manuel ydelse (kr./md.)", value=ydelse_default, step=100, key=ydelse_key, on_change=clear_preset, label_visibility="collapsed")
 
     if actual_salgsaar == 0:
         base_frie_j = st.session_state["basis_frie_j"] + (cash_j - faktisk_udbetaling_j)
@@ -880,8 +888,8 @@ def simulate_solo_fire_plan(scenario_name, boligpris, udbetaling_j, ydelse_defau
 
     # RENDERING AF PLOTLY GRAF (SOLO)
     fig = make_subplots(specs=[[{"secondary_y": True}]])
-    fig.add_trace(go.Scatter(x=plt_years, y=plt_depot_j, name="Johans Formue (Mio)", stackgroup='one', fillcolor='rgba(140, 133, 123, 0.6)', line=dict(width=0), hoverinfo='x+y+name'), secondary_y=False)
-    fig.add_trace(go.Scatter(x=plt_years, y=plt_hours_j, name="Johan Timer/Uge", mode='lines+markers', line=dict(color='#F25C84', width=3), hoverinfo='x+y+name'), secondary_y=True)
+    fig.add_trace(go.Scatter(x=plt_years, y=plt_depot_j, name="Johans Formue (Mio)", stackgroup='one', fillcolor='rgba(140, 133, 123, 0.6)', line=dict(width=0), hoverinfo='x+y+name'), secondary_y=True)
+    fig.add_trace(go.Scatter(x=plt_years, y=plt_hours_j, name="Johan Timer/Uge", mode='lines+markers', line=dict(color='#F25C84', width=3), hoverinfo='x+y+name'), secondary_y=False)
 
     fig.update_layout(
         paper_bgcolor='rgba(0,0,0,0)',
@@ -889,11 +897,11 @@ def simulate_solo_fire_plan(scenario_name, boligpris, udbetaling_j, ydelse_defau
         hovermode="x unified",
         margin=dict(l=0, r=0, t=20, b=10),
         legend=dict(orientation="h", yanchor="bottom", y=1.05, xanchor="center", x=0.5),
-        font=dict(color="#4a4742")
+        font=dict(color="#2c2925")
     )
-    fig.update_yaxes(title_text="Formue (Mio. kr.)", secondary_y=False, showgrid=True, gridcolor='rgba(200, 200, 200, 0.2)', zeroline=False)
-    fig.update_yaxes(title_text="Barista Timer", secondary_y=True, showgrid=False, zeroline=False, rangemode='tozero')
-    fig.update_xaxes(title_text="År", showgrid=False, zeroline=False)
+    fig.update_yaxes(title_text="Barista Timer", secondary_y=False, showgrid=True, gridcolor='rgba(200, 200, 200, 0.2)', zeroline=False, rangemode='tozero', tickfont=dict(size=14, color="#2c2925"), title_font=dict(size=16, color="#2c2925"))
+    fig.update_yaxes(title_text="Formue (Mio. kr.)", secondary_y=True, showgrid=False, zeroline=False, tickfont=dict(size=14, color="#2c2925"), title_font=dict(size=16, color="#2c2925"))
+    fig.update_xaxes(title_text="År", showgrid=False, zeroline=False, tickfont=dict(size=14, color="#2c2925"), title_font=dict(size=16, color="#2c2925"))
 
     st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
 
