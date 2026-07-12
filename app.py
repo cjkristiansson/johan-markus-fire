@@ -312,6 +312,7 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
         budget_j_total = sum(st.session_state["budget_j"].values())
         budget_m_total = sum(st.session_state["budget_m"].values())
 
+        # Start_inv_md_j bruges nu KUN visuelt til at vise "Mdl. opsparing i År 0". Den lægges IKKE længere til fremtiden.
         start_inv_md_j = st.session_state["inkomst_j"] - (budget_j_total + bolig_faelles_current)
         start_inv_md_m = st.session_state["inkomst_m"] - (budget_m_total + bolig_faelles_current) + bsu_passive
         
@@ -418,7 +419,6 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
             netto_bolig_faelles = (ny_lån_ydelse + current_ejerudgifter - (renter_md * 0.256)) / 2
             diff_faelles = bolig_faelles_current - netto_bolig_faelles
             start_fire_j -= diff_faelles; start_fire_m -= diff_faelles
-            start_inv_md_j += diff_faelles; start_inv_md_m += diff_faelles
             bolig_faelles_current = netto_bolig_faelles
             
             depot_free_j += (equity_amt / 2); depot_free_m += (equity_amt / 2)
@@ -433,7 +433,6 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
                 valby_afdrag_md = ekstra_nominel_ydelse
                 
                 start_fire_j += (ekstra_nominel_ydelse / 2); start_fire_m += (ekstra_nominel_ydelse / 2)
-                start_inv_md_j -= (ekstra_nominel_ydelse / 2); start_inv_md_m -= (ekstra_nominel_ydelse / 2)
                 bolig_faelles_current += (ekstra_nominel_ydelse / 2)
 
         if year > 0:
@@ -460,7 +459,7 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
                     if use_bsu:
                         locked_frivaerdi_m += bsu_amount
                         skaleret_udbetaling_j -= (bsu_amount / 2); skaleret_udbetaling_m += (bsu_amount / 2)
-                        bsu_passive = 0; start_inv_md_m -= 983
+                        bsu_passive = 0
                         
                     mangler_m = max(0, skaleret_udbetaling_m - locked_frivaerdi_m)
                     fakt_udb_m = skaleret_udbetaling_m - mangler_m
@@ -476,7 +475,6 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
                     
                     diff_faelles = (bolig_faelles_current * ((1 + global_inflation_rate)**year)) - ny_bolig_faelles
                     start_fire_j -= diff_faelles; start_fire_m -= diff_faelles
-                    start_inv_md_j += (diff_faelles / ((1 + global_inflation_rate)**year)); start_inv_md_m += (diff_faelles / ((1 + global_inflation_rate)**year))
                     
                     bolig_faelles_current = ny_bolig_faelles / ((1 + global_inflation_rate)**year)
                     restgaeld_start = maal_pris - (fakt_udb_j + fakt_udb_m)
@@ -493,9 +491,8 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
             depot_ask_j = np.maximum(0, depot_ask_j * (1 + current_ret * 0.83))
             depot_ask_m = np.maximum(0, depot_ask_m * (1 + current_ret * 0.83))
             
-            depot_free_j += np.where(~j_reached_arr, start_inv_md_j * 12 * ((1 + global_inflation_rate)**year), 0)
-            depot_free_m += np.where(~m_reached_arr, start_inv_md_m * 12 * ((1 + global_inflation_rate)**year), 0)
-
+            # VIGTIGT: FANTOM-INDKOMST SLETTET. Vi tager ikke længere jeres UX-opsparing ind i fremtiden. I sparrer nu 0 kr. ekstra op.
+            
             ask_limit_year = ask_base_limit * ((1 + global_inflation_rate)**year)
             space_j = np.maximum(0, ask_limit_year - depot_ask_j); move_j = np.minimum(space_j, np.maximum(0, depot_free_j))
             depot_ask_j += move_j; depot_free_j -= move_j
@@ -503,10 +500,9 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
             space_m = np.maximum(0, ask_limit_year - depot_ask_m); move_m = np.minimum(space_m, np.maximum(0, depot_free_m))
             depot_ask_m += move_m; depot_free_m -= move_m
 
+            # VIGTIGT: UX-PENSION SLETTET. Pensionen vokser udelukkende via PAL-skat justeret afkast. Ingen løbende indbetalinger.
             pension_j_current = np.maximum(0, pension_j_current * (1 + (current_ret * (1 - pal_tax))))
             pension_m_current = np.maximum(0, pension_m_current * (1 + (current_ret * (1 - pal_tax))))
-            pension_j_current += np.where(~j_reached_arr, st.session_state["pension_indb_j"] * 12 * ((1 + global_inflation_rate)**year), 0)
-            pension_m_current += np.where(~m_reached_arr, st.session_state["pension_indb_m"] * 12 * ((1 + global_inflation_rate)**year), 0)
 
         p_j = calculate_drawdown_monthly_income(np.maximum(0, depot_ask_j + depot_free_j), c_age_j, pensionsalder_j, global_return_rate_net_drawdown, global_inflation_rate, use_real_drawdown)
         p_m_drawdown = calculate_drawdown_monthly_income(np.maximum(0, depot_ask_m + depot_free_m), c_age_m, pensionsalder_m, global_return_rate_net_drawdown, global_inflation_rate, use_real_drawdown)
@@ -708,6 +704,7 @@ def simulate_solo_fire_plan(scenario_name, boligpris, udbetaling_j, ydelse_defau
         solo_budget_j["Mad"] = 3000
         budget_j_total = sum(solo_budget_j.values())
         
+        # Start_inv_md_j bruges kun visuelt i toppen, ikke i loopet
         start_inv_md_j = st.session_state["inkomst_j"] - (budget_j_total + bolig_total_current)
         start_fire_j = sum(v for k, v in solo_budget_j.items() if k not in ["A_kasse_Fagforening", "Loensikring"]) + bolig_total_current
 
@@ -792,7 +789,7 @@ def simulate_solo_fire_plan(scenario_name, boligpris, udbetaling_j, ydelse_defau
             
             netto_bolig_total = ny_lån_ydelse + current_ejerudgifter - (renter_md * 0.256)
             diff_bolig = bolig_total_current - netto_bolig_total
-            start_fire_j -= diff_bolig; start_inv_md_j += diff_bolig
+            start_fire_j -= diff_bolig
             bolig_total_current = netto_bolig_total
             
             depot_free_j += equity_amt
@@ -807,7 +804,6 @@ def simulate_solo_fire_plan(scenario_name, boligpris, udbetaling_j, ydelse_defau
                 valby_afdrag_md = ekstra_nominel_ydelse
                 
                 start_fire_j += ekstra_nominel_ydelse
-                start_inv_md_j -= (ekstra_nominel_ydelse / ((1 + global_inflation_rate)**year))
                 bolig_total_current += (ekstra_nominel_ydelse / ((1 + global_inflation_rate)**year))
 
         if year > 0:
@@ -835,7 +831,6 @@ def simulate_solo_fire_plan(scenario_name, boligpris, udbetaling_j, ydelse_defau
                     
                     diff_bolig = (bolig_total_current * ((1 + global_inflation_rate)**year)) - ny_bolig_total
                     start_fire_j -= diff_bolig
-                    start_inv_md_j += (diff_bolig / ((1 + global_inflation_rate)**year))
                     
                     bolig_total_current = ny_bolig_total / ((1 + global_inflation_rate)**year)
                     restgaeld_start = maal_pris - fakt_udb_j
@@ -846,14 +841,15 @@ def simulate_solo_fire_plan(scenario_name, boligpris, udbetaling_j, ydelse_defau
             
             depot_free_j = np.maximum(0, depot_free_j + (return_frie_j - tax_j))
             depot_ask_j = np.maximum(0, depot_ask_j * (1 + current_ret * 0.83))
-            depot_free_j += np.where(~j_reached_arr, start_inv_md_j * 12 * ((1 + global_inflation_rate)**year), 0)
 
+            # VIGTIGT: FANTOM-INDKOMST SLETTET. Vi tager ikke længere UX-opsparing med i fremtiden
+            
             ask_limit_year = ask_base_limit * ((1 + global_inflation_rate)**year)
             space_j = np.maximum(0, ask_limit_year - depot_ask_j); move_j = np.minimum(space_j, np.maximum(0, depot_free_j))
             depot_ask_j += move_j; depot_free_j -= move_j
             
+            # VIGTIGT: UX-PENSION SLETTET. Ingen løbende indbetalinger.
             pension_j_current = np.maximum(0, pension_j_current * (1 + (current_ret * (1 - pal_tax))))
-            pension_j_current += np.where(~j_reached_arr, st.session_state["pension_indb_j"] * 12 * ((1 + global_inflation_rate)**year), 0)
 
         p_j = calculate_drawdown_monthly_income(np.maximum(0, depot_ask_j + depot_free_j), c_age_j, pensionsalder_j, global_return_rate_net_drawdown, global_inflation_rate, use_real_drawdown)
         h_j_array = np.maximum(0, start_fire_j - p_j) / (global_barista_wage_net * ((1+global_inflation_rate)**year) * weeks_per_month)
