@@ -532,11 +532,11 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
             if is_worst_case:
                 dep_j_val, dep_m_val = p10_dep_j, p10_dep_m
                 hr_j_val, hr_m_val = p90_h_j, p90_h_m
-                table_data.append({"År": year, "J.alder": c_age_j, "J.depot (M)": f"{p10_dep_j/1e6:.2f}", "J.Passiv (kr)": format_dkk(p10_p_j), "J.Arbtid": f"{get_emoji_status(p90_h_j).split()[0]} {p90_h_j:.1f}t", "J.Succes": f"{succ_j:.0f}%", "M.alder": c_age_m, "M.depot (M)": f"{p10_dep_m/1e6:.2f}", "M.Passiv (kr)": format_dkk(p10_p_m), "M.Arbtid": f"{get_emoji_status(p90_h_m).split()[0]} {p90_h_m:.1f}t", "M.Succes": f"{succ_m:.0f}%"})
+                table_data.append({"År": year, "J.alder": c_age_j, "J.depot (M)": f"{p10_dep_j/1e6:.2f}", "J.Passiv (kr)": format_dkk(p10_p_j), "J.Arbtid": f"{get_emoji_status(p90_h_j).split()[0]} {p90_h_j:.1f}t", "M.alder": c_age_m, "M.depot (M)": f"{p10_dep_m/1e6:.2f}", "M.Passiv (kr)": format_dkk(p10_p_m), "M.Arbtid": f"{get_emoji_status(p90_h_m).split()[0]} {p90_h_m:.1f}t"})
             else:
                 dep_j_val, dep_m_val = med_dep_j, med_dep_m
                 hr_j_val, hr_m_val = med_h_j, med_h_m
-                table_data.append({"År": year, "J.alder": c_age_j, "J.depot (M)": f"{med_dep_j/1e6:.2f}", "J.Passiv (kr)": format_dkk(med_p_j), "J.Arbtid": get_emoji_status(med_h_j), "J.Succes": f"{succ_j:.0f}%", "M.alder": c_age_m, "M.depot (M)": f"{med_dep_m/1e6:.2f}", "M.Passiv (kr)": format_dkk(med_p_m), "M.Arbtid": get_emoji_status(med_h_m), "M.Succes": f"{succ_m:.0f}%"})
+                table_data.append({"År": year, "J.alder": c_age_j, "J.depot (M)": f"{med_dep_j/1e6:.2f}", "J.Passiv (kr)": format_dkk(med_p_j), "J.Arbtid": get_emoji_status(med_h_j), "M.alder": c_age_m, "M.depot (M)": f"{med_dep_m/1e6:.2f}", "M.Passiv (kr)": format_dkk(med_p_m), "M.Arbtid": get_emoji_status(med_h_m)})
         else:
             dep_j_val, dep_m_val = depot_ask_j[0] + depot_free_j[0], depot_ask_m[0] + depot_free_m[0]
             hr_j_val, hr_m_val = h_j_array[0], h_m_array[0]
@@ -869,11 +869,11 @@ def simulate_solo_fire_plan(scenario_name, boligpris, udbetaling_j, ydelse_defau
             if is_worst_case:
                 dep_j_val = p10_dep_j
                 hr_j_val = p90_h_j
-                table_data.append({"År": year, "Alder": c_age_j, "Depot (M)": f"{p10_dep_j/1e6:.2f}", "Passiv Indkomst (kr)": format_dkk(p10_p_j), "Arbejdstid (Barista)": f"{get_emoji_status(p90_h_j).split()[0]} {p90_h_j:.1f}t", "Succesrate": f"{succ_j:.0f}%"})
+                table_data.append({"År": year, "Alder": c_age_j, "Depot (M)": f"{p10_dep_j/1e6:.2f}", "Passiv Indkomst (kr)": format_dkk(p10_p_j), "Arbejdstid (Barista)": f"{get_emoji_status(p90_h_j).split()[0]} {p90_h_j:.1f}t"})
             else:
                 dep_j_val = med_dep_j
                 hr_j_val = med_h_j
-                table_data.append({"År": year, "Alder": c_age_j, "Depot (M)": f"{med_dep_j/1e6:.2f}", "Passiv Indkomst (kr)": format_dkk(med_p_j), "Arbejdstid (Barista)": get_emoji_status(med_h_j), "Succesrate": f"{succ_j:.0f}%"})
+                table_data.append({"År": year, "Alder": c_age_j, "Depot (M)": f"{med_dep_j/1e6:.2f}", "Passiv Indkomst (kr)": format_dkk(med_p_j), "Arbejdstid (Barista)": get_emoji_status(med_h_j)})
         else:
             dep_j_val = depot_ask_j[0] + depot_free_j[0]
             hr_j_val = h_j_array[0]
