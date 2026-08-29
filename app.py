@@ -1,4 +1,226 @@
+import streamlit as st
+import pandas as pd
+import numpy as np
+import plotly.graph_objects as go
+from plotly.subplots import make_subplots
 
+# Konfiguration
+st.set_page_config(page_title="FIRE Dashboard", layout="wide", initial_sidebar_state="expanded")
+
+# --- INDLÆS EKSTERN CSS ---
+def load_css(file_name):
+    try:
+        with open(file_name) as f:
+            st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
+    except FileNotFoundError:
+        pass
+
+load_css("style.css")
+
+# --- INITIALISERING AF SESSION STATE (BASISDATA) ---
+if "inkomst_j" not in st.session_state: st.session_state["inkomst_j"] = 38468
+if "inkomst_m" not in st.session_state: st.session_state["inkomst_m"] = 32983
+if "pension_j" not in st.session_state: st.session_state["pension_j"] = 845000
+if "pension_m" not in st.session_state: st.session_state["pension_m"] = 570000
+if "pension_indb_j" not in st.session_state: st.session_state["pension_indb_j"] = 7500
+if "pension_indb_m" not in st.session_state: st.session_state["pension_indb_m"] = 5000
+
+# Formue før boligkøb
+if "cash_j_base" not in st.session_state: st.session_state["cash_j_base"] = 2567500
+if "cash_m_base" not in st.session_state: st.session_state["cash_m_base"] = 1153888
+if "basis_ask_j" not in st.session_state: st.session_state["basis_ask_j"] = 187498
+if "basis_frie_j" not in st.session_state: st.session_state["basis_frie_j"] = 125000
+if "basis_ask_m" not in st.session_state: st.session_state["basis_ask_m"] = 170000
+if "basis_frie_m" not in st.session_state: st.session_state["basis_frie_m"] = 0
+
+# Toggles og Fælles Madbudget variabler
+if "use_bsu_m" not in st.session_state: st.session_state["use_bsu_m"] = False
+if "use_real_drawdown" not in st.session_state: st.session_state["use_real_drawdown"] = False
+if "use_ask_500k" not in st.session_state: st.session_state["use_ask_500k"] = False
+if "mad_total_val" not in st.session_state: st.session_state["mad_total_val"] = 6000
+if "mad_j_val" not in st.session_state: st.session_state["mad_j_val"] = 4500
+if "mc_active" not in st.session_state: st.session_state["mc_active"] = True
+
+# Valby Pris Input
+if "valby_pris_input" not in st.session_state: st.session_state["valby_pris_input"] = 6600000
+
+# Personlige budgetter
+if "budget_j" not in st.session_state:
+    st.session_state["budget_j"] = {"Studielaan": 0, "Mad": st.session_state["mad_j_val"], "Ferie": 1500, "Renovering": 1000, "A_kasse_Fagforening": 672, "Puregym": 279, "Transport": 730, "Telefon": 100, "Spotify_Cloud": 100, "Charity": 100, "Frisoer": 450, "Toej": 1200, "Oevrig": 3000}
+if "budget_m" not in st.session_state:
+    st.session_state["budget_m"] = {"Studielaan": 1600, "Mad": st.session_state["mad_total_val"] - st.session_state["mad_j_val"], "Ferie": 1500, "Renovering": 1000, "A_kasse_Fagforening": 520, "Puregym": 0, "Transport": 500, "Telefon": 300, "Streaming": 565, "Charity": 100, "Frisoer": 450, "Toej": 1200, "Oevrig": 3000}
+
+# --- POP-UP MODAL TIL REGLER OG LOGIK ---
+@st.dialog("📜 Modellens Regler & Logik")
+def show_rules_dialog():
+    st.markdown("""
+    * **Trin 0 (Boligkøb først):** Startdepotet i år 1 er formuen *efter* udbetaling til bolig.
+    * **Lagerbeskatning:** Frie midler beskattes progressivt (27/42%). Progressionsgrænsen indekseres årligt. ASK-loftet udnyttes før indskud på frie midler.
+    * **Udskudt Salg:** Hvis salget udskydes, låses friværdien. Modellen fremskriver asymmetrisk boliginflation og faste afdrag frem til Salgsåret.
+    * **Monte Carlo Simulering:** Kører 1.000 parallelle universer vektoriseret i NumPy baseret på historisk volatilitet for at stressteste Barista-tilværelsen.
+    """)
+
+# --- TOP HEADER ---
+col_title, col_link = st.columns([0.85, 0.15], vertical_alignment="center")
+with col_title:
+    st.markdown("<h1 style='margin-top: -15px; margin-bottom: 0px;'>FIRE Brofinansiering</h1>", unsafe_allow_html=True)
+with col_link:
+    if st.button("📜 Regler & Logik", type="tertiary", use_container_width=True):
+        show_rules_dialog()
+
+# --- HOVEDNAVIGATION (PILLS) ---
+view_selection = st.pills("Navigation", options=["Boligscenarier", "⚙️ Basisdata & Opsætning"], default="Boligscenarier", label_visibility="collapsed")
+st.write("") 
+
+# --- SIDEBAR ---
+st.sidebar.header("Globale Antagelser")
+
+if "active_preset" not in st.session_state:
+    st.session_state["active_preset"] = "Realistisk"
+    st.session_state["slider_return"] = 7.0
+    st.session_state["slider_drawdown"] = 3.5
+    st.session_state["slider_inflation"] = 2.0
+
+def set_preset(preset):
+    st.session_state["active_preset"] = preset
+
+def clear_preset():
+    st.session_state["active_preset"] = "Custom"
+
+def toggle_mc():
+    st.session_state["mc_active"] = not st.session_state.get("mc_active", False)
+
+# Knapper
+st.sidebar.button("Standard", type="primary" if st.session_state["active_preset"] == "Standard" else "secondary", use_container_width=True, on_click=set_preset, args=("Standard",))
+st.sidebar.button("Realistisk", type="primary" if st.session_state["active_preset"] == "Realistisk" else "secondary", use_container_width=True, on_click=set_preset, args=("Realistisk",))
+st.sidebar.button("Konservativ", type="primary" if st.session_state["active_preset"] == "Konservativ" else "secondary", use_container_width=True, on_click=set_preset, args=("Konservativ",), disabled=st.session_state.get("mc_active", False), help="Deaktiveret under Monte Carlo for at forhindre bias i P10 scenariet.")
+
+global_return_rate_gross = st.sidebar.slider("Bruttoafkast under opsparing (%)", min_value=3.0, max_value=10.0, step=0.5, on_change=clear_preset, key="slider_return") / 100
+global_return_rate_net_drawdown = st.sidebar.slider("Nettoafkast i passiv fase (%)", min_value=2.0, max_value=8.0, step=0.1, on_change=clear_preset, key="slider_drawdown") / 100
+global_inflation_rate = st.sidebar.slider("Årlig inflation (%)", min_value=0.0, max_value=5.0, step=0.5, on_change=clear_preset, key="slider_inflation") / 100
+
+st.sidebar.toggle("Købekraftsjusteret udtræk i FIRE-fasen", key="use_real_drawdown", help="Tvinger modellen til at reservere en del af aktieafkastet til at beskytte hovedstolen mod inflation. Resulterer i en lavere start-udbetaling, der til gengæld stiger år for år for at fastholde købekraften.", on_change=clear_preset)
+
+st.sidebar.divider()
+st.sidebar.markdown("### Monte Carlo Simulering", help="Stresstester din FIRE-plan ved at køre 1.000 parallelle markedsforløb. Det kvantificerer risikoen for at ramme et krak tidligt i forløbet (Sequence of Returns Risk).")
+mc_volatility = st.sidebar.slider("Markedsvolatilitet (%)", min_value=5.0, max_value=25.0, value=15.0, step=1.0, on_change=clear_preset) / 100
+mc_btn_label = "Slå Monte Carlo FRA" if st.session_state.get("mc_active", False) else "Beregn Monte Carlo"
+st.sidebar.button(mc_btn_label, type="primary", use_container_width=True, on_click=toggle_mc)
+
+st.sidebar.divider()
+st.sidebar.markdown("### Salg af Valby-lejlighed")
+global_salgsaar = st.sidebar.slider("Salgsår (0 = Sælg nu)", min_value=0, max_value=10, value=0, step=1, on_change=clear_preset)
+global_bolig_inflation = st.sidebar.slider("Boligmarkedsvækst (Asymmetrisk gevinst %)", min_value=-10.0, max_value=10.0, value=3.0, step=0.5, on_change=clear_preset) / 100
+global_salgsomkostninger = st.sidebar.number_input("Salgsomkostninger (kr.)", min_value=0, max_value=500000, value=150000, step=10000, on_change=clear_preset, help="Mæglersalær, bankgebyrer, tinglysning mm. Trækkes fra provenuet ved salg.")
+
+st.sidebar.divider()
+st.sidebar.markdown("### Boligfinansiering (Nye boliger)")
+global_loan_type = st.sidebar.radio("Lånetype", ["Standard lån (Manuelt)", "FlexLife (Auto 30 år afdragsfri)"], on_change=clear_preset, label_visibility="collapsed")
+
+st.sidebar.divider()
+st.sidebar.markdown("### Skattepolitik")
+st.sidebar.toggle("Hæv ASK-loft til 500.000 kr.", key="use_ask_500k", on_change=clear_preset)
+
+st.sidebar.divider()
+global_barista_wage_net = st.sidebar.number_input("Baristaløn (Netto kr./t)", min_value=80, max_value=250, value=135, step=5, on_change=clear_preset)
+pensionsalder_j = st.sidebar.number_input("Johans pensionsalder", min_value=55, max_value=75, value=67, step=1, on_change=clear_preset)
+pensionsalder_m = st.sidebar.number_input("Markus' pensionsalder", min_value=55, max_value=75, value=65, step=1, on_change=clear_preset)
+
+st.sidebar.divider()
+st.sidebar.text_input("Gendan Scenarie-ID", help="Indtast ID for at indlæse specifik konfiguration (f.eks. 'solo').", key="secret_id")
+
+# --- SIKRE HJÆLPEFUNKTIONER ---
+def format_dkk(amount):
+    try:
+        if pd.isna(amount) or np.isnan(amount) or np.isinf(amount):
+            return "0"
+        return f"{int(amount):,}".replace(',', '.')
+    except:
+        return "0"
+
+def calculate_drawdown_monthly_income(depot_total_arr, current_age, target_age, net_return_rate, inflation_rate, use_real_rate):
+    if current_age >= target_age: return depot_total_arr * 0.0
+    years_left = target_age - current_age
+    months_left = years_left * 12
+    if use_real_rate:
+        effective_rate = ((1 + net_return_rate) / (1 + inflation_rate)) - 1
+    else:
+        effective_rate = net_return_rate
+    monthly_rate = effective_rate / 12
+    if monthly_rate <= 0: return depot_total_arr / months_left
+    return depot_total_arr * (monthly_rate * (1 + monthly_rate)**months_left) / ((1 + monthly_rate)**months_left - 1)
+
+def get_emoji_status(barista_hours):
+    try:
+        if pd.isna(barista_hours) or np.isnan(barista_hours) or np.isinf(barista_hours):
+            return "🏁 0.0t"
+        if barista_hours <= 0: return "🏁 0.0t"
+        elif 0 < barista_hours <= 15: return f"🟡 {barista_hours:.1f}t"
+        elif 15 < barista_hours <= 25: return f"🟠 {barista_hours:.1f}t"
+        else: return f"🔴 {barista_hours:.1f}t"
+    except:
+        return "🏁 0.0t"
+
+# --- DYNAMISKE SIMULERINGSFUNKTIONER ---
+def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_m, ydelse_default, ydelse_key, ejerudgifter_standard, bolig_solgt):
+    pal_tax, weeks_per_month, age_j, age_m = 0.153, 4.33, 41, 32
+    ydelse_key_clean = ydelse_key.replace("solo_", "")
+    
+    nuvaerende_afdragsfri = st.session_state.get(f"nuvaerende_afdragsfri_{ydelse_key_clean}", False)
+    ejerudgifter_input = st.session_state.get(f"ejer_{ydelse_key_clean}", int(ejerudgifter_standard))
+    mangler_skat = st.session_state.get(f"mangler_skat_{ydelse_key_clean}", False)
+    
+    skat_tillaeg = int((boligpris * 0.0055) / 12) if mangler_skat else 0
+    effektiv_ejerudgift = ejerudgifter_input + skat_tillaeg
+
+    aktiver_oml = st.session_state.get(f"aktiver_oml_{ydelse_key_clean}", False)
+    oml_aar = st.session_state.get(f"oml_aar_{ydelse_key_clean}", 5)
+    oml_rente = st.session_state.get(f"oml_rente_{ydelse_key_clean}", 4.0) / 100
+    oml_bidrag = st.session_state.get(f"oml_bidrag_{ydelse_key_clean}", 0.45) / 100
+    oml_total_rente = oml_rente + oml_bidrag
+    oml_afdrag_fri = st.session_state.get(f"oml_afdrag_fri_{ydelse_key_clean}", True)
+    oml_omk = st.session_state.get(f"oml_omk_{ydelse_key_clean}", 50000)
+    use_equity = st.session_state.get(f"use_equity_{ydelse_key_clean}", False)
+    equity_amt = st.session_state.get(f"equity_amount_{ydelse_key_clean}", 1000000) if use_equity else 0
+
+    use_real_drawdown = st.session_state.get("use_real_drawdown", False)
+    use_ask_500k = st.session_state.get("use_ask_500k", False)
+    ask_base_limit = 500000 if use_ask_500k else 174000
+
+    is_mc = st.session_state.get("mc_active", False)
+    n_sims = 1000 if is_mc else 1
+    vol = mc_volatility if is_mc else 0.0
+    market_returns = np.random.normal(loc=global_return_rate_gross, scale=vol, size=(26, n_sims))
+
+    is_valby = "Valby" in scenario_name
+    actual_salgsaar = 0 if is_valby else global_salgsaar
+    
+    valby_pris = st.session_state.get("valby_pris_input", 6600000)
+    maal_pris = boligpris
+
+    use_bsu = st.session_state.get("use_bsu_m", False)
+    bsu_amount = 292060
+    
+    cash_j = st.session_state["cash_j_base"] if bolig_solgt else 0
+    cash_m = st.session_state["cash_m_base"] if bolig_solgt else 0
+
+    if bolig_solgt and actual_salgsaar == 0:
+        cash_j = max(0, cash_j - (global_salgsomkostninger / 2))
+        cash_m = max(0, cash_m - (global_salgsomkostninger / 2))
+    
+    valby_fast_restgaeld = 3059064
+    valby_afdrag_md = 0 if nuvaerende_afdragsfri else 6930
+    
+    target_total_udb = udbetaling_j + udbetaling_m
+    ui_cash_pct = (target_total_udb / boligpris * 100) if boligpris > 0 else 0
+    ui_loan_pct = 100 - ui_cash_pct
+
+    effektiv_realkreditydelse = ydelse_default
+
+    with st.expander("🏠 Vis økonomiske detaljer & lån", expanded=False):
+        if actual_salgsaar > 0:
+            st.info(f"⏳ **Salg udskudt til År {actual_salgsaar}.** Jeres nuværende Valby-friværdi er låst i mursten indtil da.")
+            
         col_j, col_m, col_inp = st.columns([0.41, 0.41, 0.18], vertical_alignment="bottom")
 
         with col_inp:
