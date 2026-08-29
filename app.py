@@ -244,7 +244,7 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
                         st.error(f"⚠️ FlexLife afvist (>60% belåning). Indtast manuelt:")
                         effektiv_realkreditydelse = st.number_input("Manuel ydelse (kr./md.)", value=ydelse_default, step=100, key=ydelse_key, on_change=clear_preset, label_visibility="collapsed")
                 else:
-                    effektiv_realkreditydelse = st.number_input("Manuel ydelse (kr./md.)", value=yddefault, step=100, key=ydelse_key, on_change=clear_preset, label_visibility="collapsed")
+                    effektiv_realkreditydelse = st.number_input("Manuel ydelse (kr./md.)", value=ydelse_default, step=100, key=ydelse_key, on_change=clear_preset, label_visibility="collapsed")
 
     if actual_salgsaar == 0:
         if use_bsu and bolig_solgt:
