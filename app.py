@@ -55,7 +55,7 @@ if "budget_m" not in st.session_state:
 def show_rules_dialog():
     st.markdown("""
     * **Trin 0 (Boligkøb først):** Startdepotet i år 1 er formuen *efter* udbetaling til bolig.
-    * **Lagerbeskatning:** Frie midler beskattes progressivt (27/42%). Progressionsgrænsen indekseres årligt. ASK-loftet udnyttes før indskud på frie midler.
+    * **Lagerbeskatning vs Realisationsbeskatning:** Aktiesparekonti lagerbeskattes (17%). Frie midler antages investeret i danske udbyttebetalende fonde og realisationsbeskattes (kun udbytte på ca. 2% beskattes årligt, mens restgevinsten udskyder skatten).
     * **Udskudt Salg:** Hvis salget udskydes, låses friværdien. Modellen fremskriver asymmetrisk boliginflation og faste afdrag frem til Salgsåret.
     * **Monte Carlo Simulering:** Kører 1.000 parallelle universer vektoriseret i NumPy baseret på historisk volatilitet for at stressteste Barista-tilværelsen.
     """)
@@ -482,12 +482,21 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
             prog_limit_j = 79400 * ((1 + global_inflation_rate)**year)
             prog_limit_m = 79400 * ((1 + global_inflation_rate)**year)
             
-            return_frie_j = depot_free_j * current_ret; return_frie_m = depot_free_m * current_ret
-            tax_j = np.where(return_frie_j <= prog_limit_j, return_frie_j * 0.27, prog_limit_j * 0.27 + (return_frie_j - prog_limit_j) * 0.42)
-            tax_m = np.where(return_frie_m <= prog_limit_m, return_frie_m * 0.27, prog_limit_m * 0.27 + (return_frie_m - prog_limit_m) * 0.42)
+            return_frie_j = depot_free_j * current_ret
+            return_frie_m = depot_free_m * current_ret
             
-            depot_free_j = np.maximum(0, depot_free_j + (return_frie_j - tax_j))
-            depot_free_m = np.maximum(0, depot_free_m + (return_frie_m - tax_m))
+            # REALISATIONSBESKATNING: Beskat kun et antaget udbytte på ca. 2% årligt, lad restafkast vokse skattefrit.
+            div_yield = 0.02
+            div_j = np.where(current_ret > 0, depot_free_j * np.minimum(current_ret, div_yield), 0)
+            div_m = np.where(current_ret > 0, depot_free_m * np.minimum(current_ret, div_yield), 0)
+            
+            tax_j = np.where(div_j <= prog_limit_j, div_j * 0.27, prog_limit_j * 0.27 + (div_j - prog_limit_j) * 0.42)
+            tax_m = np.where(div_m <= prog_limit_m, div_m * 0.27, prog_limit_m * 0.27 + (div_m - prog_limit_m) * 0.42)
+            
+            depot_free_j = np.maximum(0, depot_free_j + return_frie_j - tax_j)
+            depot_free_m = np.maximum(0, depot_free_m + return_frie_m - tax_m)
+            
+            # ASK (Lagerbeskatning 17%)
             depot_ask_j = np.maximum(0, depot_ask_j * (1 + current_ret * 0.83))
             depot_ask_m = np.maximum(0, depot_ask_m * (1 + current_ret * 0.83))
             
@@ -838,10 +847,18 @@ def simulate_solo_fire_plan(scenario_name, boligpris, udbetaling_j, ydelse_defau
 
             prog_limit_j = 79400 * ((1 + global_inflation_rate)**year)
             return_frie_j = depot_free_j * current_ret
-            tax_j = np.where(return_frie_j <= prog_limit_j, return_frie_j * 0.27, prog_limit_j * 0.27 + (return_frie_j - prog_limit_j) * 0.42)
             
-            depot_free_j = np.maximum(0, depot_free_j + (return_frie_j - tax_j))
+            # REALISATIONSBESKATNING: Beskat kun et antaget udbytte på ca. 2% årligt, lad restafkast vokse skattefrit.
+            div_yield = 0.02
+            div_j = np.where(current_ret > 0, depot_free_j * np.minimum(current_ret, div_yield), 0)
+            
+            tax_j = np.where(div_j <= prog_limit_j, div_j * 0.27, prog_limit_j * 0.27 + (div_j - prog_limit_j) * 0.42)
+            
+            depot_free_j = np.maximum(0, depot_free_j + return_frie_j - tax_j)
+            
+            # ASK (Lagerbeskatning 17%)
             depot_ask_j = np.maximum(0, depot_ask_j * (1 + current_ret * 0.83))
+            
             depot_free_j += np.where(~j_reached_arr, start_inv_md_j * 12 * ((1 + global_inflation_rate)**year), 0)
 
             ask_limit_year = ask_base_limit * ((1 + global_inflation_rate)**year)
