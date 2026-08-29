@@ -55,7 +55,7 @@ if "budget_m" not in st.session_state:
 def show_rules_dialog():
     st.markdown("""
     * **Trin 0 (Boligkøb først):** Startdepotet i år 1 er formuen *efter* udbetaling til bolig.
-    * **Lagerbeskatning vs Realisationsbeskatning:** Aktiesparekonti lagerbeskattes (17%). Frie midler antages investeret i danske udbyttebetalende fonde og realisationsbeskattes (kun udbytte på ca. 2% beskattes årligt, mens restgevinsten udskyder skatten).
+    * **Skat (Frie Midler):** Frie midler anvender en effektiv gennemsnitsskat (22%/36%) på det årlige afkast for realistisk at simulere fordelen ved udskudt skat under realisationsbeskatning.
     * **Udskudt Salg:** Hvis salget udskydes, låses friværdien. Modellen fremskriver asymmetrisk boliginflation og faste afdrag frem til Salgsåret.
     * **Monte Carlo Simulering:** Kører 1.000 parallelle universer vektoriseret i NumPy baseret på historisk volatilitet for at stressteste Barista-tilværelsen.
     """)
@@ -244,7 +244,7 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
                         st.error(f"⚠️ FlexLife afvist (>60% belåning). Indtast manuelt:")
                         effektiv_realkreditydelse = st.number_input("Manuel ydelse (kr./md.)", value=ydelse_default, step=100, key=ydelse_key, on_change=clear_preset, label_visibility="collapsed")
                 else:
-                    effektiv_realkreditydelse = st.number_input("Manuel ydelse (kr./md.)", value=ydelse_default, step=100, key=ydelse_key, on_change=clear_preset, label_visibility="collapsed")
+                    effektiv_realkreditydelse = st.number_input("Manuel ydelse (kr./md.)", value=yddefault, step=100, key=ydelse_key, on_change=clear_preset, label_visibility="collapsed")
 
     if actual_salgsaar == 0:
         if use_bsu and bolig_solgt:
@@ -485,13 +485,15 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
             return_frie_j = depot_free_j * current_ret
             return_frie_m = depot_free_m * current_ret
             
-            # REALISATIONSBESKATNING: Beskat kun et antaget udbytte på ca. 2% årligt, lad restafkast vokse skattefrit.
-            div_yield = 0.02
-            div_j = np.where(current_ret > 0, depot_free_j * np.minimum(current_ret, div_yield), 0)
-            div_m = np.where(current_ret > 0, depot_free_m * np.minimum(current_ret, div_yield), 0)
+            # REALISTISK EFFEKTIV SKAT PÅ FRIE MIDLER
+            eff_tax_low = 0.22
+            eff_tax_high = 0.36
             
-            tax_j = np.where(div_j <= prog_limit_j, div_j * 0.27, prog_limit_j * 0.27 + (div_j - prog_limit_j) * 0.42)
-            tax_m = np.where(div_m <= prog_limit_m, div_m * 0.27, prog_limit_m * 0.27 + (div_m - prog_limit_m) * 0.42)
+            tax_j = np.where(return_frie_j <= prog_limit_j, return_frie_j * eff_tax_low, prog_limit_j * eff_tax_low + (return_frie_j - prog_limit_j) * eff_tax_high)
+            tax_m = np.where(return_frie_m <= prog_limit_m, return_frie_m * eff_tax_low, prog_limit_m * eff_tax_low + (return_frie_m - prog_limit_m) * eff_tax_high)
+            
+            tax_j = np.where(current_ret > 0, tax_j, 0)
+            tax_m = np.where(current_ret > 0, tax_m, 0)
             
             depot_free_j = np.maximum(0, depot_free_j + return_frie_j - tax_j)
             depot_free_m = np.maximum(0, depot_free_m + return_frie_m - tax_m)
@@ -812,7 +814,6 @@ def simulate_solo_fire_plan(scenario_name, boligpris, udbetaling_j, ydelse_defau
                 valby_afdrag_md = ekstra_nominel_ydelse
                 
                 start_fire_j += ekstra_nominel_ydelse
-                start_inv_md_j -= (ekstra_nominel_ydelse / ((1 + global_inflation_rate)**year))
                 bolig_total_current += (ekstra_nominel_ydelse / ((1 + global_inflation_rate)**year))
 
         if year > 0:
@@ -848,11 +849,12 @@ def simulate_solo_fire_plan(scenario_name, boligpris, udbetaling_j, ydelse_defau
             prog_limit_j = 79400 * ((1 + global_inflation_rate)**year)
             return_frie_j = depot_free_j * current_ret
             
-            # REALISATIONSBESKATNING: Beskat kun et antaget udbytte på ca. 2% årligt, lad restafkast vokse skattefrit.
-            div_yield = 0.02
-            div_j = np.where(current_ret > 0, depot_free_j * np.minimum(current_ret, div_yield), 0)
+            # REALISTISK EFFEKTIV SKAT PÅ FRIE MIDLER
+            eff_tax_low = 0.22
+            eff_tax_high = 0.36
             
-            tax_j = np.where(div_j <= prog_limit_j, div_j * 0.27, prog_limit_j * 0.27 + (div_j - prog_limit_j) * 0.42)
+            tax_j = np.where(return_frie_j <= prog_limit_j, return_frie_j * eff_tax_low, prog_limit_j * eff_tax_low + (return_frie_j - prog_limit_j) * eff_tax_high)
+            tax_j = np.where(current_ret > 0, tax_j, 0)
             
             depot_free_j = np.maximum(0, depot_free_j + return_frie_j - tax_j)
             
