@@ -28,13 +28,15 @@ if "pension_indb_m" not in st.session_state: st.session_state["pension_indb_m"] 
 # Formue før boligkøb
 if "cash_j_base" not in st.session_state: st.session_state["cash_j_base"] = 2567500
 if "cash_m_base" not in st.session_state: st.session_state["cash_m_base"] = 1153888
-if "basis_ask_j" not in st.session_state: st.session_state["basis_ask_j"] = 187498
-if "basis_frie_j" not in st.session_state: st.session_state["basis_frie_j"] = 125000
+if "basis_ask_j" not in st.session_state: st.session_state["basis_ask_j"] = 185300
+if "basis_frie_j" not in st.session_state: st.session_state["basis_frie_j"] = 100426
 if "basis_ask_m" not in st.session_state: st.session_state["basis_ask_m"] = 170000
 if "basis_frie_m" not in st.session_state: st.session_state["basis_frie_m"] = 0
 
 # Toggles og Fælles Madbudget variabler
 if "use_bsu_m" not in st.session_state: st.session_state["use_bsu_m"] = False
+if "use_loensikring_j" not in st.session_state: st.session_state["use_loensikring_j"] = False
+if "use_loensikring_m" not in st.session_state: st.session_state["use_loensikring_m"] = False
 if "use_real_drawdown" not in st.session_state: st.session_state["use_real_drawdown"] = False
 if "use_ask_500k" not in st.session_state: st.session_state["use_ask_500k"] = False
 if "mad_total_val" not in st.session_state: st.session_state["mad_total_val"] = 6000
@@ -46,9 +48,9 @@ if "valby_pris_input" not in st.session_state: st.session_state["valby_pris_inpu
 
 # Personlige budgetter
 if "budget_j" not in st.session_state:
-    st.session_state["budget_j"] = {"Studielaan": 0, "Mad": st.session_state["mad_j_val"], "Ferie": 1500, "Renovering": 1000, "A_kasse_Fagforening": 672, "Puregym": 279, "Transport": 730, "Telefon": 100, "Spotify_Cloud": 100, "Charity": 100, "Frisoer": 450, "Toej": 1200, "Oevrig": 3000}
+    st.session_state["budget_j"] = {"Studielaan": 0, "Mad": st.session_state["mad_j_val"], "Ferie": 1500, "Renovering": 1000, "A_kasse_Fagforening": 672, "Loensikring": 0, "Puregym": 279, "Transport": 730, "Telefon": 100, "Spotify_Cloud": 100, "Charity": 100, "Frisoer": 450, "Toej": 1200, "Oevrig": 3000}
 if "budget_m" not in st.session_state:
-    st.session_state["budget_m"] = {"Studielaan": 1600, "Mad": st.session_state["mad_total_val"] - st.session_state["mad_j_val"], "Ferie": 1500, "Renovering": 1000, "A_kasse_Fagforening": 520, "Puregym": 0, "Transport": 500, "Telefon": 300, "Streaming": 565, "Charity": 100, "Frisoer": 450, "Toej": 1200, "Oevrig": 3000}
+    st.session_state["budget_m"] = {"Studielaan": 1600, "Mad": st.session_state["mad_total_val"] - st.session_state["mad_j_val"], "Ferie": 1500, "Renovering": 1000, "A_kasse_Fagforening": 520, "Loensikring": 0, "Puregym": 0, "Transport": 500, "Telefon": 300, "Streaming": 565, "Charity": 100, "Frisoer": 450, "Toej": 1200, "Oevrig": 3000}
 
 # --- POP-UP MODAL TIL REGLER OG LOGIK ---
 @st.dialog("📜 Modellens Regler & Logik")
@@ -313,8 +315,8 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
         start_inv_md_j = st.session_state["inkomst_j"] - (budget_j_total + bolig_faelles_current)
         start_inv_md_m = st.session_state["inkomst_m"] - (budget_m_total + bolig_faelles_current) + bsu_passive
         
-        start_fire_j = sum(v for k, v in st.session_state["budget_j"].items() if k not in ["A_kasse_Fagforening"]) + bolig_faelles_current
-        start_fire_m = sum(v for k, v in st.session_state["budget_m"].items() if k not in ["A_kasse_Fagforening", "Studielaan"]) + bolig_faelles_current
+        start_fire_j = sum(v for k, v in st.session_state["budget_j"].items() if k not in ["A_kasse_Fagforening", "Loensikring"]) + bolig_faelles_current
+        start_fire_m = sum(v for k, v in st.session_state["budget_m"].items() if k not in ["A_kasse_Fagforening", "Loensikring", "Studielaan"]) + bolig_faelles_current
 
         udb_j_str = format_dkk(udbetaling_j)
         ydelse_j_str = format_dkk(effektiv_realkreditydelse / 2)
@@ -520,10 +522,12 @@ def simulate_joint_fire_plan(scenario_name, boligpris, udbetaling_j, udbetaling_
             med_dep_j = np.median(depot_ask_j + depot_free_j); p10_dep_j = np.percentile(depot_ask_j + depot_free_j, 10)
             med_p_j = np.median(p_j); p10_p_j = np.percentile(p_j, 10)
             med_h_j = np.median(h_j_array); p90_h_j = np.percentile(h_j_array, 90)
+            succ_j = np.mean(h_j_array <= 0) * 100
 
             med_dep_m = np.median(depot_ask_m + depot_free_m); p10_dep_m = np.percentile(depot_ask_m + depot_free_m, 10)
             med_p_m = np.median(p_m_total); p10_p_m = np.percentile(p_m_total, 10)
             med_h_m = np.median(h_m_array); p90_h_m = np.percentile(h_m_array, 90)
+            succ_m = np.mean(h_m_array <= 0) * 100
 
             if is_worst_case:
                 dep_j_val, dep_m_val = p10_dep_j, p10_dep_m
@@ -705,7 +709,7 @@ def simulate_solo_fire_plan(scenario_name, boligpris, udbetaling_j, ydelse_defau
         budget_j_total = sum(solo_budget_j.values())
         
         start_inv_md_j = st.session_state["inkomst_j"] - (budget_j_total + bolig_total_current)
-        start_fire_j = sum(v for k, v in solo_budget_j.items() if k not in ["A_kasse_Fagforening"]) + bolig_total_current
+        start_fire_j = sum(v for k, v in solo_budget_j.items() if k not in ["A_kasse_Fagforening", "Loensikring"]) + bolig_total_current
 
         udb_j_str = format_dkk(faktisk_udbetaling_j)
         ydelse_j_str = format_dkk(effektiv_realkreditydelse)
@@ -860,6 +864,7 @@ def simulate_solo_fire_plan(scenario_name, boligpris, udbetaling_j, ydelse_defau
             med_dep_j = np.median(depot_ask_j + depot_free_j); p10_dep_j = np.percentile(depot_ask_j + depot_free_j, 10)
             med_p_j = np.median(p_j); p10_p_j = np.percentile(p_j, 10)
             med_h_j = np.median(h_j_array); p90_h_j = np.percentile(h_j_array, 90)
+            succ_j = np.mean(h_j_array <= 0) * 100
 
             if is_worst_case:
                 dep_j_val = p10_dep_j
@@ -951,6 +956,8 @@ if view_selection == "⚙️ Basisdata & Opsætning":
         st.session_state["basis_ask_j"] = st.number_input("Aktiesparekonto (kr.)", value=st.session_state["basis_ask_j"], key="ask_j", on_change=clear_preset)
         st.session_state["basis_frie_j"] = st.number_input("Frie midler / Aktier (kr.)", value=st.session_state["basis_frie_j"], key="fr_j", on_change=clear_preset)
         
+        st.session_state["use_loensikring_j"] = st.toggle("Inddrag Lønsikring (1.836 kr.)", value=st.session_state.get("use_loensikring_j", False), key="toggle_loen_j", on_change=clear_preset)
+        st.session_state["budget_j"]["Loensikring"] = 1836 if st.session_state["use_loensikring_j"] else 0
         df_j = st.data_editor(pd.DataFrame(list(st.session_state["budget_j"].items()), columns=["Kategori", "Beløb"]), hide_index=True, use_container_width=True, key="ed_j", on_change=clear_preset)
         st.session_state["budget_j"] = dict(df_j.values)
         
@@ -963,6 +970,8 @@ if view_selection == "⚙️ Basisdata & Opsætning":
         st.session_state["basis_ask_m"] = st.number_input("Aktiesparekonto (kr.)", value=st.session_state["basis_ask_m"], key="ask_m", on_change=clear_preset)
         st.session_state["basis_frie_m"] = st.number_input("Frie midler / Aktier (kr.)", value=st.session_state["basis_frie_m"], key="fr_m", on_change=clear_preset)
         
+        st.session_state["use_loensikring_m"] = st.toggle("Inddrag Lønsikring (720 kr.)", value=st.session_state.get("use_loensikring_m", False), key="toggle_loen_m", on_change=clear_preset)
+        st.session_state["budget_m"]["Loensikring"] = 720 if st.session_state["use_loensikring_m"] else 0
         df_m = st.data_editor(pd.DataFrame(list(st.session_state["budget_m"].items()), columns=["Kategori", "Beløb"]), hide_index=True, use_container_width=True, key="ed_m", on_change=clear_preset)
         st.session_state["budget_m"] = dict(df_m.values)
         st.session_state["use_bsu_m"] = st.toggle("Inddrag Norsk BSU", value=st.session_state.get("use_bsu_m", False), key="toggle_bsu_m", on_change=clear_preset)
