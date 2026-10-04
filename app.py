@@ -126,7 +126,7 @@ if "budget_j" not in st.session_state:
     st.session_state["budget_j"] = {
         "Mad": 3000, 
         "Ferie": 1500, 
-        "Renovering": 1500, 
+        "Renovering": 1000, 
         "A_kasse_Fagforening": 542,
         "Forsikringer": 170,
         "Internet": 100, 
@@ -144,7 +144,7 @@ if "budget_m" not in st.session_state:
         "Studielaan": 1600, 
         "Mad": 3000, 
         "Ferie": 1500, 
-        "Renovering": 1500, 
+        "Renovering": 1000, 
         "A_kasse_Fagforening": 520, 
         "Forsikringer": 170,
         "Internet": 0,
@@ -445,22 +445,22 @@ def simulate_joint_fire_plan(scenario_name, boligpris, ydelse_key, ejerudgifter_
         fire_budget_j_total = sum(st.session_state["budget_j"].values())
         fire_budget_m_total = sum(st.session_state["budget_m"].values())
 
-        # Udregn Johans udgifter IDAG (Nuværende budget ud fra dine screenshots)
+        # Udregn Johans udgifter IDAG (Nuværende budget)
         current_mad_j = st.session_state["mad_j_val"] # Hentes fra slideren i opsætning
-        current_reno_j = 2500
+        current_reno_j = 1000
         current_akasse_j = 672
         current_internet_j = 0
-        current_oevrig_j = 2500 # I dag bruger du 2500 på øvrigt
+        current_oevrig_j = 0
         
         # Beregn forskellen (hvor meget Johan bruger i dag vs. FIRE-budgettet)
         diff_mad_j = current_mad_j - st.session_state["budget_j"].get("Mad", 3000)
-        diff_reno_j = current_reno_j - st.session_state["budget_j"].get("Renovering", 1500)
+        diff_reno_j = current_reno_j - st.session_state["budget_j"].get("Renovering", 1000)
         diff_akasse_j = current_akasse_j - st.session_state["budget_j"].get("A_kasse_Fagforening", 542)
         diff_internet_j = current_internet_j - st.session_state["budget_j"].get("Internet", 100)
         diff_oevrig_j = current_oevrig_j - st.session_state["budget_j"].get("Oevrig", 2000)
         
         extra_current_j = diff_mad_j + diff_reno_j + diff_akasse_j + diff_internet_j + diff_oevrig_j
-        current_budget_j_total = fire_budget_j_total + extra_current_j 
+        current_budget_j_total = fire_budget_j_total + extra_current_j
         
         # Samme princip for Markus (Mad difference)
         current_mad_m = st.session_state["mad_total_val"] - st.session_state["mad_j_val"]
@@ -905,14 +905,14 @@ def simulate_solo_fire_plan(scenario_name, boligpris, ydelse_key, ejerudgifter_s
         
         # Udregn Johans udgifter IDAG (Nuværende budget i Solo)
         current_mad_j = st.session_state["mad_j_val"] # Slider værdi
-        current_reno_j = 1500
+        current_reno_j = 1000
         current_akasse_j = 672
         current_internet_j = 0
-        current_oevrig_j = 2500 # I dag bruger du 2500 på øvrigt
+        current_oevrig_j = 0 
         
         # Beregn differencen til dit nuværende forbrug
         diff_mad_solo = current_mad_j - solo_budget_j.get("Mad", 3000)
-        diff_reno_solo = current_reno_j - solo_budget_j.get("Renovering", 1500)
+        diff_reno_solo = current_reno_j - solo_budget_j.get("Renovering", 1000)
         diff_akasse_solo = current_akasse_j - solo_budget_j.get("A_kasse_Fagforening", 542)
         diff_internet_solo = current_internet_j - solo_budget_j.get("Internet", 100)
         diff_oevrig_solo = current_oevrig_j - solo_budget_j.get("Oevrig", 2000)
