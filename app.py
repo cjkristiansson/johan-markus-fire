@@ -17,6 +17,67 @@ def load_css(file_name):
 
 load_css("style.css")
 
+# --- GOOGLE SHEETS AUTO-SYNC ---
+def clean_currency(x):
+    if isinstance(x, str):
+        x = x.replace('kr', '').replace('.', '').replace(',', '.').replace(' ', '').strip()
+        try: return float(x)
+        except: return 0.0
+    return float(x) if pd.notnull(x) else 0.0
+
+@st.cache_data(ttl=3600)
+def fetch_google_sheets_data():
+    sheet_id = "19kuzhNztBR00hvXMvpE18B0-B5CdoQx2y5JPCcVziPE"
+    sheet_name = "Likviditet, Fonder mm."
+    url = f"https://docs.google.com/spreadsheets/d/{sheet_id}/gviz/tq?tqx=out:csv&sheet={sheet_name}"
+    
+    # Fallback-værdier hvis netværk fejler eller link ikke er offentligt
+    data = {"ask": 190165, "frie": 144591, "forbrug": 89589, "frivaerdi": 2514000}
+    try:
+        df = pd.read_csv(url, on_bad_lines='skip')
+        temp_data = {
+            "saldo": 0.0, "ask": 0.0, "frie": 0.0, 
+            "valby_kontant": 0.0, "valby_afdrag": 0.0, "valby_frivaerdi": 0.0
+        }
+        
+        for c in range(len(df.columns) - 1):
+            for r in range(len(df)):
+                val_lower = str(df.iloc[r, c]).lower().strip()
+                if val_lower == "saldo":
+                    temp_data["saldo"] = clean_currency(df.iloc[r, c + 1])
+                elif "investeringar aktiesparkonto" in val_lower:
+                    temp_data["ask"] = clean_currency(df.iloc[r, c + 1])
+                elif "investeringar månedsopsparing" in val_lower:
+                    temp_data["frie"] = clean_currency(df.iloc[r, c + 1])
+                elif "kontantindsats valby lejlighed" in val_lower:
+                    temp_data["valby_kontant"] = clean_currency(df.iloc[r, c + 1])
+                elif "avbetalat boliglån" in val_lower:
+                    temp_data["valby_afdrag"] = clean_currency(df.iloc[r, c + 1])
+                elif "friværdi efter salgt" in val_lower:
+                    temp_data["valby_frivaerdi"] = clean_currency(df.iloc[r, c + 1])
+
+        # Overstyr kun fallback, hvis vi fandt gyldige data
+        if temp_data["ask"] > 0: data["ask"] = int(temp_data["ask"])
+        if temp_data["frie"] > 0: data["frie"] = int(temp_data["frie"])
+        if temp_data["saldo"] > 0: data["forbrug"] = int(max(0, temp_data["saldo"] - temp_data["frie"]))
+        
+        tot_frivaerdi = temp_data["valby_kontant"] + temp_data["valby_afdrag"] + temp_data["valby_frivaerdi"]
+        if tot_frivaerdi > 0: data["frivaerdi"] = int(tot_frivaerdi)
+        
+    except Exception as e:
+        pass
+    
+    return data
+
+# INITIALISERING AF SYNC
+if "gsheets_synced" not in st.session_state:
+    fetched_data = fetch_google_sheets_data()
+    st.session_state["basis_ask_j"] = fetched_data["ask"]
+    st.session_state["basis_frie_j"] = fetched_data["frie"]
+    st.session_state["forbrugskonti_j"] = fetched_data["forbrug"]
+    st.session_state["frivaerdi_j"] = fetched_data["frivaerdi"]
+    st.session_state["gsheets_synced"] = True
+
 # --- INITIALISERING AF SESSION STATE (BASISDATA) ---
 if "inkomst_j" not in st.session_state: st.session_state["inkomst_j"] = 38468
 if "inkomst_m" not in st.session_state: st.session_state["inkomst_m"] = 32983
@@ -25,11 +86,8 @@ if "pension_m" not in st.session_state: st.session_state["pension_m"] = 570000
 if "pension_indb_j" not in st.session_state: st.session_state["pension_indb_j"] = 7500
 if "pension_indb_m" not in st.session_state: st.session_state["pension_indb_m"] = 5000
 
-# Formue før boligkøb
-if "cash_j_base" not in st.session_state: st.session_state["cash_j_base"] = 2603589
+# Fælles formue før boligkøb
 if "cash_m_base" not in st.session_state: st.session_state["cash_m_base"] = 1153888
-if "basis_ask_j" not in st.session_state: st.session_state["basis_ask_j"] = 190165
-if "basis_frie_j" not in st.session_state: st.session_state["basis_frie_j"] = 144591
 if "basis_ask_m" not in st.session_state: st.session_state["basis_ask_m"] = 170000
 if "basis_frie_m" not in st.session_state: st.session_state["basis_frie_m"] = 0
 
@@ -490,6 +548,7 @@ def simulate_joint_fire_plan(scenario_name, boligpris, ydelse_key, ejerudgifter_
                     
                     if use_bsu:
                         locked_frivaerdi_m += bsu_amount
+                        skaleret_udbetaling_j -= (bsu_amount / 2); skaleret_udbetaling_m += (bsu_amount / 2)
                         bsu_passive = 0; start_inv_md_m -= 983
                         
                     mangler_m = max(0, skaleret_udbetaling_m - locked_frivaerdi_m)
@@ -1026,10 +1085,22 @@ if view_selection == "⚙️ Basisdata & Opsætning":
     
     with col_setup_j:
         st.markdown("### 👤 JOHAN DATA")
+        
+        if st.button("🔄 Hent nyeste data fra Google Sheets", help="Kræver at dit Google Sheet er sat til 'Alle med linket kan se'"):
+            st.cache_data.clear()
+            fetched_data = fetch_google_sheets_data()
+            st.session_state["basis_ask_j"] = fetched_data["ask"]
+            st.session_state["basis_frie_j"] = fetched_data["frie"]
+            st.session_state["forbrugskonti_j"] = fetched_data["forbrug"]
+            st.session_state["frivaerdi_j"] = fetched_data["frivaerdi"]
+            st.rerun()
+            
         st.session_state["inkomst_j"] = st.number_input("Månedsløn (Netto kr.)", value=st.session_state["inkomst_j"], step=500, key="inp_j", on_change=clear_preset)
         st.session_state["pension_j"] = st.number_input("Pensionsopsparing (kr.)", min_value=0, value=st.session_state["pension_j"], step=10000, key="input_pen_j", on_change=clear_preset)
         st.session_state["pension_indb_j"] = st.number_input("Arbejdsgiverpension (mdl. kr.)", min_value=0, value=st.session_state["pension_indb_j"], step=500, key="indb_pen_j", on_change=clear_preset)
-        st.session_state["cash_j_base"] = st.number_input("Forbrugskonti + Friværdi Valby (kr.)", value=st.session_state["cash_j_base"], step=10000, key="csh_j", on_change=clear_preset)
+        
+        st.session_state["forbrugskonti_j"] = st.number_input("Forbrugskonti (kr.)", value=st.session_state["forbrugskonti_j"], step=1000, key="csh_j_1", on_change=clear_preset)
+        st.session_state["frivaerdi_j"] = st.number_input("Friværdi Valby (kr.)", value=st.session_state["frivaerdi_j"], step=10000, key="csh_j_2", on_change=clear_preset)
         st.session_state["basis_ask_j"] = st.number_input("Investeringar aktiesparkonto (kr.)", value=st.session_state["basis_ask_j"], key="ask_j", on_change=clear_preset)
         st.session_state["basis_frie_j"] = st.number_input("Investeringar månedsopsparing (kr.)", value=st.session_state["basis_frie_j"], key="fr_j", on_change=clear_preset)
         
