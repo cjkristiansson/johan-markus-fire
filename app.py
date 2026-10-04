@@ -110,22 +110,52 @@ if "basis_frie_j" not in st.session_state: st.session_state["basis_frie_j"] = 14
 if "basis_ask_m" not in st.session_state: st.session_state["basis_ask_m"] = 170000
 if "basis_frie_m" not in st.session_state: st.session_state["basis_frie_m"] = 0
 
-# Toggles og Fælles Madbudget variabler
+# Toggles og Fælles Madbudget variabler (Styrer nuværende forbrug)
 if "use_bsu_m" not in st.session_state: st.session_state["use_bsu_m"] = False
 if "use_real_drawdown" not in st.session_state: st.session_state["use_real_drawdown"] = False
 if "use_ask_500k" not in st.session_state: st.session_state["use_ask_500k"] = False
 if "mad_total_val" not in st.session_state: st.session_state["mad_total_val"] = 6000
-if "mad_j_val" not in st.session_state: st.session_state["mad_j_val"] = 4500
+if "mad_j_val" not in st.session_state: st.session_state["mad_j_val"] = 6000
 if "mc_active" not in st.session_state: st.session_state["mc_active"] = True
 
 # Valby Pris Input
 if "valby_pris_input" not in st.session_state: st.session_state["valby_pris_input"] = 6600000
 
-# Personlige budgetter
+# Personlige budgetter (Dette definerer FIRE-BUDGETTET direkte)
 if "budget_j" not in st.session_state:
-    st.session_state["budget_j"] = {"Studielaan": 0, "Mad": st.session_state["mad_j_val"], "Ferie": 1500, "Renovering": 1000, "A_kasse_Fagforening": 672, "Puregym": 279, "Transport": 730, "Telefon": 100, "Spotify_Cloud": 100, "Charity": 100, "Frisoer": 450, "Toej": 1200, "Oevrig": 3000}
+    st.session_state["budget_j"] = {
+        "Studielaan": 0, 
+        "Mad": 3000, 
+        "Ferie": 1500, 
+        "Renovering": 1500, 
+        "A_kasse_Fagforening": 542, 
+        "Internet": 200, 
+        "Puregym": 279, 
+        "Transport": 730, 
+        "Telefon": 100, 
+        "Spotify_Cloud": 100, 
+        "Charity": 100, 
+        "Frisoer": 450, 
+        "Toej": 1200, 
+        "Oevrig": 3000
+    }
 if "budget_m" not in st.session_state:
-    st.session_state["budget_m"] = {"Studielaan": 1600, "Mad": st.session_state["mad_total_val"] - st.session_state["mad_j_val"], "Ferie": 1500, "Renovering": 1000, "A_kasse_Fagforening": 520, "Puregym": 0, "Transport": 500, "Telefon": 300, "Streaming": 565, "Charity": 100, "Frisoer": 450, "Toej": 1200, "Oevrig": 3000}
+    st.session_state["budget_m"] = {
+        "Studielaan": 1600, 
+        "Mad": 3000, 
+        "Ferie": 1500, 
+        "Renovering": 1500, 
+        "A_kasse_Fagforening": 520, 
+        "Internet": 0,
+        "Puregym": 0, 
+        "Transport": 500, 
+        "Telefon": 300, 
+        "Streaming": 565, 
+        "Charity": 100, 
+        "Frisoer": 450, 
+        "Toej": 1200, 
+        "Oevrig": 3000
+    }
 
 # --- POP-UP MODAL TIL REGLER OG LOGIK ---
 @st.dialog("📜 Modellens Regler & Logik")
@@ -410,17 +440,37 @@ def simulate_joint_fire_plan(scenario_name, boligpris, ydelse_key, ejerudgifter_
     depot_free_m -= move_m
 
     with col_inp:
-        budget_j_total = sum(st.session_state["budget_j"].values())
-        budget_m_total = sum(st.session_state["budget_m"].values())
+        # FIRE Budget (Direkte fra datatabellerne)
+        fire_budget_j_total = sum(st.session_state["budget_j"].values())
+        fire_budget_m_total = sum(st.session_state["budget_m"].values())
 
-        # KORREKTION: Opdaterer current opsparing, så den afspejler hele madbudgettet lige nu (6.000 kr)
-        mad_diff_j = st.session_state["mad_total_val"] - st.session_state["mad_j_val"]
-        start_inv_md_j = st.session_state["inkomst_j"] - (budget_j_total + bolig_faelles_current + mad_diff_j)
+        # Udregn Johans udgifter IDAG (Nuværende budget)
+        current_mad_j = st.session_state["mad_j_val"] # Hentes fra slideren i opsætning
+        current_reno_j = 1500
+        current_akasse_j = 672
+        current_internet_j = 0
         
-        start_inv_md_m = st.session_state["inkomst_m"] - (budget_m_total + bolig_faelles_current) + bsu_passive
+        # Beregn forskellen (hvor meget mere Johan bruger i dag ift. FIRE-budgettet)
+        diff_mad_j = current_mad_j - st.session_state["budget_j"].get("Mad", 3000)
+        diff_reno_j = current_reno_j - st.session_state["budget_j"].get("Renovering", 1500)
+        diff_akasse_j = current_akasse_j - st.session_state["budget_j"].get("A_kasse_Fagforening", 542)
+        diff_internet_j = current_internet_j - st.session_state["budget_j"].get("Internet", 200)
         
-        start_fire_j = sum(v for k, v in st.session_state["budget_j"].items() if k not in ["A_kasse_Fagforening"]) + bolig_faelles_current
-        start_fire_m = sum(v for k, v in st.session_state["budget_m"].items() if k not in ["A_kasse_Fagforening", "Studielaan"]) + bolig_faelles_current
+        extra_current_j = diff_mad_j + diff_reno_j + diff_akasse_j + diff_internet_j
+        current_budget_j_total = fire_budget_j_total + extra_current_j
+        
+        # Samme princip for Markus (Mad difference)
+        current_mad_m = st.session_state["mad_total_val"] - st.session_state["mad_j_val"]
+        diff_mad_m = current_mad_m - st.session_state["budget_m"].get("Mad", 3000)
+        current_budget_m_total = fire_budget_m_total + diff_mad_m
+
+        # Nuværende opsparingsrater
+        start_inv_md_j = st.session_state["inkomst_j"] - (current_budget_j_total + bolig_faelles_current)
+        start_inv_md_m = st.session_state["inkomst_m"] - (current_budget_m_total + bolig_faelles_current) + bsu_passive
+        
+        # Fremtidige FIRE-udgifter
+        start_fire_j = fire_budget_j_total + bolig_faelles_current
+        start_fire_m = sum(v for k, v in st.session_state["budget_m"].items() if k not in ["Studielaan"]) + bolig_faelles_current
 
         udb_j_str = format_dkk(faktisk_udbetaling_j)
         ydelse_j_str = format_dkk(effektiv_realkreditydelse / 2)
@@ -849,13 +899,28 @@ def simulate_solo_fire_plan(scenario_name, boligpris, ydelse_key, ejerudgifter_s
     with col_inp:
         solo_budget_j = st.session_state["budget_j"].copy()
         solo_budget_j["Mad"] = 3000
-        budget_j_total = sum(solo_budget_j.values())
+        fire_budget_j_total = sum(solo_budget_j.values())
         
-        # KORREKTION: Opdaterer current opsparing, så den afspejler hele madbudgettet lige nu (6.000 kr)
-        mad_diff_solo = st.session_state["mad_total_val"] - solo_budget_j["Mad"]
-        start_inv_md_j = st.session_state["inkomst_j"] - (budget_j_total + bolig_total_current + mad_diff_solo)
+        # Udregn Johans udgifter IDAG (Nuværende budget i Solo)
+        current_mad_j = st.session_state["mad_j_val"] # Slider værdi
+        current_reno_j = 1500
+        current_akasse_j = 672
+        current_internet_j = 0
         
-        start_fire_j = sum(v for k, v in solo_budget_j.items() if k not in ["A_kasse_Fagforening"]) + bolig_total_current
+        # Beregn differencen til dit nuværende forbrug
+        diff_mad_solo = current_mad_j - solo_budget_j.get("Mad", 3000)
+        diff_reno_solo = current_reno_j - solo_budget_j.get("Renovering", 1500)
+        diff_akasse_solo = current_akasse_j - solo_budget_j.get("A_kasse_Fagforening", 542)
+        diff_internet_solo = current_internet_j - solo_budget_j.get("Internet", 200)
+        
+        extra_current_solo = diff_mad_solo + diff_reno_solo + diff_akasse_solo + diff_internet_solo
+        current_budget_j_total = fire_budget_j_total + extra_current_solo
+        
+        # Nuværende opsparingsevne
+        start_inv_md_j = st.session_state["inkomst_j"] - (current_budget_j_total + bolig_total_current)
+        
+        # FIRE månedlige udgifter (Ingen ekskludering, da du bliver ved at betale A-kasse i Barista FIRE)
+        start_fire_j = fire_budget_j_total + bolig_total_current
 
         udb_j_str = format_dkk(faktisk_udbetaling_j)
         ydelse_j_str = format_dkk(effektiv_realkreditydelse)
@@ -1095,24 +1160,21 @@ def simulate_solo_fire_plan(scenario_name, boligpris, ydelse_key, ejerudgifter_s
 if view_selection == "⚙️ Basisdata & Opsætning":
     st.subheader("Konfiguration af personlig økonomi")
     
-    st.markdown("### 🛒 Fælles Udgifter & Nuværende Bolig")
+    st.markdown("### 🛒 Nuværende Fælles Udgifter (Før FIRE)")
     col_mad1, col_mad2, col_valby = st.columns(3)
     with col_mad1:
         st.session_state["mad_total_val"] = st.number_input("Samlet månedligt madbudget (kr.)", min_value=0, value=st.session_state["mad_total_val"], step=500, key="total_mad_input", on_change=clear_preset)
     with col_mad2:
-        st.session_state["mad_j_val"] = st.slider("Johans andel af madbudgettet", min_value=0, max_value=int(st.session_state["mad_total_val"]), value=min(st.session_state["mad_j_val"], int(st.session_state["mad_total_val"])), step=100, key="mad_slider_j", on_change=clear_preset)
+        st.session_state["mad_j_val"] = st.slider("Johans andel (Idag)", min_value=0, max_value=int(st.session_state["mad_total_val"]), value=min(st.session_state["mad_j_val"], int(st.session_state["mad_total_val"])), step=100, key="mad_slider_j", on_change=clear_preset)
     with col_valby:
         st.session_state["valby_pris_input"] = st.number_input("Nuværende boligværdi (Valby kr.)", min_value=0, value=st.session_state["valby_pris_input"], step=50000, key="valby_pris_inp", on_change=clear_preset)
         
-    st.session_state["budget_j"]["Mad"] = st.session_state["mad_j_val"]
-    st.session_state["budget_m"]["Mad"] = int(st.session_state["mad_total_val"]) - st.session_state["mad_j_val"]
-    
     st.write("")
     st.divider()
     col_setup_j, col_setup_m = st.columns(2)
     
     with col_setup_j:
-        st.markdown("### 👤 JOHAN DATA")
+        st.markdown("### 👤 JOHAN DATA (Barista FIRE Mål)")
         
         if st.button("🔄 Hent nyeste data fra Google Sheets", help="Kræver at dit Google Sheet er sat til 'Alle med linket kan se'"):
             fetch_google_sheets_data.clear()
@@ -1138,11 +1200,12 @@ if view_selection == "⚙️ Basisdata & Opsætning":
         st.session_state["basis_ask_j"] = st.number_input("Investeringar aktiesparkonto (kr.)", value=st.session_state["basis_ask_j"], key="ask_j", on_change=clear_preset)
         st.session_state["basis_frie_j"] = st.number_input("Investeringar månedsopsparing (kr.)", value=st.session_state["basis_frie_j"], key="fr_j", on_change=clear_preset)
         
+        st.markdown("<p style='font-size: 0.9em; color: gray;'>Dine estimerede månedlige udgifter i Barista FIRE:</p>", unsafe_allow_html=True)
         df_j = st.data_editor(pd.DataFrame(list(st.session_state["budget_j"].items()), columns=["Kategori", "Beløb"]), hide_index=True, use_container_width=True, key="ed_j", on_change=clear_preset)
         st.session_state["budget_j"] = dict(df_j.values)
         
     with col_setup_m:
-        st.markdown("### 👤 MARKUS DATA")
+        st.markdown("### 👤 MARKUS DATA (Barista FIRE Mål)")
         st.session_state["inkomst_m"] = st.number_input("Månedsløn (Netto kr.)", value=st.session_state["inkomst_m"], step=500, key="inp_m", on_change=clear_preset)
         st.session_state["pension_m"] = st.number_input("Pensionsopsparing (kr.)", min_value=0, value=st.session_state["pension_m"], step=10000, key="input_pen_m", on_change=clear_preset)
         st.session_state["pension_indb_m"] = st.number_input("Arbejdsgiverpension (mdl. kr.)", min_value=0, value=st.session_state["pension_indb_m"], step=500, key="indb_pen_m", on_change=clear_preset)
@@ -1150,6 +1213,7 @@ if view_selection == "⚙️ Basisdata & Opsætning":
         st.session_state["basis_ask_m"] = st.number_input("Aktiesparekonto (kr.)", value=st.session_state["basis_ask_m"], key="ask_m", on_change=clear_preset)
         st.session_state["basis_frie_m"] = st.number_input("Frie midler / Aktier (kr.)", value=st.session_state["basis_frie_m"], key="fr_m", on_change=clear_preset)
         
+        st.markdown("<p style='font-size: 0.9em; color: gray;'>Dine estimerede månedlige udgifter i Barista FIRE:</p>", unsafe_allow_html=True)
         df_m = st.data_editor(pd.DataFrame(list(st.session_state["budget_m"].items()), columns=["Kategori", "Beløb"]), hide_index=True, use_container_width=True, key="ed_m", on_change=clear_preset)
         st.session_state["budget_m"] = dict(df_m.values)
         st.session_state["use_bsu_m"] = st.toggle("Inddrag Norsk BSU", value=st.session_state.get("use_bsu_m", False), key="toggle_bsu_m", on_change=clear_preset)
