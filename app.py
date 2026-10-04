@@ -26,10 +26,10 @@ if "pension_indb_j" not in st.session_state: st.session_state["pension_indb_j"] 
 if "pension_indb_m" not in st.session_state: st.session_state["pension_indb_m"] = 5000
 
 # Formue før boligkøb
-if "cash_j_base" not in st.session_state: st.session_state["cash_j_base"] = 2567500
+if "cash_j_base" not in st.session_state: st.session_state["cash_j_base"] = 2603589
 if "cash_m_base" not in st.session_state: st.session_state["cash_m_base"] = 1153888
-if "basis_ask_j" not in st.session_state: st.session_state["basis_ask_j"] = 187498
-if "basis_frie_j" not in st.session_state: st.session_state["basis_frie_j"] = 125000
+if "basis_ask_j" not in st.session_state: st.session_state["basis_ask_j"] = 190165
+if "basis_frie_j" not in st.session_state: st.session_state["basis_frie_j"] = 144591
 if "basis_ask_m" not in st.session_state: st.session_state["basis_ask_m"] = 170000
 if "basis_frie_m" not in st.session_state: st.session_state["basis_frie_m"] = 0
 
@@ -1029,9 +1029,9 @@ if view_selection == "⚙️ Basisdata & Opsætning":
         st.session_state["inkomst_j"] = st.number_input("Månedsløn (Netto kr.)", value=st.session_state["inkomst_j"], step=500, key="inp_j", on_change=clear_preset)
         st.session_state["pension_j"] = st.number_input("Pensionsopsparing (kr.)", min_value=0, value=st.session_state["pension_j"], step=10000, key="input_pen_j", on_change=clear_preset)
         st.session_state["pension_indb_j"] = st.number_input("Arbejdsgiverpension (mdl. kr.)", min_value=0, value=st.session_state["pension_indb_j"], step=500, key="indb_pen_j", on_change=clear_preset)
-        st.session_state["cash_j_base"] = st.number_input("Kontanter / Friværdi (kr.)", value=st.session_state["cash_j_base"], step=10000, key="csh_j", on_change=clear_preset)
-        st.session_state["basis_ask_j"] = st.number_input("Aktiesparekonto (kr.)", value=st.session_state["basis_ask_j"], key="ask_j", on_change=clear_preset)
-        st.session_state["basis_frie_j"] = st.number_input("Frie midler / Aktier (kr.)", value=st.session_state["basis_frie_j"], key="fr_j", on_change=clear_preset)
+        st.session_state["cash_j_base"] = st.number_input("Saldo + Friværdi Valby (kr.)", value=st.session_state["cash_j_base"], step=10000, key="csh_j", on_change=clear_preset)
+        st.session_state["basis_ask_j"] = st.number_input("Investeringar aktiesparkonto (kr.)", value=st.session_state["basis_ask_j"], key="ask_j", on_change=clear_preset)
+        st.session_state["basis_frie_j"] = st.number_input("Investeringar månedsopsparing (kr.)", value=st.session_state["basis_frie_j"], key="fr_j", on_change=clear_preset)
         
         df_j = st.data_editor(pd.DataFrame(list(st.session_state["budget_j"].items()), columns=["Kategori", "Beløb"]), hide_index=True, use_container_width=True, key="ed_j", on_change=clear_preset)
         st.session_state["budget_j"] = dict(df_j.values)
