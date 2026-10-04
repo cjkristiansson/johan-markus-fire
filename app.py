@@ -3,6 +3,7 @@ import pandas as pd
 import numpy as np
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
+import urllib.parse
 
 # Konfiguration
 st.set_page_config(page_title="FIRE Dashboard", layout="wide", initial_sidebar_state="expanded")
@@ -28,44 +29,52 @@ def clean_currency(x):
 @st.cache_data(ttl=3600)
 def fetch_google_sheets_data():
     sheet_id = "19kuzhNztBR00hvXMvpE18B0-B5CdoQx2y5JPCcVziPE"
-    sheet_name = "Likviditet, Fonder mm."
-    url = f"https://docs.google.com/spreadsheets/d/{sheet_id}/gviz/tq?tqx=out:csv&sheet={sheet_name}"
     
-    # Fallback-værdier hvis netværk fejler eller link ikke er offentligt
+    # Fallback-værdier hvis netværket driller
     data = {"ask": 190165, "frie": 144591, "forbrug": 89589, "frivaerdi": 2514000}
+    
     try:
-        df = pd.read_csv(url, on_bad_lines='skip')
-        temp_data = {
-            "saldo": 0.0, "ask": 0.0, "frie": 0.0, 
-            "valby_kontant": 0.0, "valby_afdrag": 0.0, "valby_frivaerdi": 0.0
-        }
+        # 1. Hent data fra 'Saldo' fanen
+        tab1 = urllib.parse.quote("Saldo")
+        url1 = f"https://docs.google.com/spreadsheets/d/{sheet_id}/gviz/tq?tqx=out:csv&sheet={tab1}"
+        df1 = pd.read_csv(url1, on_bad_lines='skip')
         
-        for c in range(len(df.columns) - 1):
-            for r in range(len(df)):
-                val_lower = str(df.iloc[r, c]).lower().strip()
-                if val_lower == "saldo":
-                    temp_data["saldo"] = clean_currency(df.iloc[r, c + 1])
-                elif "investeringar aktiesparkonto" in val_lower:
-                    temp_data["ask"] = clean_currency(df.iloc[r, c + 1])
-                elif "investeringar månedsopsparing" in val_lower:
-                    temp_data["frie"] = clean_currency(df.iloc[r, c + 1])
-                elif "kontantindsats valby lejlighed" in val_lower:
-                    temp_data["valby_kontant"] = clean_currency(df.iloc[r, c + 1])
-                elif "avbetalat boliglån" in val_lower:
-                    temp_data["valby_afdrag"] = clean_currency(df.iloc[r, c + 1])
-                elif "friværdi efter salgt" in val_lower:
-                    temp_data["valby_frivaerdi"] = clean_currency(df.iloc[r, c + 1])
+        for c in range(len(df1.columns) - 1):
+            for r in range(len(df1)):
+                val_lower = str(df1.iloc[r, c]).lower().strip()
+                if "på forbrugskonti" in val_lower:
+                    val = clean_currency(df1.iloc[r, c + 1])
+                    if val > 0: data["forbrug"] = int(val)
 
-        # Overstyr kun fallback, hvis vi fandt gyldige data
-        if temp_data["ask"] > 0: data["ask"] = int(temp_data["ask"])
-        if temp_data["frie"] > 0: data["frie"] = int(temp_data["frie"])
-        if temp_data["saldo"] > 0: data["forbrug"] = int(max(0, temp_data["saldo"] - temp_data["frie"]))
+        # 2. Hent data fra 'Likviditet, Fonder mm.' fanen
+        tab2 = urllib.parse.quote("Likviditet, Fonder mm.")
+        url2 = f"https://docs.google.com/spreadsheets/d/{sheet_id}/gviz/tq?tqx=out:csv&sheet={tab2}"
+        df2 = pd.read_csv(url2, on_bad_lines='skip')
         
-        tot_frivaerdi = temp_data["valby_kontant"] + temp_data["valby_afdrag"] + temp_data["valby_frivaerdi"]
+        valby_k = 0; valby_a = 0; valby_f = 0
+        for c in range(len(df2.columns) - 1):
+            for r in range(len(df2)):
+                val_lower = str(df2.iloc[r, c]).lower().strip()
+                if "investeringar aktiesparkonto" in val_lower:
+                    val = clean_currency(df2.iloc[r, c + 1])
+                    if val > 0: data["ask"] = int(val)
+                elif "investeringar månedsopsparing" in val_lower:
+                    val = clean_currency(df2.iloc[r, c + 1])
+                    if val > 0: data["frie"] = int(val)
+                elif "kontantindsats valby" in val_lower:
+                    valby_k = clean_currency(df2.iloc[r, c + 1])
+                elif "avbetalat boliglån" in val_lower:
+                    valby_a = clean_currency(df2.iloc[r, c + 1])
+                elif "friværdi efter salgt" in val_lower:
+                    valby_f = clean_currency(df2.iloc[r, c + 1])
+        
+        tot_frivaerdi = valby_k + valby_a + valby_f
         if tot_frivaerdi > 0: data["frivaerdi"] = int(tot_frivaerdi)
         
+        st.toast("✅ Fik kontakt til Google Sheets (Hentede fra begge faner)!")
+        
     except Exception as e:
-        pass
+        st.error(f"❌ Kunne ikke opdatere fra Google Sheets automatisk. Viser sidst gemte tal. Fejl: {e}")
     
     return data
 
@@ -86,7 +95,7 @@ if "pension_m" not in st.session_state: st.session_state["pension_m"] = 570000
 if "pension_indb_j" not in st.session_state: st.session_state["pension_indb_j"] = 7500
 if "pension_indb_m" not in st.session_state: st.session_state["pension_indb_m"] = 5000
 
-# Formue før boligkøb
+# Formue før boligkøb (Sikring for manglende variabler)
 if "forbrugskonti_j" not in st.session_state: st.session_state["forbrugskonti_j"] = 89589
 if "frivaerdi_j" not in st.session_state: st.session_state["frivaerdi_j"] = 2514000
 if "cash_m_base" not in st.session_state: st.session_state["cash_m_base"] = 1153888
@@ -263,6 +272,7 @@ def simulate_joint_fire_plan(scenario_name, boligpris, ydelse_key, ejerudgifter_
     use_bsu = st.session_state.get("use_bsu_m", False)
     bsu_amount = 292060
     
+    # Hent dynamisk de to nye adskilte felter og læg dem sammen til samlet personlig likviditet
     total_cash_j = st.session_state.get("forbrugskonti_j", 0) + st.session_state.get("frivaerdi_j", 0)
     cash_j = total_cash_j if bolig_solgt else 0
     cash_m = st.session_state["cash_m_base"] if bolig_solgt else 0
