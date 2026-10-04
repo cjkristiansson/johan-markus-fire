@@ -86,8 +86,12 @@ if "pension_m" not in st.session_state: st.session_state["pension_m"] = 570000
 if "pension_indb_j" not in st.session_state: st.session_state["pension_indb_j"] = 7500
 if "pension_indb_m" not in st.session_state: st.session_state["pension_indb_m"] = 5000
 
-# Fælles formue før boligkøb
+# Formue før boligkøb
+if "forbrugskonti_j" not in st.session_state: st.session_state["forbrugskonti_j"] = 89589
+if "frivaerdi_j" not in st.session_state: st.session_state["frivaerdi_j"] = 2514000
 if "cash_m_base" not in st.session_state: st.session_state["cash_m_base"] = 1153888
+if "basis_ask_j" not in st.session_state: st.session_state["basis_ask_j"] = 190165
+if "basis_frie_j" not in st.session_state: st.session_state["basis_frie_j"] = 144591
 if "basis_ask_m" not in st.session_state: st.session_state["basis_ask_m"] = 170000
 if "basis_frie_m" not in st.session_state: st.session_state["basis_frie_m"] = 0
 
@@ -259,7 +263,8 @@ def simulate_joint_fire_plan(scenario_name, boligpris, ydelse_key, ejerudgifter_
     use_bsu = st.session_state.get("use_bsu_m", False)
     bsu_amount = 292060
     
-    cash_j = st.session_state["cash_j_base"] if bolig_solgt else 0
+    total_cash_j = st.session_state.get("forbrugskonti_j", 0) + st.session_state.get("frivaerdi_j", 0)
+    cash_j = total_cash_j if bolig_solgt else 0
     cash_m = st.session_state["cash_m_base"] if bolig_solgt else 0
 
     if bolig_solgt and actual_salgsaar == 0:
@@ -365,7 +370,7 @@ def simulate_joint_fire_plan(scenario_name, boligpris, ydelse_key, ejerudgifter_
         bolig_faelles_current = (valby_ydelse + 3374) / 2
         restgaeld_start = valby_fast_restgaeld
         
-        locked_frivaerdi_j = float(st.session_state["cash_j_base"])
+        locked_frivaerdi_j = float(st.session_state.get("forbrugskonti_j", 0) + st.session_state.get("frivaerdi_j", 0))
         locked_frivaerdi_m = float(st.session_state["cash_m_base"])
 
     depot_free_j = np.full(n_sims, base_frie_j, dtype=float)
@@ -734,7 +739,8 @@ def simulate_solo_fire_plan(scenario_name, boligpris, ydelse_key, ejerudgifter_s
     is_valby = "Valby" in scenario_name
     actual_salgsaar = 0 if is_valby else global_salgsaar
     
-    cash_j = st.session_state["cash_j_base"]
+    total_cash_j = st.session_state.get("forbrugskonti_j", 0) + st.session_state.get("frivaerdi_j", 0)
+    cash_j = total_cash_j
     
     if not is_valby and actual_salgsaar == 0:
         cash_j = max(0, cash_j - global_salgsomkostninger)
@@ -810,7 +816,7 @@ def simulate_solo_fire_plan(scenario_name, boligpris, ydelse_key, ejerudgifter_s
         valby_ydelse = 15230 - 6930 if nuvaerende_afdragsfri else 15230
         bolig_total_current = valby_ydelse + 3374
         restgaeld_start = valby_fast_restgaeld
-        locked_frivaerdi_j = float(st.session_state["cash_j_base"])
+        locked_frivaerdi_j = float(total_cash_j)
 
     depot_free_j = np.full(n_sims, base_frie_j, dtype=float)
     depot_ask_j = np.full(n_sims, st.session_state["basis_ask_j"], dtype=float)
