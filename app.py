@@ -1029,7 +1029,7 @@ if view_selection == "⚙️ Basisdata & Opsætning":
         st.session_state["inkomst_j"] = st.number_input("Månedsløn (Netto kr.)", value=st.session_state["inkomst_j"], step=500, key="inp_j", on_change=clear_preset)
         st.session_state["pension_j"] = st.number_input("Pensionsopsparing (kr.)", min_value=0, value=st.session_state["pension_j"], step=10000, key="input_pen_j", on_change=clear_preset)
         st.session_state["pension_indb_j"] = st.number_input("Arbejdsgiverpension (mdl. kr.)", min_value=0, value=st.session_state["pension_indb_j"], step=500, key="indb_pen_j", on_change=clear_preset)
-        st.session_state["cash_j_base"] = st.number_input("Saldo + Friværdi Valby (kr.)", value=st.session_state["cash_j_base"], step=10000, key="csh_j", on_change=clear_preset)
+        st.session_state["cash_j_base"] = st.number_input("Forbrugskonti + Friværdi Valby (kr.)", value=st.session_state["cash_j_base"], step=10000, key="csh_j", on_change=clear_preset)
         st.session_state["basis_ask_j"] = st.number_input("Investeringar aktiesparkonto (kr.)", value=st.session_state["basis_ask_j"], key="ask_j", on_change=clear_preset)
         st.session_state["basis_frie_j"] = st.number_input("Investeringar månedsopsparing (kr.)", value=st.session_state["basis_frie_j"], key="fr_j", on_change=clear_preset)
         
