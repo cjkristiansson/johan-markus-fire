@@ -138,6 +138,7 @@ def show_rules_dialog():
     * **Trin 0 (Boligkøb først):** Startdepotet i år 1 er formuen *efter* udbetaling til bolig. Belåning er automatisk sat til 40 % realkreditlån (F3) og 60 % udbetaling.
     * **Skat (Frie Midler):** Frie midler anvender en effektiv gennemsnitsskat (22%/36%) på det årlige afkast for realistisk at simulere fordelen ved udskudt skat under realisationsbeskatning.
     * **Udskudt Salg:** Hvis salget udskydes, låses friværdien. Modellen fremskriver asymmetrisk boliginflation og faste afdrag frem til Salgsåret.
+    * **Scenarie A:** Hvert år på x-aksen repræsenterer et år *mere* i jeres fuldtidsjobs, hvor I opsparer løbende. Grafen viser, hvad Barista-timerne falder til, hvis I udskyder FIRE-starten.
     * **Monte Carlo Simulering:** Kører 1.000 parallelle universer vektoriseret i NumPy baseret på historisk volatilitet for at stressteste Barista-tilværelsen.
     """)
 
@@ -409,18 +410,15 @@ def simulate_joint_fire_plan(scenario_name, boligpris, ydelse_key, ejerudgifter_
     depot_free_m -= move_m
 
     with col_inp:
-        # Læser direkte fra de tabeller, du redigerer i UI'et (Tydeligt og gennemsigtigt)
         current_budget_j_total = sum(st.session_state["budget_idag_j"].values())
         current_budget_m_total = sum(st.session_state["budget_idag_m"].values())
         
         fire_budget_j_total = sum(st.session_state["budget_fire_j"].values())
         fire_budget_m_total = sum(st.session_state["budget_fire_m"].values())
 
-        # Udregner overskud baseret på fuldtidsløn og 'I dag' tabellen
         start_inv_md_j = st.session_state["inkomst_j"] - (current_budget_j_total + bolig_faelles_current)
         start_inv_md_m = st.session_state["inkomst_m"] - (current_budget_m_total + bolig_faelles_current) + bsu_passive
         
-        # Sætter barren for fremtiden baseret på 'Barista' tabellen
         start_fire_j = fire_budget_j_total + bolig_faelles_current
         start_fire_m = sum(v for k, v in st.session_state["budget_fire_m"].items() if k not in ["Studielaan"]) + bolig_faelles_current
 
@@ -627,7 +625,7 @@ def simulate_joint_fire_plan(scenario_name, boligpris, ydelse_key, ejerudgifter_
             depot_ask_j = np.maximum(0, depot_ask_j * (1 + current_ret * 0.83))
             depot_ask_m = np.maximum(0, depot_ask_m * (1 + current_ret * 0.83))
             
-            # SCENARIE A: Vi indbetaler fuldtidsopsparing & pension hvert eneste år (indtil FIRE rammes)
+            # SCENARIE A: Vi indbetaler fuldtidsopsparing & pension hvert eneste år
             depot_free_j += np.where(~j_reached_arr, start_inv_md_j * 12 * ((1 + global_inflation_rate)**year), 0)
             depot_free_m += np.where(~m_reached_arr, start_inv_md_m * 12 * ((1 + global_inflation_rate)**year), 0)
 
@@ -850,8 +848,21 @@ def simulate_solo_fire_plan(scenario_name, boligpris, ydelse_key, ejerudgifter_s
     depot_ask_j += move_j; depot_free_j -= move_j
 
     with col_inp:
-        current_budget_j_total = sum(st.session_state["budget_idag_j"].values())
-        fire_budget_j_total = sum(st.session_state["budget_fire_j"].values())
+        # Hent basisbudgetter og lav en kopi til solo-justering
+        solo_budget_idag = st.session_state["budget_idag_j"].copy()
+        solo_budget_fire = st.session_state["budget_fire_j"].copy()
+        
+        # --- SOLO JUSTERINGER ---
+        # Internet og Forsikringer fordobles i Barista-budgettet
+        solo_budget_fire["Internet"] = solo_budget_fire.get("Internet", 0) * 2
+        solo_budget_fire["Forsikringer"] = solo_budget_fire.get("Forsikringer", 0) * 2
+        
+        # For 'i dag' budgettet: Hvis internet er 0 kr. (Markus betaler i dag), sættes det til 200 kr. for at dække den fulde regning.
+        solo_budget_idag["Internet"] = 200 if solo_budget_idag.get("Internet", 0) == 0 else solo_budget_idag.get("Internet", 0) * 2
+        solo_budget_idag["Forsikringer"] = solo_budget_idag.get("Forsikringer", 0) * 2
+
+        current_budget_j_total = sum(solo_budget_idag.values())
+        fire_budget_j_total = sum(solo_budget_fire.values())
         
         start_inv_md_j = st.session_state["inkomst_j"] - (current_budget_j_total + bolig_total_current)
         start_fire_j = fire_budget_j_total + bolig_total_current
@@ -873,8 +884,10 @@ def simulate_solo_fire_plan(scenario_name, boligpris, ydelse_key, ejerudgifter_s
         **Ejerudgifter:** {ejer_j_str} kr./md.  
         **Startdepot (År 0):** {depot_j_str} kr.  
         **Mdl. opsparing:** {inv_md_j_str} kr.  
-        **Mdl. Udgifter:** {fire_j_str} kr./md.
-        """)
+        **Mdl. Udgifter:** {fire_j_str} kr./md.*
+        
+        <p style='font-size: 0.8em; color: gray; margin-top: -10px;'>* Inkl. solo-tillæg (Internet og forsikring fordoblet).</p>
+        """, unsafe_allow_html=True)
 
     st.markdown("<div style='margin-top: -15px;'></div>", unsafe_allow_html=True)
     col_mc, col_tog, col_ejer = st.columns([0.5, 0.3, 0.2], vertical_alignment="bottom")
@@ -1010,7 +1023,7 @@ def simulate_solo_fire_plan(scenario_name, boligpris, ydelse_key, ejerudgifter_s
             # ASK (Lagerbeskatning 17%)
             depot_ask_j = np.maximum(0, depot_ask_j * (1 + current_ret * 0.83))
             
-            # SCENARIE A: Vi indbetaler fuldtidsopsparing & pension hvert eneste år (indtil FIRE rammes)
+            # SCENARIE A: Indbetaler opsparing & pension indtil FIRE rammes
             depot_free_j += np.where(~j_reached_arr, start_inv_md_j * 12 * ((1 + global_inflation_rate)**year), 0)
 
             ask_limit_year = ask_base_limit * ((1 + global_inflation_rate)**year)
