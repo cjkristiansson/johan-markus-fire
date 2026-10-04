@@ -447,7 +447,7 @@ def simulate_joint_fire_plan(scenario_name, boligpris, ydelse_key, ejerudgifter_
 
         # Udregn Johans udgifter IDAG (Nuværende budget)
         current_mad_j = st.session_state["mad_j_val"] # Hentes fra slideren i opsætning
-        current_reno_j = 2500
+        current_reno_j = 1000
         current_akasse_j = 672
         current_internet_j = 0
         current_oevrig_j = 0
