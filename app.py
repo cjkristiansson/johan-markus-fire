@@ -413,7 +413,10 @@ def simulate_joint_fire_plan(scenario_name, boligpris, ydelse_key, ejerudgifter_
         budget_j_total = sum(st.session_state["budget_j"].values())
         budget_m_total = sum(st.session_state["budget_m"].values())
 
-        start_inv_md_j = st.session_state["inkomst_j"] - (budget_j_total + bolig_faelles_current)
+        # KORREKTION: Opdaterer current opsparing, så den afspejler hele madbudgettet lige nu (6.000 kr)
+        mad_diff_j = st.session_state["mad_total_val"] - st.session_state["mad_j_val"]
+        start_inv_md_j = st.session_state["inkomst_j"] - (budget_j_total + bolig_faelles_current + mad_diff_j)
+        
         start_inv_md_m = st.session_state["inkomst_m"] - (budget_m_total + bolig_faelles_current) + bsu_passive
         
         start_fire_j = sum(v for k, v in st.session_state["budget_j"].items() if k not in ["A_kasse_Fagforening"]) + bolig_faelles_current
@@ -848,7 +851,10 @@ def simulate_solo_fire_plan(scenario_name, boligpris, ydelse_key, ejerudgifter_s
         solo_budget_j["Mad"] = 3000
         budget_j_total = sum(solo_budget_j.values())
         
-        start_inv_md_j = st.session_state["inkomst_j"] - (budget_j_total + bolig_total_current)
+        # KORREKTION: Opdaterer current opsparing, så den afspejler hele madbudgettet lige nu (6.000 kr)
+        mad_diff_solo = st.session_state["mad_total_val"] - solo_budget_j["Mad"]
+        start_inv_md_j = st.session_state["inkomst_j"] - (budget_j_total + bolig_total_current + mad_diff_solo)
+        
         start_fire_j = sum(v for k, v in solo_budget_j.items() if k not in ["A_kasse_Fagforening"]) + bolig_total_current
 
         udb_j_str = format_dkk(faktisk_udbetaling_j)
