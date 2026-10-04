@@ -26,12 +26,14 @@ def clean_currency(x):
         except: return 0.0
     return float(x) if pd.notnull(x) else 0.0
 
-@st.cache_data(ttl=3600)
+@st.cache_data(ttl=3600, show_spinner=False)
 def fetch_google_sheets_data():
     sheet_id = "19kuzhNztBR00hvXMvpE18B0-B5CdoQx2y5JPCcVziPE"
     
-    # Fallback-værdier hvis netværket driller
+    # Fallback-værdier
     data = {"ask": 190165, "frie": 144591, "forbrug": 89589, "frivaerdi": 2514000}
+    success = False
+    error_msg = ""
     
     try:
         # 1. Hent data fra 'Saldo' fanen
@@ -71,21 +73,25 @@ def fetch_google_sheets_data():
         tot_frivaerdi = valby_k + valby_a + valby_f
         if tot_frivaerdi > 0: data["frivaerdi"] = int(tot_frivaerdi)
         
-        st.toast("✅ Fik kontakt til Google Sheets (Hentede fra begge faner)!")
+        success = True
         
     except Exception as e:
-        st.error(f"❌ Kunne ikke opdatere fra Google Sheets automatisk. Viser sidst gemte tal. Fejl: {e}")
+        error_msg = str(e)
     
-    return data
+    return data, success, error_msg
 
 # INITIALISERING AF SYNC
 if "gsheets_synced" not in st.session_state:
-    fetched_data = fetch_google_sheets_data()
+    fetched_data, is_success, err_msg = fetch_google_sheets_data()
+    
     st.session_state["basis_ask_j"] = fetched_data["ask"]
     st.session_state["basis_frie_j"] = fetched_data["frie"]
     st.session_state["forbrugskonti_j"] = fetched_data["forbrug"]
     st.session_state["frivaerdi_j"] = fetched_data["frivaerdi"]
     st.session_state["gsheets_synced"] = True
+    
+    if not is_success:
+        st.error(f"Kunne ikke hente Google Sheets data (bruger sidst gemte tal). Fejl: {err_msg}")
 
 # --- INITIALISERING AF SESSION STATE (BASISDATA) ---
 if "inkomst_j" not in st.session_state: st.session_state["inkomst_j"] = 38468
@@ -1103,12 +1109,18 @@ if view_selection == "⚙️ Basisdata & Opsætning":
         st.markdown("### 👤 JOHAN DATA")
         
         if st.button("🔄 Hent nyeste data fra Google Sheets", help="Kræver at dit Google Sheet er sat til 'Alle med linket kan se'"):
-            st.cache_data.clear()
-            fetched_data = fetch_google_sheets_data()
+            fetch_google_sheets_data.clear()
+            fetched_data, is_success, err_msg = fetch_google_sheets_data()
             st.session_state["basis_ask_j"] = fetched_data["ask"]
             st.session_state["basis_frie_j"] = fetched_data["frie"]
             st.session_state["forbrugskonti_j"] = fetched_data["forbrug"]
             st.session_state["frivaerdi_j"] = fetched_data["frivaerdi"]
+            
+            if is_success:
+                st.toast("✅ Opdateret succesfuldt fra Google Sheets!")
+            else:
+                st.error(f"❌ Fejl ved opdatering: {err_msg}")
+            
             st.rerun()
             
         st.session_state["inkomst_j"] = st.number_input("Månedsløn (Netto kr.)", value=st.session_state["inkomst_j"], step=500, key="inp_j", on_change=clear_preset)
