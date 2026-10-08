@@ -127,10 +127,10 @@ if "budget_fire_m" not in st.session_state:
 @st.dialog("📜 Modellens Regler & Logik")
 def show_rules_dialog():
     st.markdown("""
-    * **Phantom Withdrawal:** Modellen trækker nu dine årlige passive udgifter konkret fra depoterne hvert simulerede år i Barista-fasen. 
-    * **Frie Midler (Realisationsbeskatning):** Skat trækkes ikke af afkastet hvert år, men beregnes først ud fra 27/42% zonerne på de realiserede gevinster ved udbetaling.
-    * **Pensions-overgang:** Frem til 67 år finansieres du af Bridge-midler (Frie+ASK). Fra 67-90 år indgår den officielle pension som et aktiv i den passive udbetaling uden at droppe til 0.
-    * **Monte Carlo (SORR):** Fordi midler rent faktisk trækkes ud, rammes du realistisk af sequence-of-return-risks (SORR) ved dårlige afkast.
+    * **Scenarie A (Tidslinjen):** X-aksen repræsenterer opsparingsfasen. Hvert år på grafen viser scenariet: *"Hvad nu hvis jeg arbejder fuldtid i X år mere og sparer op, inden jeg skifter til Barista FIRE?"*.
+    * **Skat (Frie Midler):** Frie midler anvender en effektiv gennemsnitsskat (22%/36%) på det årlige afkast for realistisk at simulere fremtidig skattepligt under opsparingen.
+    * **Pensions-overgang:** Frem til 67 år antager modellen, at du finansieres af Bridge-midler (Frie+ASK). Fra 67-90 år indgår den officielle pension som en glidende overgang, der sænker dit ugentlige timekrav betydeligt.
+    * **Udskudt Salg:** Hvis salget af Valby udskydes, låses friværdien. Modellen fremskriver asymmetrisk boliginflation og faste afdrag frem til Salgsåret.
     """)
 
 # --- TOP HEADER ---
@@ -173,10 +173,6 @@ global_return_rate_net_drawdown = st.sidebar.slider("Nettoafkast i passiv fase (
 global_inflation_rate = st.sidebar.slider("Årlig inflation (%)", min_value=0.0, max_value=5.0, step=0.5, on_change=clear_preset, key="slider_inflation") / 100
 
 st.sidebar.toggle("Købekraftsjusteret udtræk i FIRE-fasen", key="use_real_drawdown", help="Tvinger modellen til at reservere en del af aktieafkastet til at beskytte hovedstolen mod inflation.", on_change=clear_preset)
-
-st.sidebar.divider()
-st.sidebar.markdown("### Tidslinje for overgang")
-global_years_to_barista = st.sidebar.number_input("År indtil Barista FIRE (Fuldtidsopsparing)", min_value=0, max_value=20, value=0, step=1, help="0 = I skifter i dag. 3 = I arbejder fuldtid i 3 år endnu og sætter overskud til side, inden I trækker jer og begynder at hæve.")
 
 st.sidebar.divider()
 st.sidebar.markdown("### Monte Carlo Simulering")
@@ -228,7 +224,7 @@ def calculate_drawdown_monthly_income(depot_bridge_arr, depot_pension_arr, curre
         months_left = years_left * 12
         if monthly_rate <= 0: return depot_bridge_arr / months_left
         return depot_bridge_arr * (monthly_rate * (1 + monthly_rate)**months_left) / ((1 + monthly_rate)**months_left - 1)
-    # Post-pension: Lægger pension oveni og udjævner til alder 90 (fjerner age 67 klippen)
+    # Post-pension: Lægger pension oveni og udjævner til alder 90
     else:
         months_to_90 = np.maximum(1, (life_expectancy - current_age) * 12)
         total_wealth = depot_bridge_arr + depot_pension_arr
@@ -356,10 +352,7 @@ def simulate_joint_fire_plan(scenario_name, boligpris, ydelse_key, ejerudgifter_
         locked_frivaerdi_m = float(st.session_state["cash_m_base"])
 
     depot_free_j = np.full(n_sims, base_frie_j, dtype=float)
-    indskud_frie_j = np.full(n_sims, base_frie_j, dtype=float) # TILFØJET: Sporer indskud til Realisationsskat
     depot_free_m = np.full(n_sims, base_frie_m, dtype=float)
-    indskud_frie_m = np.full(n_sims, base_frie_m, dtype=float)
-
     depot_ask_j = np.full(n_sims, st.session_state["basis_ask_j"], dtype=float)
     depot_ask_m = np.full(n_sims, st.session_state["basis_ask_m"], dtype=float)
     pension_j_current = np.full(n_sims, st.session_state["pension_j"], dtype=float)
@@ -367,14 +360,10 @@ def simulate_joint_fire_plan(scenario_name, boligpris, ydelse_key, ejerudgifter_
 
     space_j_init = np.maximum(0, ask_base_limit - depot_ask_j)
     move_j = np.minimum(space_j_init, np.maximum(0, depot_free_j))
-    frac_j = np.where(depot_free_j > 0, move_j / depot_free_j, 0)
-    indskud_frie_j -= indskud_frie_j * frac_j
     depot_ask_j += move_j; depot_free_j -= move_j
 
     space_m_init = np.maximum(0, ask_base_limit - depot_ask_m)
     move_m = np.minimum(space_m_init, np.maximum(0, depot_free_m))
-    frac_m = np.where(depot_free_m > 0, move_m / depot_free_m, 0)
-    indskud_frie_m -= indskud_frie_m * frac_m
     depot_ask_m += move_m; depot_free_m -= move_m
 
     with col_inp:
@@ -435,9 +424,7 @@ def simulate_joint_fire_plan(scenario_name, boligpris, ydelse_key, ejerudgifter_
             bolig_faelles_current = netto_bolig_faelles
             
             depot_free_j += (equity_amt / 2)
-            indskud_frie_j += (equity_amt / 2)
             depot_free_m += (equity_amt / 2)
-            indskud_frie_m += (equity_amt / 2)
 
         if is_valby and nuvaerende_afdragsfri and year == 10:
             if not (aktiver_oml and oml_aar <= 10) and (actual_salgsaar == 0 or actual_salgsaar > 10):
@@ -476,10 +463,8 @@ def simulate_joint_fire_plan(scenario_name, boligpris, ydelse_key, ejerudgifter_
                     fakt_udb_m = skal_udb_m - mangler_m
                     fakt_udb_j = (skal_udb_j + mangler_m) - max(0, (skal_udb_j + mangler_m) - locked_frivaerdi_j)
                     
-                    add_j = max(0, locked_frivaerdi_j - fakt_udb_j)
-                    add_m = max(0, locked_frivaerdi_m - fakt_udb_m)
-                    depot_free_j += add_j; indskud_frie_j += add_j
-                    depot_free_m += add_m; indskud_frie_m += add_m
+                    depot_free_j += max(0, locked_frivaerdi_j - fakt_udb_j)
+                    depot_free_m += max(0, locked_frivaerdi_m - fakt_udb_m)
                     
                     if global_loan_type == "FlexLife (F3 30 år afdragsfri)":
                         ny_ydelse = ((skaleret_loan * (0.0341 + 0.0055)) / 12) * (1 - 0.256)
@@ -492,104 +477,49 @@ def simulate_joint_fire_plan(scenario_name, boligpris, ydelse_key, ejerudgifter_
                     start_fire_j -= diff_faelles; start_inv_md_j += (diff_faelles / ((1 + global_inflation_rate)**year))
                     bolig_faelles_current = ny_bolig_faelles / ((1 + global_inflation_rate)**year)
 
-            # Markedsafkast (INGEN LØBENDE SKAT PÅ FRIE MIDLER)
-            depot_free_j = np.maximum(0, depot_free_j * (1 + current_ret))
-            depot_free_m = np.maximum(0, depot_free_m * (1 + current_ret))
+            # --- MARKEDSAFKAST MED EFFEKTIV SKAT (Vigtigt for accumulation phase) ---
+            prog_limit_j = 79400 * ((1 + global_inflation_rate)**year)
+            prog_limit_m = 79400 * ((1 + global_inflation_rate)**year)
+            
+            return_frie_j = depot_free_j * current_ret
+            return_frie_m = depot_free_m * current_ret
+            
+            tax_j = np.where(return_frie_j <= prog_limit_j, return_frie_j * 0.22, prog_limit_j * 0.22 + (return_frie_j - prog_limit_j) * 0.36)
+            tax_m = np.where(return_frie_m <= prog_limit_m, return_frie_m * 0.22, prog_limit_m * 0.22 + (return_frie_m - prog_limit_m) * 0.36)
+            tax_j = np.where(current_ret > 0, tax_j, 0)
+            tax_m = np.where(current_ret > 0, tax_m, 0)
+            
+            depot_free_j = np.maximum(0, depot_free_j + return_frie_j - tax_j)
+            depot_free_m = np.maximum(0, depot_free_m + return_frie_m - tax_m)
             
             # ASK (Lagerbeskatning 17%)
             depot_ask_j = np.maximum(0, depot_ask_j * (1 + current_ret * 0.83))
             depot_ask_m = np.maximum(0, depot_ask_m * (1 + current_ret * 0.83))
 
-            # FULDTIDS-FASE (År før Barista FIRE)
-            if year < global_years_to_barista:
-                if start_inv_md_j > 0:
-                    c_j = start_inv_md_j * 12 * ((1 + global_inflation_rate)**year)
-                    depot_free_j += c_j; indskud_frie_j += c_j
-                if start_inv_md_m > 0:
-                    c_m = start_inv_md_m * 12 * ((1 + global_inflation_rate)**year)
-                    depot_free_m += c_m; indskud_frie_m += c_m
-                    
-                pension_j_current += st.session_state["pension_indb_j"] * 12 * ((1 + global_inflation_rate)**year)
-                pension_m_current += st.session_state["pension_indb_m"] * 12 * ((1 + global_inflation_rate)**year)
+            # --- OPSPARING TILFØJES ---
+            if start_inv_md_j > 0: depot_free_j += start_inv_md_j * 12 * ((1 + global_inflation_rate)**year)
+            if start_inv_md_m > 0: depot_free_m += start_inv_md_m * 12 * ((1 + global_inflation_rate)**year)
+                
+            pension_j_current += st.session_state["pension_indb_j"] * 12 * ((1 + global_inflation_rate)**year)
+            pension_m_current += st.session_state["pension_indb_m"] * 12 * ((1 + global_inflation_rate)**year)
 
+            # ASK opfyldning
             ask_limit_year = ask_base_limit * ((1 + global_inflation_rate)**year)
             
             space_j = np.maximum(0, ask_limit_year - depot_ask_j)
             move_j = np.minimum(space_j, np.maximum(0, depot_free_j))
-            frac_j = np.where(depot_free_j > 0, move_j / depot_free_j, 0)
-            indskud_frie_j -= indskud_frie_j * frac_j
             depot_ask_j += move_j; depot_free_j -= move_j
 
             space_m = np.maximum(0, ask_limit_year - depot_ask_m)
             move_m = np.minimum(space_m, np.maximum(0, depot_free_m))
-            frac_m = np.where(depot_free_m > 0, move_m / depot_free_m, 0)
-            indskud_frie_m -= indskud_frie_m * frac_m
             depot_ask_m += move_m; depot_free_m -= move_m
 
             pension_j_current = np.maximum(0, pension_j_current * (1 + (current_ret * (1 - pal_tax))))
             pension_m_current = np.maximum(0, pension_m_current * (1 + (current_ret * (1 - pal_tax))))
 
-        # Calculate Sustainable Drawdown (Glat overgang mellem depoter og pension)
+        # --- SNAPSHOT AF BARISTA-TIMER (Hvis man trækker stikket DETTE år) ---
         p_j = calculate_drawdown_monthly_income(depot_ask_j + depot_free_j, pension_j_current, c_age_j, pensionsalder_j, st.session_state.get("slider_drawdown", 3.5)/100, global_inflation_rate, use_real_drawdown)
-        p_m_drawdown = calculate_drawdown_monthly_income(depot_ask_m + depot_free_m, pension_m_current, c_age_m, pensionsalder_m, st.session_state.get("slider_drawdown", 3.5)/100, global_inflation_rate, use_real_drawdown)
-        p_m_total = p_m_drawdown + bsu_passive
-
         h_j_array = np.maximum(0, start_fire_j - p_j) / (global_barista_wage_net * ((1+global_inflation_rate)**year) * weeks_per_month)
-        h_m_array = np.maximum(0, start_fire_m - p_m_total) / (global_barista_wage_net * ((1+global_inflation_rate)**year) * weeks_per_month)
-
-        # BARISTA-FASE WITHDRAWALS (Phantom Withdrawal fix & Realisationsbeskatning)
-        if year >= global_years_to_barista:
-            # Johan Withdrawal
-            annual_withdraw_j = p_j * 12
-            rem_withdraw_j = annual_withdraw_j
-            if c_age_j >= pensionsalder_j:
-                draw_pen_j = np.minimum(pension_j_current, rem_withdraw_j)
-                pension_j_current -= draw_pen_j
-                rem_withdraw_j -= draw_pen_j
-                
-            taxable_frac_j = np.where(depot_free_j > 0, np.maximum(0, 1 - indskud_frie_j / depot_free_j), 0)
-            prog_limit_j = 79400 * ((1 + global_inflation_rate)**year)
-            
-            gross_j = rem_withdraw_j
-            for _ in range(3): # Iterativ udregning af bruttotrækket for at dække skatten
-                realized = gross_j * taxable_frac_j
-                tax = np.where(realized <= prog_limit_j, realized * 0.27, prog_limit_j * 0.27 + (realized - prog_limit_j) * 0.42)
-                gross_j = rem_withdraw_j + tax
-                
-            gross_j = np.minimum(gross_j, depot_free_j)
-            depot_free_j -= gross_j
-            indskud_frie_j -= gross_j * (1 - taxable_frac_j)
-            
-            real_final_j = gross_j * taxable_frac_j
-            tax_final_j = np.where(real_final_j <= prog_limit_j, real_final_j * 0.27, prog_limit_j * 0.27 + (real_final_j - prog_limit_j) * 0.42)
-            rem_withdraw_j = np.maximum(0, rem_withdraw_j - (gross_j - tax_final_j))
-            depot_ask_j -= np.minimum(depot_ask_j, rem_withdraw_j)
-
-            # Markus Withdrawal
-            annual_withdraw_m = p_m_drawdown * 12
-            rem_withdraw_m = annual_withdraw_m
-            if c_age_m >= pensionsalder_m:
-                draw_pen_m = np.minimum(pension_m_current, rem_withdraw_m)
-                pension_m_current -= draw_pen_m
-                rem_withdraw_m -= draw_pen_m
-                
-            taxable_frac_m = np.where(depot_free_m > 0, np.maximum(0, 1 - indskud_frie_m / depot_free_m), 0)
-            prog_limit_m = 79400 * ((1 + global_inflation_rate)**year)
-            
-            gross_m = rem_withdraw_m
-            for _ in range(3): 
-                realized_m = gross_m * taxable_frac_m
-                tax_m = np.where(realized_m <= prog_limit_m, realized_m * 0.27, prog_limit_m * 0.27 + (realized_m - prog_limit_m) * 0.42)
-                gross_m = rem_withdraw_m + tax_m
-                
-            gross_m = np.minimum(gross_m, depot_free_m)
-            depot_free_m -= gross_m
-            indskud_frie_m -= gross_m * (1 - taxable_frac_m)
-            
-            real_final_m = gross_m * taxable_frac_m
-            tax_final_m = np.where(real_final_m <= prog_limit_m, real_final_m * 0.27, prog_limit_m * 0.27 + (real_final_m - prog_limit_m) * 0.42)
-            rem_withdraw_m = np.maximum(0, rem_withdraw_m - (gross_m - tax_final_m))
-            depot_ask_m -= np.minimum(depot_ask_m, rem_withdraw_m)
 
         if n_sims > 1:
             if is_worst_case:
@@ -617,7 +547,7 @@ def simulate_joint_fire_plan(scenario_name, boligpris, ydelse_key, ejerudgifter_
     fig.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', hovermode="x unified", margin=dict(l=0, r=0, t=20, b=10), legend=dict(orientation="h", yanchor="bottom", y=1.05, xanchor="center", x=0.5), font=dict(color="#2c2925"))
     fig.update_yaxes(title_text="Barista Timer", secondary_y=False, showgrid=True, gridcolor='rgba(200, 200, 200, 0.2)', zeroline=False, rangemode='tozero', tickfont=dict(size=14, color="#2c2925"))
     fig.update_yaxes(title_text="Formue (Mio. kr.)", secondary_y=True, showgrid=False, zeroline=False, tickfont=dict(size=14, color="#2c2925"))
-    fig.update_xaxes(title_text="År", showgrid=False, zeroline=False, tickmode='linear', dtick=2, tickfont=dict(size=14, color="#2c2925"))
+    fig.update_xaxes(title_text="År (Opsparingsfase før Barista)", showgrid=False, zeroline=False, tickmode='linear', dtick=2, tickfont=dict(size=14, color="#2c2925"))
     st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
 
 def simulate_solo_fire_plan(scenario_name, boligpris, ydelse_key, ejerudgifter_standard):
@@ -688,14 +618,11 @@ def simulate_solo_fire_plan(scenario_name, boligpris, ydelse_key, ejerudgifter_s
         locked_frivaerdi_j = float(cash_j)
 
     depot_free_j = np.full(n_sims, base_frie_j, dtype=float)
-    indskud_frie_j = np.full(n_sims, base_frie_j, dtype=float) # TILFØJET: Sporer indskud
     depot_ask_j = np.full(n_sims, st.session_state["basis_ask_j"], dtype=float)
     pension_j_current = np.full(n_sims, st.session_state["pension_j"], dtype=float)
 
     space_j_init = np.maximum(0, ask_base_limit - depot_ask_j)
     move_j = np.minimum(space_j_init, np.maximum(0, depot_free_j))
-    frac_j = np.where(depot_free_j > 0, move_j / depot_free_j, 0)
-    indskud_frie_j -= indskud_frie_j * frac_j
     depot_ask_j += move_j; depot_free_j -= move_j
 
     with col_inp:
@@ -748,7 +675,6 @@ def simulate_solo_fire_plan(scenario_name, boligpris, ydelse_key, ejerudgifter_s
             bolig_total_current = netto_bolig_total
             
             depot_free_j += equity_amt
-            indskud_frie_j += equity_amt
 
         if is_valby and nuvaerende_afdragsfri and year == 10:
             if not (aktiver_oml and oml_aar <= 10) and (actual_salgsaar == 0 or actual_salgsaar > 10):
@@ -770,8 +696,7 @@ def simulate_solo_fire_plan(scenario_name, boligpris, ydelse_key, ejerudgifter_s
                     locked_frivaerdi_j = max(0, locked_frivaerdi_j - global_salgsomkostninger)
                     skaleret_udb_tot, skaleret_loan = maal_pris * 0.60, maal_pris * 0.40
                     
-                    add_j = max(0, locked_frivaerdi_j - skaleret_udb_tot)
-                    depot_free_j += add_j; indskud_frie_j += add_j
+                    depot_free_j += max(0, locked_frivaerdi_j - skaleret_udb_tot)
                     
                     ny_ydelse = ((skaleret_loan * (0.0341 + 0.0055)) / 12) * (1 - 0.256) if global_loan_type == "FlexLife (F3 30 år afdragsfri)" else (skaleret_loan * ((0.0386/12) * (1 + 0.0386/12)**360) / ((1 + 0.0386/12)**360 - 1)) - (skaleret_loan * (0.0386/12) * 0.256)
                     ny_bolig_total = ny_ydelse + effektiv_ejerudgift * ((1 + global_inflation_rate)**year)
@@ -779,58 +704,30 @@ def simulate_solo_fire_plan(scenario_name, boligpris, ydelse_key, ejerudgifter_s
                     start_fire_j -= diff_bolig; start_inv_md_j += (diff_bolig / ((1 + global_inflation_rate)**year))
                     bolig_total_current = ny_bolig_total / ((1 + global_inflation_rate)**year)
 
-            # Markedsafkast uden løbende skat på Frie Midler
-            depot_free_j = np.maximum(0, depot_free_j * (1 + current_ret))
+            # --- MARKEDSAFKAST MED EFFEKTIV SKAT ---
+            prog_limit_j = 79400 * ((1 + global_inflation_rate)**year)
+            return_frie_j = depot_free_j * current_ret
+            tax_j = np.where(return_frie_j <= prog_limit_j, return_frie_j * 0.22, prog_limit_j * 0.22 + (return_frie_j - prog_limit_j) * 0.36)
+            tax_j = np.where(current_ret > 0, tax_j, 0)
+            depot_free_j = np.maximum(0, depot_free_j + return_frie_j - tax_j)
+            
+            # ASK (Lagerbeskatning 17%)
             depot_ask_j = np.maximum(0, depot_ask_j * (1 + current_ret * 0.83))
             
-            # FULDTIDS-FASE
-            if year < global_years_to_barista:
-                if start_inv_md_j > 0:
-                    c_j = start_inv_md_j * 12 * ((1 + global_inflation_rate)**year)
-                    depot_free_j += c_j
-                    indskud_frie_j += c_j
-                pension_j_current += st.session_state["pension_indb_j"] * 12 * ((1 + global_inflation_rate)**year)
+            # --- OPSPARING TILFØJES ---
+            if start_inv_md_j > 0: depot_free_j += start_inv_md_j * 12 * ((1 + global_inflation_rate)**year)
+            pension_j_current += st.session_state["pension_indb_j"] * 12 * ((1 + global_inflation_rate)**year)
 
             ask_limit_year = ask_base_limit * ((1 + global_inflation_rate)**year)
             space_j = np.maximum(0, ask_limit_year - depot_ask_j)
             move_j = np.minimum(space_j, np.maximum(0, depot_free_j))
-            frac_j = np.where(depot_free_j > 0, move_j / depot_free_j, 0)
-            indskud_frie_j -= indskud_frie_j * frac_j
             depot_ask_j += move_j; depot_free_j -= move_j
             
             pension_j_current = np.maximum(0, pension_j_current * (1 + (current_ret * (1 - pal_tax))))
 
-        # Calculate Sustainable Drawdown
+        # --- SNAPSHOT AF BARISTA-TIMER ---
         p_j = calculate_drawdown_monthly_income(depot_ask_j + depot_free_j, pension_j_current, c_age_j, pensionsalder_j, st.session_state.get("slider_drawdown", 3.5)/100, global_inflation_rate, use_real_drawdown)
         h_j_array = np.maximum(0, start_fire_j - p_j) / (global_barista_wage_net * ((1+global_inflation_rate)**year) * weeks_per_month)
-
-        # BARISTA-FASE WITHDRAWALS
-        if year >= global_years_to_barista:
-            rem_withdraw_j = p_j * 12
-            
-            if c_age_j >= pensionsalder_j:
-                draw_pen_j = np.minimum(pension_j_current, rem_withdraw_j)
-                pension_j_current -= draw_pen_j
-                rem_withdraw_j -= draw_pen_j
-                
-            taxable_frac_j = np.where(depot_free_j > 0, np.maximum(0, 1 - indskud_frie_j / depot_free_j), 0)
-            prog_limit_j = 79400 * ((1 + global_inflation_rate)**year)
-            
-            gross_j = rem_withdraw_j
-            for _ in range(3):
-                realized = gross_j * taxable_frac_j
-                tax = np.where(realized <= prog_limit_j, realized * 0.27, prog_limit_j * 0.27 + (realized - prog_limit_j) * 0.42)
-                gross_j = rem_withdraw_j + tax
-                
-            gross_j = np.minimum(gross_j, depot_free_j)
-            depot_free_j -= gross_j
-            indskud_frie_j -= gross_j * (1 - taxable_frac_j)
-            
-            real_final_j = gross_j * taxable_frac_j
-            tax_final_j = np.where(real_final_j <= prog_limit_j, real_final_j * 0.27, prog_limit_j * 0.27 + (real_final_j - prog_limit_j) * 0.42)
-            rem_withdraw_j = np.maximum(0, rem_withdraw_j - (gross_j - tax_final_j))
-            
-            depot_ask_j -= np.minimum(depot_ask_j, rem_withdraw_j)
 
         if n_sims > 1:
             if is_worst_case:
@@ -858,8 +755,81 @@ def simulate_solo_fire_plan(scenario_name, boligpris, ydelse_key, ejerudgifter_s
     fig.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', hovermode="x unified", margin=dict(l=0, r=0, t=20, b=10), legend=dict(orientation="h", yanchor="bottom", y=1.05, xanchor="center", x=0.5), font=dict(color="#2c2925"))
     fig.update_yaxes(title_text="Barista Timer", secondary_y=False, showgrid=True, gridcolor='rgba(200, 200, 200, 0.2)', zeroline=False, rangemode='tozero', tickfont=dict(size=14, color="#2c2925"))
     fig.update_yaxes(title_text="Formue (Mio. kr.)", secondary_y=True, showgrid=False, zeroline=False, tickfont=dict(size=14, color="#2c2925"))
-    fig.update_xaxes(title_text="År", showgrid=False, zeroline=False, tickmode='linear', dtick=2, tickfont=dict(size=14, color="#2c2925"))
+    fig.update_xaxes(title_text="År (Opsparingsfase før Barista)", showgrid=False, zeroline=False, tickmode='linear', dtick=2, tickfont=dict(size=14, color="#2c2925"))
     st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
+
+# --- NAVIGATION KØRSEL ---
+if view_selection == "⚙️ Basisdata & Opsætning":
+    st.subheader("Konfiguration af personlig økonomi")
+    
+    st.markdown("### 🏠 Valby Ejendom")
+    st.session_state["valby_pris_input"] = st.number_input("Nuværende boligværdi (Valby kr.)", min_value=0, value=st.session_state["valby_pris_input"], step=50000, key="valby_pris_inp", on_change=clear_preset)
+        
+    st.write("")
+    st.divider()
+    
+    col_setup_j, col_setup_m = st.columns(2)
+    
+    with col_setup_j:
+        st.markdown("### 👤 JOHAN DATA")
+        
+        if st.button("🔄 Hent data fra Google Sheets", help="Trækker automatisk dine konti og friværdi", use_container_width=True):
+            fetch_google_sheets_data.clear()
+            fetched_data, is_success, err_msg = fetch_google_sheets_data()
+            st.session_state["basis_ask_j"] = fetched_data["ask"]
+            st.session_state["basis_frie_j"] = fetched_data["frie"]
+            st.session_state["forbrugskonti_j"] = fetched_data["forbrug"]
+            st.session_state["frivaerdi_j"] = fetched_data["frivaerdi"]
+            
+            if is_success:
+                st.toast("✅ Opdateret succesfuldt fra Google Sheets!")
+            else:
+                st.error(f"❌ Fejl ved opdatering: {err_msg}")
+            st.rerun()
+            
+        st.session_state["inkomst_j"] = st.number_input("Månedsløn (Netto kr.)", value=st.session_state["inkomst_j"], step=500, key="inp_j", on_change=clear_preset)
+        st.session_state["pension_j"] = st.number_input("Pensionsopsparing (kr.)", min_value=0, value=st.session_state["pension_j"], step=10000, key="input_pen_j", on_change=clear_preset)
+        st.session_state["pension_indb_j"] = st.number_input("Arbejdsgiverpension (mdl. kr.)", min_value=0, value=st.session_state["pension_indb_j"], step=500, key="indb_pen_j", on_change=clear_preset)
+        st.session_state["forbrugskonti_j"] = st.number_input("Forbrugskonti (kr.)", value=st.session_state["forbrugskonti_j"], step=1000, key="csh_j_1", on_change=clear_preset)
+        st.session_state["frivaerdi_j"] = st.number_input("Friværdi Valby (kr.)", value=st.session_state["frivaerdi_j"], step=10000, key="csh_j_2", on_change=clear_preset)
+        st.session_state["basis_ask_j"] = st.number_input("Investeringar aktiesparkonto (kr.)", value=st.session_state["basis_ask_j"], key="ask_j", on_change=clear_preset)
+        st.session_state["basis_frie_j"] = st.number_input("Investeringar månedsopsparing (kr.)", value=st.session_state["basis_frie_j"], key="fr_j", on_change=clear_preset)
+        
+        st.markdown("#### 💸 Johans Udgifter")
+        j_tabs = st.tabs(["I Dag (Din opsparingsevne)", "Som Barista (Dit tids-mål)"])
+        
+        with j_tabs[0]:
+            st.markdown("<p style='font-size: 0.8em; color: gray;'>Dette budget bruges til at udregne, hvor mange penge du investerer hver måned lige nu.</p>", unsafe_allow_html=True)
+            df_idag_j = st.data_editor(pd.DataFrame(list(st.session_state["budget_idag_j"].items()), columns=["Kategori", "Beløb"]), hide_index=True, use_container_width=True, key="ed_idag_j", on_change=clear_preset)
+            st.session_state["budget_idag_j"] = dict(df_idag_j.values)
+
+        with j_tabs[1]:
+            st.markdown("<p style='font-size: 0.8em; color: gray;'>Dette budget bruges til at udregne dit passive behov og dine arbejdstimer i fremtiden.</p>", unsafe_allow_html=True)
+            df_fire_j = st.data_editor(pd.DataFrame(list(st.session_state["budget_fire_j"].items()), columns=["Kategori", "Beløb"]), hide_index=True, use_container_width=True, key="ed_fire_j", on_change=clear_preset)
+            st.session_state["budget_fire_j"] = dict(df_fire_j.values)
+        
+    with col_setup_m:
+        st.markdown("### 👤 MARKUS DATA")
+        st.session_state["inkomst_m"] = st.number_input("Månedsløn (Netto kr.)", value=st.session_state["inkomst_m"], step=500, key="inp_m", on_change=clear_preset)
+        st.session_state["pension_m"] = st.number_input("Pensionsopsparing (kr.)", min_value=0, value=st.session_state["pension_m"], step=10000, key="input_pen_m", on_change=clear_preset)
+        st.session_state["pension_indb_m"] = st.number_input("Arbejdsgiverpension (mdl. kr.)", min_value=0, value=st.session_state["pension_indb_m"], step=500, key="indb_pen_m", on_change=clear_preset)
+        st.session_state["cash_m_base"] = st.number_input("Kontanter / Friværdi (kr.)", value=st.session_state["cash_m_base"], step=10000, key="csh_m", on_change=clear_preset)
+        st.session_state["basis_ask_m"] = st.number_input("Aktiesparekonto (kr.)", value=st.session_state["basis_ask_m"], key="ask_m", on_change=clear_preset)
+        st.session_state["basis_frie_m"] = st.number_input("Frie midler / Aktier (kr.)", value=st.session_state["basis_frie_m"], key="fr_m", on_change=clear_preset)
+        st.session_state["use_bsu_m"] = st.toggle("Inddrag Norsk BSU", value=st.session_state.get("use_bsu_m", False), key="toggle_bsu_m", on_change=clear_preset)
+        
+        st.markdown("#### 💸 Markus' Udgifter")
+        m_tabs = st.tabs(["I Dag (Din opsparingsevne)", "Som Barista (Dit tids-mål)"])
+        
+        with m_tabs[0]:
+            st.markdown("<p style='font-size: 0.8em; color: gray;'>Beregner den månedlige opsparingsevne for Markus i dag.</p>", unsafe_allow_html=True)
+            df_idag_m = st.data_editor(pd.DataFrame(list(st.session_state["budget_idag_m"].items()), columns=["Kategori", "Beløb"]), hide_index=True, use_container_width=True, key="ed_idag_m", on_change=clear_preset)
+            st.session_state["budget_idag_m"] = dict(df_idag_m.values)
+
+        with m_tabs[1]:
+            st.markdown("<p style='font-size: 0.8em; color: gray;'>Beregner de fremtidige Barista-timer for Markus.</p>", unsafe_allow_html=True)
+            df_fire_m = st.data_editor(pd.DataFrame(list(st.session_state["budget_fire_m"].items()), columns=["Kategori", "Beløb"]), hide_index=True, use_container_width=True, key="ed_fire_m", on_change=clear_preset)
+            st.session_state["budget_fire_m"] = dict(df_fire_m.values)
 
 else:
     is_solo_mode = (st.session_state.get("secret_id", "").strip().lower() == "solo")
