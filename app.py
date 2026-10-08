@@ -266,6 +266,7 @@ def simulate_joint_fire_plan(scenario_name, boligpris, ydelse_key, ejerudgifter_
     use_equity = st.session_state.get(f"use_equity_{ydelse_key_clean}", False)
     equity_amt = st.session_state.get(f"equity_amount_{ydelse_key_clean}", 1000000) if use_equity else 0
 
+    use_real_drawdown = st.session_state.get("use_real_drawdown", False)
     use_ask_500k = st.session_state.get("use_ask_500k", False)
     ask_base_limit = 500000 if use_ask_500k else 174000
 
@@ -534,12 +535,13 @@ def simulate_joint_fire_plan(scenario_name, boligpris, ydelse_key, ejerudgifter_
         p_m_total = p_m_drawdown + bsu_passive
 
         h_j_array = np.maximum(0, start_fire_j - p_j) / (global_barista_wage_net * ((1+global_inflation_rate)**year) * weeks_per_month)
+        h_m_array = np.maximum(0, start_fire_m - p_m_total) / (global_barista_wage_net * ((1+global_inflation_rate)**year) * weeks_per_month)
 
         # BARISTA-FASE WITHDRAWALS (Phantom Withdrawal fix & Realisationsbeskatning)
         if year >= global_years_to_barista:
+            # Johan Withdrawal
             annual_withdraw_j = p_j * 12
             rem_withdraw_j = annual_withdraw_j
-            
             if c_age_j >= pensionsalder_j:
                 draw_pen_j = np.minimum(pension_j_current, rem_withdraw_j)
                 pension_j_current -= draw_pen_j
@@ -561,9 +563,33 @@ def simulate_joint_fire_plan(scenario_name, boligpris, ydelse_key, ejerudgifter_
             real_final_j = gross_j * taxable_frac_j
             tax_final_j = np.where(real_final_j <= prog_limit_j, real_final_j * 0.27, prog_limit_j * 0.27 + (real_final_j - prog_limit_j) * 0.42)
             rem_withdraw_j = np.maximum(0, rem_withdraw_j - (gross_j - tax_final_j))
+            depot_ask_j -= np.minimum(depot_ask_j, rem_withdraw_j)
+
+            # Markus Withdrawal
+            annual_withdraw_m = p_m_drawdown * 12
+            rem_withdraw_m = annual_withdraw_m
+            if c_age_m >= pensionsalder_m:
+                draw_pen_m = np.minimum(pension_m_current, rem_withdraw_m)
+                pension_m_current -= draw_pen_m
+                rem_withdraw_m -= draw_pen_m
+                
+            taxable_frac_m = np.where(depot_free_m > 0, np.maximum(0, 1 - indskud_frie_m / depot_free_m), 0)
+            prog_limit_m = 79400 * ((1 + global_inflation_rate)**year)
             
-            draw_ask_j = np.minimum(depot_ask_j, rem_withdraw_j)
-            depot_ask_j -= draw_ask_j
+            gross_m = rem_withdraw_m
+            for _ in range(3): 
+                realized_m = gross_m * taxable_frac_m
+                tax_m = np.where(realized_m <= prog_limit_m, realized_m * 0.27, prog_limit_m * 0.27 + (realized_m - prog_limit_m) * 0.42)
+                gross_m = rem_withdraw_m + tax_m
+                
+            gross_m = np.minimum(gross_m, depot_free_m)
+            depot_free_m -= gross_m
+            indskud_frie_m -= gross_m * (1 - taxable_frac_m)
+            
+            real_final_m = gross_m * taxable_frac_m
+            tax_final_m = np.where(real_final_m <= prog_limit_m, real_final_m * 0.27, prog_limit_m * 0.27 + (real_final_m - prog_limit_m) * 0.42)
+            rem_withdraw_m = np.maximum(0, rem_withdraw_m - (gross_m - tax_final_m))
+            depot_ask_m -= np.minimum(depot_ask_m, rem_withdraw_m)
 
         if n_sims > 1:
             if is_worst_case:
@@ -834,79 +860,6 @@ def simulate_solo_fire_plan(scenario_name, boligpris, ydelse_key, ejerudgifter_s
     fig.update_yaxes(title_text="Formue (Mio. kr.)", secondary_y=True, showgrid=False, zeroline=False, tickfont=dict(size=14, color="#2c2925"))
     fig.update_xaxes(title_text="År", showgrid=False, zeroline=False, tickmode='linear', dtick=2, tickfont=dict(size=14, color="#2c2925"))
     st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
-
-# --- NAVIGATION KØRSEL ---
-if view_selection == "⚙️ Basisdata & Opsætning":
-    st.subheader("Konfiguration af personlig økonomi")
-    
-    st.markdown("### 🏠 Valby Ejendom")
-    st.session_state["valby_pris_input"] = st.number_input("Nuværende boligværdi (Valby kr.)", min_value=0, value=st.session_state["valby_pris_input"], step=50000, key="valby_pris_inp", on_change=clear_preset)
-        
-    st.write("")
-    st.divider()
-    
-    col_setup_j, col_setup_m = st.columns(2)
-    
-    with col_setup_j:
-        st.markdown("### 👤 JOHAN DATA")
-        
-        if st.button("🔄 Hent data fra Google Sheets", help="Trækker automatisk dine konti og friværdi", use_container_width=True):
-            fetch_google_sheets_data.clear()
-            fetched_data, is_success, err_msg = fetch_google_sheets_data()
-            st.session_state["basis_ask_j"] = fetched_data["ask"]
-            st.session_state["basis_frie_j"] = fetched_data["frie"]
-            st.session_state["forbrugskonti_j"] = fetched_data["forbrug"]
-            st.session_state["frivaerdi_j"] = fetched_data["frivaerdi"]
-            
-            if is_success:
-                st.toast("✅ Opdateret succesfuldt fra Google Sheets!")
-            else:
-                st.error(f"❌ Fejl ved opdatering: {err_msg}")
-            st.rerun()
-            
-        st.session_state["inkomst_j"] = st.number_input("Månedsløn (Netto kr.)", value=st.session_state["inkomst_j"], step=500, key="inp_j", on_change=clear_preset)
-        st.session_state["pension_j"] = st.number_input("Pensionsopsparing (kr.)", min_value=0, value=st.session_state["pension_j"], step=10000, key="input_pen_j", on_change=clear_preset)
-        st.session_state["pension_indb_j"] = st.number_input("Arbejdsgiverpension (mdl. kr.)", min_value=0, value=st.session_state["pension_indb_j"], step=500, key="indb_pen_j", on_change=clear_preset)
-        st.session_state["forbrugskonti_j"] = st.number_input("Forbrugskonti (kr.)", value=st.session_state["forbrugskonti_j"], step=1000, key="csh_j_1", on_change=clear_preset)
-        st.session_state["frivaerdi_j"] = st.number_input("Friværdi Valby (kr.)", value=st.session_state["frivaerdi_j"], step=10000, key="csh_j_2", on_change=clear_preset)
-        st.session_state["basis_ask_j"] = st.number_input("Investeringar aktiesparkonto (kr.)", value=st.session_state["basis_ask_j"], key="ask_j", on_change=clear_preset)
-        st.session_state["basis_frie_j"] = st.number_input("Investeringar månedsopsparing (kr.)", value=st.session_state["basis_frie_j"], key="fr_j", on_change=clear_preset)
-        
-        st.markdown("#### 💸 Johans Udgifter")
-        j_tabs = st.tabs(["I Dag (Din opsparingsevne)", "Som Barista (Dit tids-mål)"])
-        
-        with j_tabs[0]:
-            st.markdown("<p style='font-size: 0.8em; color: gray;'>Dette budget bruges til at udregne, hvor mange penge du investerer hver måned lige nu.</p>", unsafe_allow_html=True)
-            df_idag_j = st.data_editor(pd.DataFrame(list(st.session_state["budget_idag_j"].items()), columns=["Kategori", "Beløb"]), hide_index=True, use_container_width=True, key="ed_idag_j", on_change=clear_preset)
-            st.session_state["budget_idag_j"] = dict(df_idag_j.values)
-
-        with j_tabs[1]:
-            st.markdown("<p style='font-size: 0.8em; color: gray;'>Dette budget bruges til at udregne dit passive behov og dine arbejdstimer i fremtiden.</p>", unsafe_allow_html=True)
-            df_fire_j = st.data_editor(pd.DataFrame(list(st.session_state["budget_fire_j"].items()), columns=["Kategori", "Beløb"]), hide_index=True, use_container_width=True, key="ed_fire_j", on_change=clear_preset)
-            st.session_state["budget_fire_j"] = dict(df_fire_j.values)
-        
-    with col_setup_m:
-        st.markdown("### 👤 MARKUS DATA")
-        st.session_state["inkomst_m"] = st.number_input("Månedsløn (Netto kr.)", value=st.session_state["inkomst_m"], step=500, key="inp_m", on_change=clear_preset)
-        st.session_state["pension_m"] = st.number_input("Pensionsopsparing (kr.)", min_value=0, value=st.session_state["pension_m"], step=10000, key="input_pen_m", on_change=clear_preset)
-        st.session_state["pension_indb_m"] = st.number_input("Arbejdsgiverpension (mdl. kr.)", min_value=0, value=st.session_state["pension_indb_m"], step=500, key="indb_pen_m", on_change=clear_preset)
-        st.session_state["cash_m_base"] = st.number_input("Kontanter / Friværdi (kr.)", value=st.session_state["cash_m_base"], step=10000, key="csh_m", on_change=clear_preset)
-        st.session_state["basis_ask_m"] = st.number_input("Aktiesparekonto (kr.)", value=st.session_state["basis_ask_m"], key="ask_m", on_change=clear_preset)
-        st.session_state["basis_frie_m"] = st.number_input("Frie midler / Aktier (kr.)", value=st.session_state["basis_frie_m"], key="fr_m", on_change=clear_preset)
-        st.session_state["use_bsu_m"] = st.toggle("Inddrag Norsk BSU", value=st.session_state.get("use_bsu_m", False), key="toggle_bsu_m", on_change=clear_preset)
-        
-        st.markdown("#### 💸 Markus' Udgifter")
-        m_tabs = st.tabs(["I Dag (Din opsparingsevne)", "Som Barista (Dit tids-mål)"])
-        
-        with m_tabs[0]:
-            st.markdown("<p style='font-size: 0.8em; color: gray;'>Beregner den månedlige opsparingsevne for Markus i dag.</p>", unsafe_allow_html=True)
-            df_idag_m = st.data_editor(pd.DataFrame(list(st.session_state["budget_idag_m"].items()), columns=["Kategori", "Beløb"]), hide_index=True, use_container_width=True, key="ed_idag_m", on_change=clear_preset)
-            st.session_state["budget_idag_m"] = dict(df_idag_m.values)
-
-        with m_tabs[1]:
-            st.markdown("<p style='font-size: 0.8em; color: gray;'>Beregner de fremtidige Barista-timer for Markus.</p>", unsafe_allow_html=True)
-            df_fire_m = st.data_editor(pd.DataFrame(list(st.session_state["budget_fire_m"].items()), columns=["Kategori", "Beløb"]), hide_index=True, use_container_width=True, key="ed_fire_m", on_change=clear_preset)
-            st.session_state["budget_fire_m"] = dict(df_fire_m.values)
 
 else:
     is_solo_mode = (st.session_state.get("secret_id", "").strip().lower() == "solo")
