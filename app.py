@@ -128,8 +128,8 @@ if "budget_fire_m" not in st.session_state:
 def show_rules_dialog():
     st.markdown("""
     * **Scenarie A (Tidslinjen):** X-aksen repræsenterer opsparingsfasen. Hvert år på grafen viser scenariet: *"Hvad nu hvis jeg arbejder fuldtid i X år mere og sparer op, inden jeg skifter til Barista FIRE?"*.
-    * **Skat (Frie Midler):** Frie midler anvender en effektiv gennemsnitsskat (22%/36%) på det årlige afkast for realistisk at simulere fremtidig skattepligt under opsparingen.
-    * **Pensions-overgang:** Frem til 67 år antager modellen, at du finansieres af Bridge-midler (Frie+ASK). Fra 67-90 år indgår den officielle pension som en glidende overgang, der sænker dit ugentlige timekrav betydeligt.
+    * **Skat (Frie Midler):** Frie midler anvender en effektiv gennemsnitsskat (22%/36%) på det årlige afkast for realistisk at simulere skattepligt under opsparingsfasen.
+    * **Pensions-overgang:** Frem til 67 år antager modellen, at du finansieres af Bridge-midler (Frie+ASK). Fra 67-90 år indgår den officielle pension som et aktiv der frigives og sænker arbejdstimerne.
     * **Udskudt Salg:** Hvis salget af Valby udskydes, låses friværdien. Modellen fremskriver asymmetrisk boliginflation og faste afdrag frem til Salgsåret.
     """)
 
@@ -385,9 +385,20 @@ def simulate_joint_fire_plan(scenario_name, boligpris, ydelse_key, ejerudgifter_
         inv_md_j_str = format_dkk(start_inv_md_j)
         fire_j_str = format_dkk(start_fire_j)
 
+        udb_m_str = format_dkk(faktisk_udbetaling_m)
+        ydelse_m_str = format_dkk(effektiv_realkreditydelse / 2)
+        ejer_m_str = format_dkk(effektiv_ejerudgift / 2)
+        depot_m_str = format_dkk(depot_free_m[0] + depot_ask_m[0])
+        inv_md_m_str = format_dkk(start_inv_md_m)
+        fire_m_str = format_dkk(start_fire_m)
+
     with col_j:
         st.subheader("JOHAN")
         st.markdown(f"**Mål-Udbetaling:** {udb_j_str} kr. | **Realkredit:** {ydelse_j_str} kr./md. | **Mdl. Udgifter (Fremtid):** {fire_j_str} kr./md.")
+    
+    with col_m:
+        st.subheader("MARKUS")
+        st.markdown(f"**Mål-Udbetaling:** {udb_m_str} kr. | **Realkredit:** {ydelse_m_str} kr./md. | **Mdl. Udgifter (Fremtid):** {fire_m_str} kr./md.")
 
     col_mc, col_tog, col_ejer = st.columns([0.5, 0.3, 0.2], vertical_alignment="bottom")
     with col_mc:
@@ -397,7 +408,7 @@ def simulate_joint_fire_plan(scenario_name, boligpris, ydelse_key, ejerudgifter_
     with col_ejer:
         st.number_input("Ejerudgift", value=int(ejerudgifter_standard), step=100, key=f"ejer_{ydelse_key_clean}", on_change=clear_preset)
 
-    table_data, plt_years, plt_depot_j, plt_hours_j = [], [], [], []
+    table_data, plt_years, plt_depot_j, plt_hours_j, plt_depot_m, plt_hours_m = [], [], [], [], [], []
     
     for year in range(0, 26):
         c_age_j, c_age_m = age_j + year, age_m + year
@@ -420,7 +431,8 @@ def simulate_joint_fire_plan(scenario_name, boligpris, ydelse_key, ejerudgifter_
             netto_bolig_faelles = (ny_lån_ydelse + current_ejerudgifter - ((ny_hovedstol * oml_total_rente / 12) * 0.256)) / 2
             
             diff_faelles = bolig_faelles_current - netto_bolig_faelles
-            start_fire_j -= diff_faelles; start_inv_md_j += diff_faelles
+            start_fire_j -= diff_faelles; start_inv_md_j += (diff_faelles / ((1 + global_inflation_rate)**year))
+            start_fire_m -= diff_faelles; start_inv_md_m += (diff_faelles / ((1 + global_inflation_rate)**year))
             bolig_faelles_current = netto_bolig_faelles
             
             depot_free_j += (equity_amt / 2)
@@ -432,6 +444,7 @@ def simulate_joint_fire_plan(scenario_name, boligpris, ydelse_key, ejerudgifter_
                 ny_valby_ydelse = valby_fast_restgaeld * (rente_mnd * (1 + rente_mnd)**(17*12)) / ((1 + rente_mnd)**(17*12) - 1)
                 ekstra_nominel_ydelse = ny_valby_ydelse - 8300
                 start_fire_j += (ekstra_nominel_ydelse / 2); start_inv_md_j -= (ekstra_nominel_ydelse / 2)
+                start_fire_m += (ekstra_nominel_ydelse / 2); start_inv_md_m -= (ekstra_nominel_ydelse / 2)
                 bolig_faelles_current += (ekstra_nominel_ydelse / 2)
 
         if year > 0:
@@ -475,9 +488,10 @@ def simulate_joint_fire_plan(scenario_name, boligpris, ydelse_key, ejerudgifter_
                     ny_bolig_faelles = (ny_ydelse + effektiv_ejerudgift * ((1 + global_inflation_rate)**year)) / 2
                     diff_faelles = (bolig_faelles_current * ((1 + global_inflation_rate)**year)) - ny_bolig_faelles
                     start_fire_j -= diff_faelles; start_inv_md_j += (diff_faelles / ((1 + global_inflation_rate)**year))
+                    start_fire_m -= diff_faelles; start_inv_md_m += (diff_faelles / ((1 + global_inflation_rate)**year))
                     bolig_faelles_current = ny_bolig_faelles / ((1 + global_inflation_rate)**year)
 
-            # --- MARKEDSAFKAST MED EFFEKTIV SKAT (Vigtigt for accumulation phase) ---
+            # --- MARKEDSAFKAST MED EFFEKTIV SKAT (Simulerer skattepligt under opsparingen) ---
             prog_limit_j = 79400 * ((1 + global_inflation_rate)**year)
             prog_limit_m = 79400 * ((1 + global_inflation_rate)**year)
             
@@ -496,14 +510,13 @@ def simulate_joint_fire_plan(scenario_name, boligpris, ydelse_key, ejerudgifter_
             depot_ask_j = np.maximum(0, depot_ask_j * (1 + current_ret * 0.83))
             depot_ask_m = np.maximum(0, depot_ask_m * (1 + current_ret * 0.83))
 
-            # --- OPSPARING TILFØJES ---
+            # --- FULD OPSPARING TILFØJES HVERT ÅR PÅ TIDSLINJEN ---
             if start_inv_md_j > 0: depot_free_j += start_inv_md_j * 12 * ((1 + global_inflation_rate)**year)
             if start_inv_md_m > 0: depot_free_m += start_inv_md_m * 12 * ((1 + global_inflation_rate)**year)
                 
             pension_j_current += st.session_state["pension_indb_j"] * 12 * ((1 + global_inflation_rate)**year)
             pension_m_current += st.session_state["pension_indb_m"] * 12 * ((1 + global_inflation_rate)**year)
 
-            # ASK opfyldning
             ask_limit_year = ask_base_limit * ((1 + global_inflation_rate)**year)
             
             space_j = np.maximum(0, ask_limit_year - depot_ask_j)
@@ -517,32 +530,84 @@ def simulate_joint_fire_plan(scenario_name, boligpris, ydelse_key, ejerudgifter_
             pension_j_current = np.maximum(0, pension_j_current * (1 + (current_ret * (1 - pal_tax))))
             pension_m_current = np.maximum(0, pension_m_current * (1 + (current_ret * (1 - pal_tax))))
 
-        # --- SNAPSHOT AF BARISTA-TIMER (Hvis man trækker stikket DETTE år) ---
+        # --- SNAPSHOT AF BARISTA-TIMER ---
         p_j = calculate_drawdown_monthly_income(depot_ask_j + depot_free_j, pension_j_current, c_age_j, pensionsalder_j, st.session_state.get("slider_drawdown", 3.5)/100, global_inflation_rate, use_real_drawdown)
+        p_m_drawdown = calculate_drawdown_monthly_income(depot_ask_m + depot_free_m, pension_m_current, c_age_m, pensionsalder_m, st.session_state.get("slider_drawdown", 3.5)/100, global_inflation_rate, use_real_drawdown)
+        p_m_total = p_m_drawdown + bsu_passive
+
         h_j_array = np.maximum(0, start_fire_j - p_j) / (global_barista_wage_net * ((1+global_inflation_rate)**year) * weeks_per_month)
+        h_m_array = np.maximum(0, start_fire_m - p_m_total) / (global_barista_wage_net * ((1+global_inflation_rate)**year) * weeks_per_month)
 
         if n_sims > 1:
-            if is_worst_case:
-                dep_j_val = np.percentile(depot_ask_j + depot_free_j, 10)
-                hr_j_val = np.percentile(h_j_array, 90)
-                table_data.append({"År": year, "J.alder": c_age_j, "J.depot (M)": f"{dep_j_val/1e6:.2f}", "J.Passiv (kr)": format_dkk(np.percentile(p_j, 10)), "J.Arbtid": f"{get_emoji_status(hr_j_val).split()[0]} {hr_j_val:.1f}t"})
-            else:
-                dep_j_val = np.median(depot_ask_j + depot_free_j)
-                hr_j_val = np.median(h_j_array)
-                table_data.append({"År": year, "J.alder": c_age_j, "J.depot (M)": f"{dep_j_val/1e6:.2f}", "J.Passiv (kr)": format_dkk(np.median(p_j)), "J.Arbtid": get_emoji_status(hr_j_val)})
-        else:
-            dep_j_val = depot_ask_j[0] + depot_free_j[0]
-            hr_j_val = h_j_array[0]
-            table_data.append({"År": year, "J.alder": c_age_j, "J.depot (M)": f"{dep_j_val/1e6:.2f}", "J.Passiv (kr)": format_dkk(p_j[0]), "J.Arbtid": get_emoji_status(h_j_array[0])})
+            med_dep_j = np.median(depot_ask_j + depot_free_j)
+            med_p_j = np.median(p_j)
+            med_h_j = np.median(h_j_array)
+            med_dep_m = np.median(depot_ask_m + depot_free_m)
+            med_p_m = np.median(p_m_total)
+            med_h_m = np.median(h_m_array)
 
-        plt_years.append(year); plt_depot_j.append(dep_j_val / 1e6); plt_hours_j.append(max(0, hr_j_val))
+            if is_worst_case:
+                p10_dep_j = np.percentile(depot_ask_j + depot_free_j, 10)
+                p10_p_j = np.percentile(p_j, 10)
+                p90_h_j = np.percentile(h_j_array, 90)
+                p10_dep_m = np.percentile(depot_ask_m + depot_free_m, 10)
+                p10_p_m = np.percentile(p_m_total, 10)
+                p90_h_m = np.percentile(h_m_array, 90)
+
+                dep_j_val, dep_m_val = p10_dep_j, p10_dep_m
+                hr_j_val, hr_m_val = p90_h_j, p90_h_m
+
+                table_data.append({
+                    "År": year, 
+                    "J.alder": c_age_j, 
+                    "J.depot (M)": f"{p10_dep_j/1e6:.2f}", 
+                    "J.Passiv (kr)": format_dkk(p10_p_j), 
+                    "J.Arbtid": f"{get_emoji_status(p90_h_j).split()[0]} {p90_h_j:.1f}t",
+                    "M.alder": c_age_m, 
+                    "M.depot (M)": f"{p10_dep_m/1e6:.2f}", 
+                    "M.Passiv (kr)": format_dkk(p10_p_m), 
+                    "M.Arbtid": f"{get_emoji_status(p90_h_m).split()[0]} {p90_h_m:.1f}t"
+                })
+            else:
+                dep_j_val, dep_m_val = med_dep_j, med_dep_m
+                hr_j_val, hr_m_val = med_h_j, med_h_m
+                table_data.append({
+                    "År": year, 
+                    "J.alder": c_age_j, 
+                    "J.depot (M)": f"{med_dep_j/1e6:.2f}", 
+                    "J.Passiv (kr)": format_dkk(med_p_j), 
+                    "J.Arbtid": get_emoji_status(med_h_j),
+                    "M.alder": c_age_m, 
+                    "M.depot (M)": f"{med_dep_m/1e6:.2f}", 
+                    "M.Passiv (kr)": format_dkk(med_p_m), 
+                    "M.Arbtid": get_emoji_status(med_h_m)
+                })
+        else:
+            dep_j_val, dep_m_val = depot_ask_j[0] + depot_free_j[0], depot_ask_m[0] + depot_free_m[0]
+            hr_j_val, hr_m_val = h_j_array[0], h_m_array[0]
+            table_data.append({
+                "År": year, 
+                "J.alder": c_age_j, 
+                "J.depot (M)": f"{dep_j_val/1e6:.2f}", 
+                "J.Passiv (kr)": format_dkk(p_j[0]), 
+                "J.Arbtid": get_emoji_status(h_j_array[0]),
+                "M.alder": c_age_m, 
+                "M.depot (M)": f"{dep_m_val/1e6:.2f}", 
+                "M.Passiv (kr)": format_dkk(p_m_total[0]), 
+                "M.Arbtid": get_emoji_status(h_m_array[0])
+            })
+
+        plt_years.append(year); plt_depot_j.append(dep_j_val / 1e6); plt_depot_m.append(dep_m_val / 1e6)
+        plt_hours_j.append(max(0, hr_j_val)); plt_hours_m.append(max(0, hr_m_val))
 
     st.table(pd.DataFrame(table_data).set_index("År"))
 
     # RENDERING AF PLOTLY GRAF
     fig = make_subplots(specs=[[{"secondary_y": True}]])
     fig.add_trace(go.Scatter(x=plt_years, y=plt_depot_j, name="Johans Formue (Mio)", stackgroup='one', fillcolor='rgba(140, 133, 123, 0.6)', line=dict(width=0), hoverinfo='x+y+name'), secondary_y=True)
+    fig.add_trace(go.Scatter(x=plt_years, y=plt_depot_m, name="Markus' Formue (Mio)", stackgroup='one', fillcolor='rgba(181, 174, 159, 0.6)', line=dict(width=0), hoverinfo='x+y+name'), secondary_y=True)
     fig.add_trace(go.Scatter(x=plt_years, y=plt_hours_j, name="Johan Timer/Uge", mode='lines+markers', line=dict(color='#F25C84', width=3), hoverinfo='x+y+name'), secondary_y=False)
+    fig.add_trace(go.Scatter(x=plt_years, y=plt_hours_m, name="Markus Timer/Uge", mode='lines+markers', line=dict(color='#2c2925', width=3, dash='dot'), hoverinfo='x+y+name'), secondary_y=False)
 
     fig.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', hovermode="x unified", margin=dict(l=0, r=0, t=20, b=10), legend=dict(orientation="h", yanchor="bottom", y=1.05, xanchor="center", x=0.5), font=dict(color="#2c2925"))
     fig.update_yaxes(title_text="Barista Timer", secondary_y=False, showgrid=True, gridcolor='rgba(200, 200, 200, 0.2)', zeroline=False, rangemode='tozero', tickfont=dict(size=14, color="#2c2925"))
@@ -704,7 +769,7 @@ def simulate_solo_fire_plan(scenario_name, boligpris, ydelse_key, ejerudgifter_s
                     start_fire_j -= diff_bolig; start_inv_md_j += (diff_bolig / ((1 + global_inflation_rate)**year))
                     bolig_total_current = ny_bolig_total / ((1 + global_inflation_rate)**year)
 
-            # --- MARKEDSAFKAST MED EFFEKTIV SKAT ---
+            # --- MARKEDSAFKAST MED EFFEKTIV SKAT (Simulerer skattepligt under opsparingen) ---
             prog_limit_j = 79400 * ((1 + global_inflation_rate)**year)
             return_frie_j = depot_free_j * current_ret
             tax_j = np.where(return_frie_j <= prog_limit_j, return_frie_j * 0.22, prog_limit_j * 0.22 + (return_frie_j - prog_limit_j) * 0.36)
@@ -714,7 +779,7 @@ def simulate_solo_fire_plan(scenario_name, boligpris, ydelse_key, ejerudgifter_s
             # ASK (Lagerbeskatning 17%)
             depot_ask_j = np.maximum(0, depot_ask_j * (1 + current_ret * 0.83))
             
-            # --- OPSPARING TILFØJES ---
+            # --- FULD OPSPARING TILFØJES HVERT ÅR PÅ TIDSLINJEN ---
             if start_inv_md_j > 0: depot_free_j += start_inv_md_j * 12 * ((1 + global_inflation_rate)**year)
             pension_j_current += st.session_state["pension_indb_j"] * 12 * ((1 + global_inflation_rate)**year)
 
