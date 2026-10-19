@@ -270,6 +270,7 @@ def simulate_joint_fire_plan(scenario_name, boligpris, ydelse_key, ejerudgifter_
     use_equity = st.session_state.get(f"use_equity_{ydelse_key_clean}", False)
     equity_amt = st.session_state.get(f"equity_amount_{ydelse_key_clean}", 1000000) if use_equity else 0
 
+    use_real_drawdown = st.session_state.get("use_real_drawdown", False)
     use_ask_500k = st.session_state.get("use_ask_500k", False)
     ask_base_limit = 500000 if use_ask_500k else 174000
 
