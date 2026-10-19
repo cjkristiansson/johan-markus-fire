@@ -175,7 +175,7 @@ global_inflation_rate = st.sidebar.slider("Årlig inflation (%)", min_value=0.0,
 st.sidebar.toggle("Købekraftsjusteret udtræk i FIRE-fasen", key="use_real_drawdown", help="Tvinger modellen til at reservere en del af aktieafkastet til at beskytte hovedstolen mod inflation.", on_change=clear_preset)
 
 st.sidebar.divider()
-st.sidebar.markdown("### ⚖️ Juridisk Risiko (Badeværelse)")
+st.sidebar.markdown("### Juridisk (Badeværelse)")
 global_legal_risk = st.sidebar.toggle("Indregn potentiel erstatningssag", value=True, on_change=clear_preset, help="Tager højde for regningen til badeværelset ved at trække beløbet permanent fra din startformue (Johans Frie Midler) i År 0.")
 if global_legal_risk:
     global_legal_amount = st.sidebar.slider("Forventet regning (kr.)", min_value=0, max_value=150000, value=75000, step=5000, on_change=clear_preset)
