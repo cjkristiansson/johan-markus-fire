@@ -175,14 +175,6 @@ global_inflation_rate = st.sidebar.slider("Årlig inflation (%)", min_value=0.0,
 st.sidebar.toggle("Købekraftsjusteret udtræk i FIRE-fasen", key="use_real_drawdown", help="Tvinger modellen til at reservere en del af aktieafkastet til at beskytte hovedstolen mod inflation.", on_change=clear_preset)
 
 st.sidebar.divider()
-st.sidebar.markdown("### Juridisk (Badeværelse)")
-global_legal_risk = st.sidebar.toggle("Indregn potentiel erstatningssag", value=True, on_change=clear_preset, help="Tager højde for regningen til badeværelset ved at trække beløbet permanent fra din startformue (Johans Frie Midler) i År 0.")
-if global_legal_risk:
-    global_legal_amount = st.sidebar.slider("Forventet regning (kr.)", min_value=0, max_value=150000, value=75000, step=5000, on_change=clear_preset)
-else:
-    global_legal_amount = 0
-
-st.sidebar.divider()
 st.sidebar.markdown("### Monte Carlo Simulering")
 mc_volatility = st.sidebar.slider("Markedsvolatilitet (%)", min_value=5.0, max_value=25.0, value=15.0, step=1.0, on_change=clear_preset) / 100
 mc_btn_label = "Slå Monte Carlo FRA" if st.session_state.get("mc_active", False) else "Beregn Monte Carlo"
@@ -358,9 +350,6 @@ def simulate_joint_fire_plan(scenario_name, boligpris, ydelse_key, ejerudgifter_
         restgaeld_start = valby_fast_restgaeld
         locked_frivaerdi_j = float(st.session_state.get("forbrugskonti_j", 0) + st.session_state.get("frivaerdi_j", 0))
         locked_frivaerdi_m = float(st.session_state["cash_m_base"])
-
-    # TRÆK JURIDISK RISIKO FRA JOHANS FRIE MIDLER
-    base_frie_j -= global_legal_amount
 
     depot_free_j = np.full(n_sims, base_frie_j, dtype=float)
     depot_free_m = np.full(n_sims, base_frie_m, dtype=float)
@@ -692,9 +681,6 @@ def simulate_solo_fire_plan(scenario_name, boligpris, ydelse_key, ejerudgifter_s
         bolig_total_current = (15230 - 6930 if nuvaerende_afdragsfri else 15230) + 3374
         restgaeld_start = valby_fast_restgaeld
         locked_frivaerdi_j = float(cash_j)
-
-    # TRÆK JURIDISK RISIKO FRA JOHANS FRIE MIDLER
-    base_frie_j -= global_legal_amount
 
     depot_free_j = np.full(n_sims, base_frie_j, dtype=float)
     depot_ask_j = np.full(n_sims, st.session_state["basis_ask_j"], dtype=float)
