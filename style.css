@@ -14,6 +14,25 @@
     padding: 1rem 1rem 0 1rem !important; 
 }
 
+    /* --- BULLETPROOF TAB SELECTORS --- */
+    [data-testid="stTabs"] button *,
+    div[data-baseweb="tab-list"] button * {
+        color: #a8a29e !important; /* Lighter gray for unselected tabs */
+    }
+    
+    [data-testid="stTabs"] button[aria-selected="true"] *,
+    div[data-baseweb="tab-list"] button[aria-selected="true"] * {
+        color: #ffffff !important; /* Bright white for active tab */
+        font-weight: 600 !important;
+    }
+
+    /* --- BULLETPROOF TABLE HEADERS --- */
+    [data-testid="stTable"] th, 
+    [data-testid="stTable"] th * {
+        background-color: #32302d !important;
+        color: #ffffff !important;
+    }
+
 @media (max-width: 768px) {
     .stMain .block-container {
         padding-top: 4.5rem !important; 
