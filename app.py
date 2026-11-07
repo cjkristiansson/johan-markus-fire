@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
-import urllib.parse
+import urllib.parse 
 
 # Konfiguration
 st.set_page_config(page_title="FIRE Dashboard", layout="wide", initial_sidebar_state="expanded")
