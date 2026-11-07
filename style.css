@@ -255,13 +255,13 @@ div[data-baseweb="tab-list"] button[aria-selected="true"] p {
 }
 
 /* ========================================================= */
-/* --- DARK MODE OVERRIDES ---                               */
+/* --- DARK MODE OVERRIDES (ACCESSIBILITY IMPROVED) ---      */
 /* ========================================================= */
 @media (prefers-color-scheme: dark) {
     /* Base Container & Header */
     html, body, [class*="css"], .stApp {
         background-color: #1c1b1a !important;
-        color: #e5e7eb !important;
+        color: #f3f4f6 !important;
     }
     
     header[data-testid="stHeader"] {
@@ -269,7 +269,7 @@ div[data-baseweb="tab-list"] button[aria-selected="true"] p {
     }
 
     h1, h1 *, h2, h3, h4 {
-        color: #f3f4f6 !important;
+        color: #ffffff !important;
     }
 
     /* Dividers */
@@ -283,8 +283,7 @@ div[data-baseweb="tab-list"] button[aria-selected="true"] p {
         background-color: #2a2826 !important;
         border: 1px solid #4a4744 !important;
     }
-    [data-testid="stBaseButton-pills"] p,
-    [data-testid="stBaseButton-pills"] span {
+    [data-testid="stBaseButton-pills"] * {
         color: #d1d5db !important;
     }
     
@@ -292,20 +291,22 @@ div[data-baseweb="tab-list"] button[aria-selected="true"] p {
         background-color: #f3f4f6 !important;
         border: 1px solid #f3f4f6 !important;
     }
-    [data-testid="stBaseButton-pillsActive"] p,
-    [data-testid="stBaseButton-pillsActive"] span {
-        color: #1c1b1a !important;
+    /* Force active pill text to be dark for contrast */
+    [data-testid="stBaseButton-pillsActive"] * {
+        color: #1c1b1a !important; 
+        font-weight: 600 !important;
     }
 
-    /* Tving labels frem (Gælder overalt: Main og Sidebar) */
+    /* Force labels */
     [data-testid="stWidgetLabel"],
+    [data-testid="stWidgetLabel"] *,
     [data-testid="stWidgetLabel"] div,
     [data-testid="stWidgetLabel"] p,
     [data-testid="stWidgetLabel"] span {
         color: #e5e7eb !important;
     }
 
-    /* --- SLIDERS (Tekst, min/max, nuværende værdi) --- */
+    /* --- SLIDERS --- */
     [data-testid="stSlider"] p,
     [data-testid="stSlider"] span,
     [data-testid="stThumbValue"],
@@ -314,11 +315,8 @@ div[data-baseweb="tab-list"] button[aria-selected="true"] p {
         color: #e5e7eb !important;
     }
 
-    /* --- TOGGLES TEKST EKSTRA SIKRING --- */
-    /* Rammer indholdet uanset om Streamlit bruger en div, p, span eller specifik baseweb-komponent */
+    /* --- TOGGLES TEKST --- */
     [data-testid="stToggle"] *,
-    [data-testid="stToggle"] p,
-    [data-testid="stToggle"] span,
     div[data-baseweb="checkbox"] p,
     div[data-baseweb="checkbox"] span,
     div[data-baseweb="checkbox"] div {
@@ -326,15 +324,14 @@ div[data-baseweb="tab-list"] button[aria-selected="true"] p {
         -webkit-text-fill-color: #e5e7eb !important;
     }
 
-    /* --- RADIO BUTTONS (Main & Sidebar) --- */
+    /* --- RADIO BUTTONS --- */
     div[role="radiogroup"] label p,
     div[role="radiogroup"] label span,
     div[role="radiogroup"] div {
         color: #e5e7eb !important;
     }
 
-    /* --- INPUT FELTER (Tekst, Tal etc.) --- */
-    /* Fjerner den hvide baggrund og sætter mørk farve */
+    /* --- INPUT FELTER & KONTROLLER (+/-) --- */
     .stTextInput div[data-baseweb="input"],
     .stNumberInput div[data-baseweb="input"],
     div[data-baseweb="base-input"] {
@@ -350,7 +347,19 @@ div[data-baseweb="tab-list"] button[aria-selected="true"] p {
         background-color: #2a2826 !important;
     }
 
-    /* --- CHEVRON / SIDEBAR KONTROL (Inkluderer mobil hamburger/chevron) --- */
+    /* Fix white +/- buttons on Number Inputs */
+    .stNumberInput button,
+    [data-testid="stNumberInputStepUp"],
+    [data-testid="stNumberInputStepDown"] {
+        background-color: #32302d !important;
+        color: #e5e7eb !important;
+        border-color: #4a4744 !important;
+    }
+    .stNumberInput button svg {
+        fill: #e5e7eb !important;
+    }
+
+    /* --- CHEVRON / SIDEBAR KONTROL --- */
     [data-testid="stSidebarCollapseButton"],
     [data-testid="stSidebarCollapseButton"] svg,
     [data-testid="collapsedControl"],
@@ -380,7 +389,7 @@ div[data-baseweb="tab-list"] button[aria-selected="true"] p {
         color: #e5e7eb !important;
     }
 
-    /* --- TOGGLES (Baggrund og Ikon) --- */
+    /* --- TOGGLES (Baggrund) --- */
     [data-testid="stToggle"] div[data-baseweb="checkbox"] > div:first-child {
         background-color: #625f5c !important; 
         border: 1px solid #7a7772 !important;
@@ -420,7 +429,7 @@ div[data-baseweb="tab-list"] button[aria-selected="true"] p {
         color: #1c1b1a !important; 
     }
 
-    /* --- ØVRIGE ELEMENTER --- */
+    /* --- EXPANDERS --- */
     [data-testid="stExpander"] {
         background-color: #1c1b1a !important;
         border: 1px solid #3a3835 !important;
@@ -430,15 +439,7 @@ div[data-baseweb="tab-list"] button[aria-selected="true"] p {
         color: #e5e7eb !important;
     }
     
-    [data-testid="stSegmentedControl"] button {
-        background-color: #2a2826 !important;
-        border: 1px solid #4a4744 !important;
-    }
-    [data-testid="stSegmentedControl"] button[data-selected="true"] {
-        background-color: #f3f4f6 !important; 
-        color: #1c1b1a !important; 
-    }
-
+    /* --- TABS (Fixed Contrast) --- */
     div[data-baseweb="tab-list"] {
         border-bottom: 1px solid #3a3835;
     }
@@ -446,19 +447,33 @@ div[data-baseweb="tab-list"] button[aria-selected="true"] p {
         border-bottom: 2px solid #f3f4f6 !important;
     }
     div[data-baseweb="tab-list"] button p {
-        color: #8b8986 !important;
+        color: #a8a29e !important; /* Lighter gray for readability */
     }
     div[data-baseweb="tab-list"] button[aria-selected="true"] p {
-        color: #f3f4f6 !important;
+        color: #ffffff !important;
     }
 
-    /* Tabeller */
+    /* --- CHARTS (Forcing SVG Text Visibility) --- */
+    [data-testid="stVegaLiteChart"] text,
+    [data-testid="stArrowVegaLiteChart"] text,
+    .marks text {
+        fill: #d1d5db !important;
+    }
+    
+    .js-plotly-plot .g-gtitle text,
+    .js-plotly-plot .g-xtitle text,
+    .js-plotly-plot .g-ytitle text,
+    .js-plotly-plot .legendtext {
+        fill: #d1d5db !important;
+    }
+
+    /* --- TABELLER --- */
     [data-testid="stTable"] {
         border-color: #4a4744 !important;
     }
     [data-testid="stTable"] th {
         background-color: #32302d !important;
-        color: #f3f4f6 !important;
+        color: #ffffff !important;
         border-color: #4a4744 !important;
     }
     [data-testid="stTable"] td {
