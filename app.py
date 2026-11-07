@@ -247,13 +247,13 @@ def calculate_drawdown_monthly_income(depot_bridge_arr, depot_pension_arr, curre
 
 def get_emoji_status(barista_hours):
     try:
-        if pd.isna(barista_hours) or np.isnan(barista_hours) or np.isinf(barista_hours): return "0.0t"
-        if barista_hours <= 0: return "0.0t"
-        elif 0 < barista_hours <= 15: return f"{barista_hours:.1f}t"
-        elif 15 < barista_hours <= 25: return f"{barista_hours:.1f}t"
-        else: return f"{barista_hours:.1f}t"
+        if pd.isna(barista_hours) or np.isnan(barista_hours) or np.isinf(barista_hours): return "🏁 0.0t"
+        if barista_hours <= 0: return "🏁 0.0t"
+        elif 0 < barista_hours <= 15: return f"🟢 {barista_hours:.1f}t"
+        elif 15 < barista_hours <= 25: return f"🟡 {barista_hours:.1f}t"
+        else: return f"🔴 {barista_hours:.1f}t"
     except:
-        return "0.0t"
+        return "🏁 0.0t"
 
 # --- DYNAMISKE SIMULERINGSFUNKTIONER ---
 def simulate_joint_fire_plan(scenario_name, boligpris, ydelse_key, ejerudgifter_standard, bolig_solgt):
@@ -604,11 +604,11 @@ def simulate_joint_fire_plan(scenario_name, boligpris, ydelse_key, ejerudgifter_
                     "J.alder": c_age_j, 
                     "J.depot (M)": f"{p10_dep_j/1e6:.2f}", 
                     "J.Passiv (kr)": format_dkk(p10_p_j), 
-                    "J.Arbtid": f"{get_emoji_status(p90_h_j).split()[0]} {p90_h_j:.1f}",
+                    "J.Arbtid": f"{get_emoji_status(p90_h_j).split()[0]} {p90_h_j:.1f}t",
                     "M.alder": c_age_m, 
                     "M.depot (M)": f"{p10_dep_m/1e6:.2f}", 
                     "M.Passiv (kr)": format_dkk(p10_p_m), 
-                    "M.Arbtid": f"{get_emoji_status(p90_h_m).split()[0]} {p90_h_m:.1f}"
+                    "M.Arbtid": f"{get_emoji_status(p90_h_m).split()[0]} {p90_h_m:.1f}t"
                 })
             else:
                 dep_j_val, dep_m_val = med_dep_j, med_dep_m
@@ -848,13 +848,14 @@ def simulate_solo_fire_plan(scenario_name, boligpris, ydelse_key, ejerudgifter_s
                     bolig_total_current = ny_bolig_total / ((1 + global_inflation_rate)**year)
                     restgaeld_start = skaleret_loan
 
-            # --- MARKEDSAFKAST MED EFFEKTIV SKAT ---
+            # --- MARKEDSAFKAST MED EFFEKTIV SKAT (Simulerer skattepligt under opsparingen) ---
             prog_limit_j = 79400 * ((1 + global_inflation_rate)**year)
             return_frie_j = depot_free_j * current_ret
             tax_j = np.where(return_frie_j <= prog_limit_j, return_frie_j * 0.22, prog_limit_j * 0.22 + (return_frie_j - prog_limit_j) * 0.36)
             tax_j = np.where(current_ret > 0, tax_j, 0)
             depot_free_j = np.maximum(0, depot_free_j + return_frie_j - tax_j)
             
+            # ASK (Lagerbeskatning 17%)
             depot_ask_j = np.maximum(0, depot_ask_j * (1 + current_ret * 0.83))
             
             # --- FULD OPSPARING TILFØJES (AKKUMULERINGSFASE) ---
@@ -879,7 +880,7 @@ def simulate_solo_fire_plan(scenario_name, boligpris, ydelse_key, ejerudgifter_s
             if is_worst_case:
                 p10_dep_j, p10_p_j, p90_h_j = np.percentile(depot_ask_j + depot_free_j, 10), np.percentile(p_j, 10), np.percentile(h_j_array, 90)
                 dep_j_val, hr_j_val = p10_dep_j, p90_h_j
-                table_data.append({"År": year, "Alder": c_age_j, "Depot (M)": f"{p10_dep_j/1e6:.2f}", "Passiv Indkomst (kr)": format_dkk(p10_p_j), "Arbejdstid (Barista)": f"{get_emoji_status(p90_h_j).split()[0]} {p90_h_j:.1f}"})
+                table_data.append({"År": year, "Alder": c_age_j, "Depot (M)": f"{p10_dep_j/1e6:.2f}", "Passiv Indkomst (kr)": format_dkk(p10_p_j), "Arbejdstid (Barista)": f"{get_emoji_status(p90_h_j).split()[0]} {p90_h_j:.1f}t"})
             else:
                 dep_j_val, hr_j_val = med_dep_j, med_h_j
                 table_data.append({"År": year, "Alder": c_age_j, "Depot (M)": f"{med_dep_j/1e6:.2f}", "Passiv Indkomst (kr)": format_dkk(med_p_j), "Arbejdstid (Barista)": get_emoji_status(med_h_j)})
