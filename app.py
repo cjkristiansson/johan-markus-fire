@@ -113,13 +113,13 @@ if "valby_pris_input" not in st.session_state: st.session_state["valby_pris_inpu
 
 # Personlige budgetter - I DAG
 if "budget_idag_j" not in st.session_state:
-    st.session_state["budget_idag_j"] = {"Mad": 6000, "Renovering": 1000, "A_kasse_Fagforening": 672, "Internet": 0, "Ferie": 1500, "Puregym": 279, "Forsikringer": 170, "Transport": 730, "Frisoer": 450, "Toej": 1200, "Telefon": 100, "Spotify_Cloud": 100, "Charity": 100, "Oevrig": 3000}
+    st.session_state["budget_idag_j"] = {"Mad": 6000, "Renovering": 1000, "A_kasse_Fagforening": 672, "Internet": 0, "Ferie": 1500, "Puregym": 279, "Forsikringer": 170, "Transport": 730, "Frisoer": 450, "Toej": 1200, "Telefon": 100, "Spotify_Cloud": 100, "Charity": 100, "Oevrig": 4500}
 if "budget_idag_m" not in st.session_state:
     st.session_state["budget_idag_m"] = {"Studielaan": 1600, "Mad": 0, "Renovering": 1000, "A_kasse_Fagforening": 520, "Internet": 0, "Ferie": 1500, "Puregym": 0, "Forsikringer": 170, "Transport": 500, "Frisoer": 450, "Toej": 1200, "Telefon": 300, "Streaming": 565, "Charity": 100, "Oevrig": 3000}
 
 # Personlige budgetter - BARISTA FIRE
 if "budget_fire_j" not in st.session_state:
-    st.session_state["budget_fire_j"] = {"Mad": 3000, "Renovering": 1000, "A_kasse_Fagforening": 542, "Internet": 100, "Ferie": 1500, "Puregym": 279, "Forsikringer": 170, "Transport": 730, "Frisoer": 450, "Toej": 1200, "Telefon": 100, "Spotify_Cloud": 100, "Charity": 100, "Oevrig": 3000}
+    st.session_state["budget_fire_j"] = {"Mad": 3000, "Renovering": 1000, "A_kasse_Fagforening": 542, "Internet": 100, "Ferie": 1500, "Puregym": 279, "Forsikringer": 170, "Transport": 730, "Frisoer": 450, "Toej": 1200, "Telefon": 100, "Spotify_Cloud": 100, "Charity": 100, "Oevrig": 4500}
 if "budget_fire_m" not in st.session_state:
     st.session_state["budget_fire_m"] = {"Studielaan": 1600, "Mad": 3000, "Renovering": 1000, "A_kasse_Fagforening": 520, "Internet": 0, "Ferie": 1500, "Puregym": 0, "Forsikringer": 170, "Transport": 500, "Frisoer": 450, "Toej": 1200, "Telefon": 300, "Streaming": 565, "Charity": 100, "Oevrig": 3000}
 
@@ -176,7 +176,7 @@ st.sidebar.toggle("Købekraftsjusteret udtræk i FIRE-fasen", key="use_real_draw
 
 st.sidebar.divider()
 st.sidebar.markdown("### ⚖️ Juridisk Risiko (Badeværelse)")
-global_legal_risk = st.sidebar.toggle("Indregn potentiel erstatningssag", value=True, on_change=clear_preset, help="Tager højde for regningen til badeværelset ved at trække beløbet permanent fra din startformue (Johans Frie Midler) i År 0.")
+global_legal_risk = st.sidebar.toggle("Indregn potentiel erstatningssag", value=True, on_change=clear_preset, help="Tager højde for regningen til badeværelset ved at trække beløbet permanent fra din startformue i År 0.")
 if global_legal_risk:
     global_legal_amount = st.sidebar.slider("Forventet regning (kr.)", min_value=0, max_value=150000, value=75000, step=5000, on_change=clear_preset)
 else:
@@ -197,6 +197,9 @@ global_salgsomkostninger = st.sidebar.number_input("Salgsomkostninger (kr.)", mi
 st.sidebar.divider()
 st.sidebar.markdown("### Boligfinansiering (Nye boliger)")
 global_loan_type = st.sidebar.radio("Lånetype", ["Standard lån (F3 Med afdrag)", "FlexLife (F3 30 år afdragsfri)"], on_change=clear_preset, label_visibility="collapsed")
+global_afdragsfri_10 = False
+if global_loan_type == "Standard lån (F3 Med afdrag)":
+    global_afdragsfri_10 = st.sidebar.toggle("Tilføj 10 års afdragsfrihed", value=False, on_change=clear_preset, help="Fjerner afdrag de første 10 år, hvorefter lånet afdrages aggressivt over 20 år.")
 
 st.sidebar.divider()
 st.sidebar.markdown("### Skattepolitik")
@@ -263,7 +266,7 @@ def simulate_joint_fire_plan(scenario_name, boligpris, ydelse_key, ejerudgifter_
     aktiver_oml = st.session_state.get(f"aktiver_oml_{ydelse_key_clean}", False)
     oml_aar = st.session_state.get(f"oml_aar_{ydelse_key_clean}", 5)
     oml_rente = st.session_state.get(f"oml_rente_{ydelse_key_clean}", 4.0) / 100
-    oml_bidrag = st.session_state.get(f"oml_bidrag_{ydelse_key_clean}", 0.45) / 100
+    oml_bidrag = st.session_state.get(f"oml_bidrag_{ydelse_key_clean}", 0.38) / 100
     oml_total_rente = oml_rente + oml_bidrag
     oml_afdrag_fri = st.session_state.get(f"oml_afdrag_fri_{ydelse_key_clean}", True)
     oml_omk = st.session_state.get(f"oml_omk_{ydelse_key_clean}", 50000)
@@ -307,8 +310,13 @@ def simulate_joint_fire_plan(scenario_name, boligpris, ydelse_key, ejerudgifter_
         target_total_udb = boligpris * 0.60
         ui_cash_pct, ui_loan_pct = 60, 40
         loan_amt = boligpris * 0.40
-        r_total = (0.0341 + 0.0045) / 12
-        brutto_md = loan_amt * (r_total * (1 + r_total)**360) / ((1 + r_total)**360 - 1)
+        r_total = (0.0341 + 0.0038) / 12  # Opdateret bidragssats
+        
+        if global_loan_type == "Standard lån (F3 Med afdrag)" and global_afdragsfri_10:
+            brutto_md = loan_amt * r_total
+        else:
+            brutto_md = loan_amt * (r_total * (1 + r_total)**360) / ((1 + r_total)**360 - 1)
+        
         effektiv_realkreditydelse_default = int(brutto_md - (loan_amt * r_total * 0.256))
 
     with st.expander("🏠 Vis økonomiske detaljer & lån", expanded=False):
@@ -325,6 +333,8 @@ def simulate_joint_fire_plan(scenario_name, boligpris, ydelse_key, ejerudgifter_
                     effektiv_realkreditydelse = brutto_md * (1 - 0.256)
                 else:
                     effektiv_realkreditydelse = st.number_input("Manuel ydelse (kr./md.)", value=effektiv_realkreditydelse_default, step=100, key=ydelse_key, on_change=clear_preset, label_visibility="collapsed")
+                    if global_afdragsfri_10:
+                        st.markdown("<p style='font-size: 0.8em; color: gray; margin-top: -10px;'>* 10 års afdragsfrihed aktiv</p>", unsafe_allow_html=True)
 
     if actual_salgsaar == 0:
         bsu_passive = 0 if (use_bsu and bolig_solgt) else (983 if use_bsu else 0)
@@ -449,6 +459,7 @@ def simulate_joint_fire_plan(scenario_name, boligpris, ydelse_key, ejerudgifter_
             depot_free_j += (equity_amt / 2)
             depot_free_m += (equity_amt / 2)
 
+        # Udløb af afdragsfrihed i Valby (År 10 chok)
         if is_valby and nuvaerende_afdragsfri and year == 10:
             if not (aktiver_oml and oml_aar <= 10) and (actual_salgsaar == 0 or actual_salgsaar > 10):
                 rente_mnd = 0.024 / 12
@@ -457,6 +468,22 @@ def simulate_joint_fire_plan(scenario_name, boligpris, ydelse_key, ejerudgifter_
                 start_fire_j += (ekstra_nominel_ydelse / 2); start_inv_md_j -= (ekstra_nominel_ydelse / 2)
                 start_fire_m += (ekstra_nominel_ydelse / 2); start_inv_md_m -= (ekstra_nominel_ydelse / 2)
                 bolig_faelles_current += (ekstra_nominel_ydelse / 2)
+                
+        # Udløb af 10-års afdragsfrihed for NYE boliger (År 10 chokket)
+        if not is_valby and global_loan_type == "Standard lån (F3 Med afdrag)" and global_afdragsfri_10 and year == (actual_salgsaar + 10):
+            r_tot_chok = (0.0341 + 0.0038) / 12
+            ny_brutto_md = restgaeld_start * (r_tot_chok * (1 + r_tot_chok)**240) / ((1 + r_tot_chok)**240 - 1)
+            ny_effektiv = ny_brutto_md - (restgaeld_start * r_tot_chok * 0.256)
+            
+            gammel_brutto_md = restgaeld_start * r_tot_chok
+            gammel_effektiv = gammel_brutto_md - (restgaeld_start * r_tot_chok * 0.256)
+            
+            ekstra_netto_ydelse = ny_effektiv - gammel_effektiv
+            ekstra_infl_justeret = ekstra_netto_ydelse / ((1 + global_inflation_rate)**year)
+            
+            start_fire_j += (ekstra_infl_justeret / 2); start_inv_md_j -= (ekstra_infl_justeret / 2)
+            start_fire_m += (ekstra_infl_justeret / 2); start_inv_md_m -= (ekstra_infl_justeret / 2)
+            bolig_faelles_current += (ekstra_infl_justeret / 2)
 
         if year > 0:
             start_fire_j *= (1 + global_inflation_rate); start_fire_m *= (1 + global_inflation_rate)
@@ -493,14 +520,19 @@ def simulate_joint_fire_plan(scenario_name, boligpris, ydelse_key, ejerudgifter_
                     if global_loan_type == "FlexLife (F3 30 år afdragsfri)":
                         ny_ydelse = ((skaleret_loan * (0.0341 + 0.0055)) / 12) * (1 - 0.256)
                     else:
-                        brutto_md = skaleret_loan * ((0.0386/12) * (1 + 0.0386/12)**360) / ((1 + 0.0386/12)**360 - 1)
-                        ny_ydelse = brutto_md - (skaleret_loan * (0.0386/12) * 0.256)
+                        r_tot_ny = (0.0341 + 0.0038) / 12
+                        if global_afdragsfri_10:
+                            brutto_md = skaleret_loan * r_tot_ny
+                        else:
+                            brutto_md = skaleret_loan * (r_tot_ny * (1 + r_tot_ny)**360) / ((1 + r_tot_ny)**360 - 1)
+                        ny_ydelse = brutto_md - (skaleret_loan * r_tot_ny * 0.256)
                     
                     ny_bolig_faelles = (ny_ydelse + effektiv_ejerudgift * ((1 + global_inflation_rate)**year)) / 2
                     diff_faelles = (bolig_faelles_current * ((1 + global_inflation_rate)**year)) - ny_bolig_faelles
                     start_fire_j -= diff_faelles; start_inv_md_j += (diff_faelles / ((1 + global_inflation_rate)**year))
                     start_fire_m -= diff_faelles; start_inv_md_m += (diff_faelles / ((1 + global_inflation_rate)**year))
                     bolig_faelles_current = ny_bolig_faelles / ((1 + global_inflation_rate)**year)
+                    restgaeld_start = skaleret_loan
 
             # --- MARKEDSAFKAST MED EFFEKTIV SKAT (Simulerer skattepligt under opsparingen) ---
             prog_limit_j = 79400 * ((1 + global_inflation_rate)**year)
@@ -636,7 +668,7 @@ def simulate_solo_fire_plan(scenario_name, boligpris, ydelse_key, ejerudgifter_s
 
     aktiver_oml = st.session_state.get(f"aktiver_oml_{ydelse_key_clean}", False)
     oml_aar = st.session_state.get(f"oml_aar_{ydelse_key_clean}", 5)
-    oml_total_rente = st.session_state.get(f"oml_rente_{ydelse_key_clean}", 4.0)/100 + st.session_state.get(f"oml_bidrag_{ydelse_key_clean}", 0.45)/100
+    oml_total_rente = st.session_state.get(f"oml_rente_{ydelse_key_clean}", 4.0)/100 + st.session_state.get(f"oml_bidrag_{ydelse_key_clean}", 0.38)/100
     oml_afdrag_fri = st.session_state.get(f"oml_afdrag_fri_{ydelse_key_clean}", True)
     oml_omk = st.session_state.get(f"oml_omk_{ydelse_key_clean}", 50000)
     equity_amt = st.session_state.get(f"equity_amount_{ydelse_key_clean}", 1000000) if st.session_state.get(f"use_equity_{ydelse_key_clean}", False) else 0
@@ -664,8 +696,13 @@ def simulate_solo_fire_plan(scenario_name, boligpris, ydelse_key, ejerudgifter_s
         effektiv_realkreditydelse_default = 15230
     else:
         faktisk_udbetaling_j, loan_amt = boligpris * 0.60, boligpris * 0.40
-        r_total = (0.0341 + 0.0045) / 12
-        brutto_md = loan_amt * (r_total * (1 + r_total)**360) / ((1 + r_total)**360 - 1)
+        r_total = (0.0341 + 0.0038) / 12  # Opdateret bidragssats
+        
+        if global_loan_type == "Standard lån (F3 Med afdrag)" and global_afdragsfri_10:
+            brutto_md = loan_amt * r_total
+        else:
+            brutto_md = loan_amt * (r_total * (1 + r_total)**360) / ((1 + r_total)**360 - 1)
+        
         effektiv_realkreditydelse_default = int(brutto_md - (loan_amt * r_total * 0.256))
 
     with st.expander("⚙️ Vis økonomiske detaljer & lån", expanded=False):
@@ -680,6 +717,8 @@ def simulate_solo_fire_plan(scenario_name, boligpris, ydelse_key, ejerudgifter_s
                     effektiv_realkreditydelse = (loan_amt * (0.0341 + 0.0055) / 12) * (1 - 0.256)
                 else:
                     effektiv_realkreditydelse = st.number_input("Manuel ydelse", value=effektiv_realkreditydelse_default, step=100, key=ydelse_key, on_change=clear_preset, label_visibility="collapsed")
+                    if global_afdragsfri_10:
+                        st.markdown("<p style='font-size: 0.8em; color: gray; margin-top: -10px;'>* 10 års afdragsfrihed aktiv</p>", unsafe_allow_html=True)
 
     if actual_salgsaar == 0:
         base_frie_j = st.session_state["basis_frie_j"] + (cash_j - faktisk_udbetaling_j)
@@ -755,6 +794,7 @@ def simulate_solo_fire_plan(scenario_name, boligpris, ydelse_key, ejerudgifter_s
             
             depot_free_j += equity_amt
 
+        # Udløb af afdragsfrihed i Valby (År 10 chok)
         if is_valby and nuvaerende_afdragsfri and year == 10:
             if not (aktiver_oml and oml_aar <= 10) and (actual_salgsaar == 0 or actual_salgsaar > 10):
                 rente_mnd = 0.024 / 12
@@ -762,6 +802,22 @@ def simulate_solo_fire_plan(scenario_name, boligpris, ydelse_key, ejerudgifter_s
                 ekstra_nominel_ydelse = ny_valby_ydelse - 8300
                 start_fire_j += ekstra_nominel_ydelse
                 bolig_total_current += (ekstra_nominel_ydelse / ((1 + global_inflation_rate)**year))
+
+        # Udløb af 10-års afdragsfrihed for NYE boliger (År 10 chokket)
+        if not is_valby and global_loan_type == "Standard lån (F3 Med afdrag)" and global_afdragsfri_10 and year == (actual_salgsaar + 10):
+            r_tot_chok = (0.0341 + 0.0038) / 12
+            ny_brutto_md = restgaeld_start * (r_tot_chok * (1 + r_tot_chok)**240) / ((1 + r_tot_chok)**240 - 1)
+            ny_effektiv = ny_brutto_md - (restgaeld_start * r_tot_chok * 0.256)
+            
+            gammel_brutto_md = restgaeld_start * r_tot_chok
+            gammel_effektiv = gammel_brutto_md - (restgaeld_start * r_tot_chok * 0.256)
+            
+            ekstra_netto_ydelse = ny_effektiv - gammel_effektiv
+            ekstra_infl_justeret = ekstra_netto_ydelse / ((1 + global_inflation_rate)**year)
+            
+            start_fire_j += ekstra_infl_justeret
+            start_inv_md_j -= ekstra_infl_justeret
+            bolig_total_current += ekstra_infl_justeret
 
         if year > 0:
             start_fire_j *= (1 + global_inflation_rate)
@@ -777,11 +833,21 @@ def simulate_solo_fire_plan(scenario_name, boligpris, ydelse_key, ejerudgifter_s
                     
                     depot_free_j += max(0, locked_frivaerdi_j - skaleret_udb_tot)
                     
-                    ny_ydelse = ((skaleret_loan * (0.0341 + 0.0055)) / 12) * (1 - 0.256) if global_loan_type == "FlexLife (F3 30 år afdragsfri)" else (skaleret_loan * ((0.0386/12) * (1 + 0.0386/12)**360) / ((1 + 0.0386/12)**360 - 1)) - (skaleret_loan * (0.0386/12) * 0.256)
+                    if global_loan_type == "FlexLife (F3 30 år afdragsfri)":
+                        ny_ydelse = ((skaleret_loan * (0.0341 + 0.0055)) / 12) * (1 - 0.256)
+                    else:
+                        r_tot_ny = (0.0341 + 0.0038) / 12
+                        if global_afdragsfri_10:
+                            brutto_md = skaleret_loan * r_tot_ny
+                        else:
+                            brutto_md = skaleret_loan * (r_tot_ny * (1 + r_tot_ny)**360) / ((1 + r_tot_ny)**360 - 1)
+                        ny_ydelse = brutto_md - (skaleret_loan * r_tot_ny * 0.256)
+                        
                     ny_bolig_total = ny_ydelse + effektiv_ejerudgift * ((1 + global_inflation_rate)**year)
                     diff_bolig = (bolig_total_current * ((1 + global_inflation_rate)**year)) - ny_bolig_total
                     start_fire_j -= diff_bolig; start_inv_md_j += (diff_bolig / ((1 + global_inflation_rate)**year))
                     bolig_total_current = ny_bolig_total / ((1 + global_inflation_rate)**year)
+                    restgaeld_start = skaleret_loan
 
             # --- MARKEDSAFKAST MED EFFEKTIV SKAT (Simulerer skattepligt under opsparingen) ---
             prog_limit_j = 79400 * ((1 + global_inflation_rate)**year)
@@ -901,7 +967,7 @@ if view_selection == "⚙️ Basisdata & Opsætning":
         m_tabs = st.tabs(["I Dag (Din opsparingsevne)", "Som Barista (Dit tids-mål)"])
         
         with m_tabs[0]:
-            st.markdown("<p style='font-size: 0.8em; color: gray;'>Beregner den med månedlige opsparingsevne for Markus i dag.</p>", unsafe_allow_html=True)
+            st.markdown("<p style='font-size: 0.8em; color: gray;'>Beregner den månedlige opsparingsevne for Markus i dag.</p>", unsafe_allow_html=True)
             df_idag_m = st.data_editor(pd.DataFrame(list(st.session_state["budget_idag_m"].items()), columns=["Kategori", "Beløb"]), hide_index=True, use_container_width=True, key="ed_idag_m", on_change=clear_preset)
             st.session_state["budget_idag_m"] = dict(df_idag_m.values)
 
