@@ -196,10 +196,12 @@ global_salgsomkostninger = st.sidebar.number_input("Salgsomkostninger (kr.)", mi
 
 st.sidebar.divider()
 st.sidebar.markdown("### Boligfinansiering (Nye boliger)")
-global_loan_type = st.sidebar.radio("Lånetype", ["Standard lån (F3 Med afdrag)", "FlexLife (F3 30 år afdragsfri)"], on_change=clear_preset, label_visibility="collapsed")
-global_afdragsfri_10 = False
-if global_loan_type == "Standard lån (F3 Med afdrag)":
-    global_afdragsfri_10 = st.sidebar.toggle("Tilføj 10 års afdragsfrihed", value=False, on_change=clear_preset, help="Fjerner afdrag de første 10 år, hvorefter lånet afdrages aggressivt over 20 år.")
+# RETTELSE 1: Fjernet toggle og samlet valgene logisk i én radio menu
+global_loan_type = st.sidebar.radio("Lånetype", [
+    "Standard lån (F3 Med afdrag)", 
+    "F3 (10 års afdragsfrihed)", 
+    "FlexLife (F3 30 år afdragsfri)"
+], on_change=clear_preset, label_visibility="collapsed")
 
 st.sidebar.divider()
 st.sidebar.markdown("### Skattepolitik")
@@ -229,13 +231,11 @@ def calculate_drawdown_monthly_income(depot_bridge_arr, depot_pension_arr, curre
         effective_rate = net_return_rate
     monthly_rate = effective_rate / 12
     
-    # Pre-pension: Lever af Bridge funds frem mod pensionsalder
     if current_age < target_age:
         years_left = target_age - current_age
         months_left = years_left * 12
         if monthly_rate <= 0: return depot_bridge_arr / months_left
         return depot_bridge_arr * (monthly_rate * (1 + monthly_rate)**months_left) / ((1 + monthly_rate)**months_left - 1)
-    # Post-pension: Lægger pension oveni og udjævner til alder 90
     else:
         months_to_90 = np.maximum(1, (life_expectancy - current_age) * 12)
         total_wealth = depot_bridge_arr + depot_pension_arr
@@ -310,13 +310,18 @@ def simulate_joint_fire_plan(scenario_name, boligpris, ydelse_key, ejerudgifter_
         target_total_udb = boligpris * 0.60
         ui_cash_pct, ui_loan_pct = 60, 40
         loan_amt = boligpris * 0.40
-        r_total = (0.0341 + 0.0038) / 12  # Opdateret bidragssats
         
-        if global_loan_type == "Standard lån (F3 Med afdrag)" and global_afdragsfri_10:
-            brutto_md = loan_amt * r_total
-        else:
+        # RETTELSE 2: Matcher den nye radio button konfiguration
+        if global_loan_type == "Standard lån (F3 Med afdrag)":
+            r_total = (0.0341 + 0.0038) / 12
             brutto_md = loan_amt * (r_total * (1 + r_total)**360) / ((1 + r_total)**360 - 1)
-        
+        elif global_loan_type == "F3 (10 års afdragsfrihed)":
+            r_total = (0.0341 + 0.0038) / 12
+            brutto_md = loan_amt * r_total
+        else: # FlexLife (30 år)
+            r_total = (0.0341 + 0.0055) / 12
+            brutto_md = loan_amt * r_total
+            
         effektiv_realkreditydelse_default = int(brutto_md - (loan_amt * r_total * 0.256))
 
     with st.expander("🏠 Vis økonomiske detaljer & lån", expanded=False):
@@ -328,13 +333,10 @@ def simulate_joint_fire_plan(scenario_name, boligpris, ydelse_key, ejerudgifter_
                 realkreditydelse_netto = st.number_input("Realkreditydelse", value=effektiv_realkreditydelse_default, step=100, key=ydelse_key, on_change=clear_preset)
                 effektiv_realkreditydelse = max(0, realkreditydelse_netto - 6930) if nuvaerende_afdragsfri else realkreditydelse_netto
             else:
-                if global_loan_type == "FlexLife (F3 30 år afdragsfri)":
-                    brutto_md = (loan_amt * (0.0341 + 0.0055)) / 12
-                    effektiv_realkreditydelse = brutto_md * (1 - 0.256)
-                else:
-                    effektiv_realkreditydelse = st.number_input("Manuel ydelse (kr./md.)", value=effektiv_realkreditydelse_default, step=100, key=ydelse_key, on_change=clear_preset, label_visibility="collapsed")
-                    if global_afdragsfri_10:
-                        st.markdown("<p style='font-size: 0.8em; color: gray; margin-top: -10px;'>* 10 års afdragsfrihed aktiv</p>", unsafe_allow_html=True)
+                # RETTELSE 3: Løst session_state fastfrysningen ved at lave en dynamisk key ud fra lånetypen
+                dynamic_key = f"{ydelse_key}_{global_loan_type.replace(' ', '_')}"
+                st.info(f"💡 Beregnet nettoydelse: **{format_dkk(effektiv_realkreditydelse_default)} kr.**")
+                effektiv_realkreditydelse = st.number_input("Manuel justering (kr./md.)", value=effektiv_realkreditydelse_default, step=100, key=dynamic_key, on_change=clear_preset, label_visibility="collapsed")
 
     if actual_salgsaar == 0:
         bsu_passive = 0 if (use_bsu and bolig_solgt) else (983 if use_bsu else 0)
@@ -468,9 +470,9 @@ def simulate_joint_fire_plan(scenario_name, boligpris, ydelse_key, ejerudgifter_
                 start_fire_j += (ekstra_nominel_ydelse / 2); start_inv_md_j -= (ekstra_nominel_ydelse / 2)
                 start_fire_m += (ekstra_nominel_ydelse / 2); start_inv_md_m -= (ekstra_nominel_ydelse / 2)
                 bolig_faelles_current += (ekstra_nominel_ydelse / 2)
-                
+
         # Udløb af 10-års afdragsfrihed for NYE boliger (År 10 chokket)
-        if not is_valby and global_loan_type == "Standard lån (F3 Med afdrag)" and global_afdragsfri_10 and year == (actual_salgsaar + 10):
+        if not is_valby and global_loan_type == "F3 (10 års afdragsfrihed)" and year == (actual_salgsaar + 10):
             r_tot_chok = (0.0341 + 0.0038) / 12
             ny_brutto_md = restgaeld_start * (r_tot_chok * (1 + r_tot_chok)**240) / ((1 + r_tot_chok)**240 - 1)
             ny_effektiv = ny_brutto_md - (restgaeld_start * r_tot_chok * 0.256)
@@ -521,7 +523,7 @@ def simulate_joint_fire_plan(scenario_name, boligpris, ydelse_key, ejerudgifter_
                         ny_ydelse = ((skaleret_loan * (0.0341 + 0.0055)) / 12) * (1 - 0.256)
                     else:
                         r_tot_ny = (0.0341 + 0.0038) / 12
-                        if global_afdragsfri_10:
+                        if global_loan_type == "F3 (10 års afdragsfrihed)":
                             brutto_md = skaleret_loan * r_tot_ny
                         else:
                             brutto_md = skaleret_loan * (r_tot_ny * (1 + r_tot_ny)**360) / ((1 + r_tot_ny)**360 - 1)
@@ -698,11 +700,14 @@ def simulate_solo_fire_plan(scenario_name, boligpris, ydelse_key, ejerudgifter_s
         faktisk_udbetaling_j, loan_amt = boligpris * 0.60, boligpris * 0.40
         r_total = (0.0341 + 0.0038) / 12  # Opdateret bidragssats
         
-        if global_loan_type == "Standard lån (F3 Med afdrag)" and global_afdragsfri_10:
-            brutto_md = loan_amt * r_total
-        else:
+        if global_loan_type == "Standard lån (F3 Med afdrag)":
             brutto_md = loan_amt * (r_total * (1 + r_total)**360) / ((1 + r_total)**360 - 1)
-        
+        elif global_loan_type == "F3 (10 års afdragsfrihed)":
+            brutto_md = loan_amt * r_total
+        else: # FlexLife (30 år)
+            r_total = (0.0341 + 0.0055) / 12
+            brutto_md = loan_amt * r_total
+            
         effektiv_realkreditydelse_default = int(brutto_md - (loan_amt * r_total * 0.256))
 
     with st.expander("⚙️ Vis økonomiske detaljer & lån", expanded=False):
@@ -713,12 +718,9 @@ def simulate_solo_fire_plan(scenario_name, boligpris, ydelse_key, ejerudgifter_s
                 realkreditydelse_netto = st.number_input("Realkreditydelse", value=effektiv_realkreditydelse_default, step=100, key=ydelse_key, on_change=clear_preset)
                 effektiv_realkreditydelse = max(0, realkreditydelse_netto - 6930) if nuvaerende_afdragsfri else realkreditydelse_netto
             else:
-                if global_loan_type == "FlexLife (F3 30 år afdragsfri)":
-                    effektiv_realkreditydelse = (loan_amt * (0.0341 + 0.0055) / 12) * (1 - 0.256)
-                else:
-                    effektiv_realkreditydelse = st.number_input("Manuel ydelse", value=effektiv_realkreditydelse_default, step=100, key=ydelse_key, on_change=clear_preset, label_visibility="collapsed")
-                    if global_afdragsfri_10:
-                        st.markdown("<p style='font-size: 0.8em; color: gray; margin-top: -10px;'>* 10 års afdragsfrihed aktiv</p>", unsafe_allow_html=True)
+                dynamic_key = f"{ydelse_key}_{global_loan_type.replace(' ', '_')}"
+                st.info(f"💡 Beregnet nettoydelse: **{format_dkk(effektiv_realkreditydelse_default)} kr.**")
+                effektiv_realkreditydelse = st.number_input("Manuel justering (kr./md.)", value=effektiv_realkreditydelse_default, step=100, key=dynamic_key, on_change=clear_preset, label_visibility="collapsed")
 
     if actual_salgsaar == 0:
         base_frie_j = st.session_state["basis_frie_j"] + (cash_j - faktisk_udbetaling_j)
@@ -804,7 +806,7 @@ def simulate_solo_fire_plan(scenario_name, boligpris, ydelse_key, ejerudgifter_s
                 bolig_total_current += (ekstra_nominel_ydelse / ((1 + global_inflation_rate)**year))
 
         # Udløb af 10-års afdragsfrihed for NYE boliger (År 10 chokket)
-        if not is_valby and global_loan_type == "Standard lån (F3 Med afdrag)" and global_afdragsfri_10 and year == (actual_salgsaar + 10):
+        if not is_valby and global_loan_type == "F3 (10 års afdragsfrihed)" and year == (actual_salgsaar + 10):
             r_tot_chok = (0.0341 + 0.0038) / 12
             ny_brutto_md = restgaeld_start * (r_tot_chok * (1 + r_tot_chok)**240) / ((1 + r_tot_chok)**240 - 1)
             ny_effektiv = ny_brutto_md - (restgaeld_start * r_tot_chok * 0.256)
@@ -837,7 +839,7 @@ def simulate_solo_fire_plan(scenario_name, boligpris, ydelse_key, ejerudgifter_s
                         ny_ydelse = ((skaleret_loan * (0.0341 + 0.0055)) / 12) * (1 - 0.256)
                     else:
                         r_tot_ny = (0.0341 + 0.0038) / 12
-                        if global_afdragsfri_10:
+                        if global_loan_type == "F3 (10 års afdragsfrihed)":
                             brutto_md = skaleret_loan * r_tot_ny
                         else:
                             brutto_md = skaleret_loan * (r_tot_ny * (1 + r_tot_ny)**360) / ((1 + r_tot_ny)**360 - 1)
