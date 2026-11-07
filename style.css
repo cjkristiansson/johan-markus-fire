@@ -29,7 +29,7 @@
     /* --- BULLETPROOF TABLE HEADERS --- */
     [data-testid="stTable"] th, 
     [data-testid="stTable"] th * {
-        background-color: #32302d !important;
+        background-color: none;
         color: #ffffff !important;
     }
 
