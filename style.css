@@ -29,8 +29,6 @@
     /* --- BULLETPROOF TABLE HEADERS --- */
     [data-testid="stTable"] th, 
     [data-testid="stTable"] th * {
-        background-color: none;
-        color: #ffffff !important;
     }
 
 @media (max-width: 768px) {
