@@ -107,26 +107,21 @@ if "use_ask_500k" not in st.session_state: st.session_state["use_ask_500k"] = Fa
 if "mc_active" not in st.session_state: st.session_state["mc_active"] = True
 if "active_preset" not in st.session_state: st.session_state["active_preset"] = "Realistisk"
 
-# Valby Pris Input
 if "valby_pris_input" not in st.session_state: st.session_state["valby_pris_input"] = 6600000
 
-# Personlige budgetter - I DAG
+# BUDGETTER
 if "budget_idag_j" not in st.session_state:
     st.session_state["budget_idag_j"] = {"Mad": 6000, "Renovering": 1000, "A_kasse_Fagforening": 672, "Internet": 0, "Ferie": 1500, "Puregym": 279, "Forsikringer": 170, "Transport": 730, "Frisoer": 450, "Toej": 1200, "Telefon": 100, "Spotify_Cloud": 100, "Charity": 100, "Oevrig": 3000}
 if "budget_idag_m" not in st.session_state:
     st.session_state["budget_idag_m"] = {"Studielaan": 1600, "Mad": 0, "Renovering": 1000, "A_kasse_Fagforening": 520, "Internet": 0, "Ferie": 1500, "Puregym": 0, "Forsikringer": 170, "Transport": 500, "Frisoer": 450, "Toej": 1200, "Telefon": 300, "Streaming": 565, "Charity": 100, "Oevrig": 3000}
-
-# Personlige budgetter - BARISTA FIRE
 if "budget_fire_j" not in st.session_state:
     st.session_state["budget_fire_j"] = {"Mad": 3000, "Renovering": 1000, "A_kasse_Fagforening": 542, "Internet": 100, "Ferie": 1500, "Puregym": 279, "Forsikringer": 170, "Transport": 730, "Frisoer": 450, "Toej": 1200, "Telefon": 100, "Spotify_Cloud": 100, "Charity": 100, "Oevrig": 3000}
 if "budget_fire_m" not in st.session_state:
     st.session_state["budget_fire_m"] = {"Studielaan": 1600, "Mad": 3000, "Renovering": 1000, "A_kasse_Fagforening": 520, "Internet": 0, "Ferie": 1500, "Puregym": 0, "Forsikringer": 170, "Transport": 500, "Frisoer": 450, "Toej": 1200, "Telefon": 300, "Streaming": 565, "Charity": 100, "Oevrig": 3000}
 
-# Tvinger reset af Øvrigt hvis den stadig står til 4500 pga. session state caching
-if st.session_state["budget_idag_j"].get("Oevrig") != 3000:
-    st.session_state["budget_idag_j"]["Oevrig"] = 3000
-if st.session_state["budget_fire_j"].get("Oevrig") != 3000:
-    st.session_state["budget_fire_j"]["Oevrig"] = 3000
+# Hard override for Øvrigt (sikrer at caching ikke overskriver vores 3000 kr)
+st.session_state["budget_idag_j"]["Oevrig"] = 3000
+st.session_state["budget_fire_j"]["Oevrig"] = 3000
 
 # --- POP-UP MODAL TIL REGLER OG LOGIK ---
 @st.dialog("Modellens Regler & Logik")
@@ -150,7 +145,7 @@ with col_link:
 view_selection = st.pills("Navigation", options=["Boligscenarier", "Basisdata & Opsætning"], default="Boligscenarier", label_visibility="collapsed")
 st.write("") 
 
-# --- SIDEBAR (OMSTRUKTURERET OG RENT DESIGN) ---
+# --- SIDEBAR ---
 st.sidebar.header("Global Opsætning")
 
 def set_preset(preset):
@@ -299,12 +294,16 @@ def simulate_joint_fire_plan(scenario_name, boligpris, ydelse_key, ejerudgifter_
     use_bsu = st.session_state.get("use_bsu_m", False)
     bsu_amount = 292060
     
-    cash_j = st.session_state.get("forbrugskonti_j", 0) + st.session_state.get("frivaerdi_j", 0)
-    cash_m = st.session_state["cash_m_base"] if bolig_solgt else 0
-
-    if bolig_solgt and actual_salgsaar == 0:
-        cash_j = max(0, cash_j - (global_salgsomkostninger / 2))
-        cash_m = max(0, cash_m - (global_salgsomkostninger / 2))
+    # KORREKT HÅNDTERING AF KONTANTER VS. FRIVÆRDI
+    if is_valby:
+        cash_j = st.session_state.get("forbrugskonti_j", 0)
+        cash_m = st.session_state.get("cash_m_base", 0)
+    else:
+        cash_j = st.session_state.get("forbrugskonti_j", 0) + st.session_state.get("frivaerdi_j", 0)
+        cash_m = st.session_state.get("cash_m_base", 0)
+        if actual_salgsaar == 0:
+            cash_j = max(0, cash_j - (global_salgsomkostninger / 2))
+            cash_m = max(0, cash_m - (global_salgsomkostninger / 2))
     
     valby_fast_restgaeld = 3059064
     valby_afdrag_md = 0 if nuvaerende_afdragsfri else 6930
@@ -322,7 +321,7 @@ def simulate_joint_fire_plan(scenario_name, boligpris, ydelse_key, ejerudgifter_
         
         if global_loan_type == "Standard lån (F3 Med afdrag)":
             brutto_md = loan_amt * (r_total * (1 + r_total)**360) / ((1 + r_total)**360 - 1)
-        else:
+        else: # F3 10 års afdragsfrihed
             brutto_md = loan_amt * r_total
             
         effektiv_realkreditydelse_default = int(brutto_md - (loan_amt * r_total * 0.256))
@@ -362,14 +361,19 @@ def simulate_joint_fire_plan(scenario_name, boligpris, ydelse_key, ejerudgifter_
         
         bolig_faelles_current = (effektiv_realkreditydelse + effektiv_ejerudgift) / 2
         restgaeld_start = valby_fast_restgaeld if is_valby else loan_amt
+        locked_frivaerdi_j, locked_frivaerdi_m = 0.0, 0.0
     else:
         bsu_passive = 983 if use_bsu else 0
         faktisk_udbetaling_j, faktisk_udbetaling_m = 0, 0
-        base_frie_j = st.session_state["basis_frie_j"]
-        base_frie_m = st.session_state["basis_frie_m"]
+        base_frie_j = st.session_state["basis_frie_j"] + cash_j
+        base_frie_m = st.session_state["basis_frie_m"] + cash_m
         valby_ydelse = 15230 - 6930 if nuvaerende_afdragsfri else 15230
         bolig_faelles_current = (valby_ydelse + 3374) / 2
         restgaeld_start = valby_fast_restgaeld
+        
+        # Friværdi er KUN Valbys murstensværdi her, vi har allerede lagt cash ind i depotet
+        locked_frivaerdi_j = float(st.session_state.get("frivaerdi_j", 0))
+        locked_frivaerdi_m = 0.0
 
     base_frie_j -= global_legal_amount
 
@@ -434,6 +438,7 @@ def simulate_joint_fire_plan(scenario_name, boligpris, ydelse_key, ejerudgifter_
         c_age_j, c_age_m = age_j + year, age_m + year
         current_ret = market_returns[year]
         
+        # Omlægningsscenarie
         if aktiver_oml and year == oml_aar and boligpris > 0 and oml_aar > actual_salgsaar:
             if is_valby:
                 afdraget_beloeb = 0 if (nuvaerende_afdragsfri and oml_aar <= 10) else (valby_afdrag_md * 12 * oml_aar)
@@ -457,6 +462,7 @@ def simulate_joint_fire_plan(scenario_name, boligpris, ydelse_key, ejerudgifter_
             depot_free_j += (equity_amt / 2)
             depot_free_m += (equity_amt / 2)
 
+        # Udløb af afdragsfrihed i Valby (År 10 chok)
         if is_valby and nuvaerende_afdragsfri and year == 10:
             if not (aktiver_oml and oml_aar <= 10) and (actual_salgsaar == 0 or actual_salgsaar > 10):
                 rente_mnd = 0.024 / 12
@@ -466,6 +472,7 @@ def simulate_joint_fire_plan(scenario_name, boligpris, ydelse_key, ejerudgifter_
                 start_fire_m += (ekstra_nominel_ydelse / 2); start_inv_md_m -= (ekstra_nominel_ydelse / 2)
                 bolig_faelles_current += (ekstra_nominel_ydelse / 2)
 
+        # Udløb af 10-års afdragsfrihed for NYE boliger (År 10 chokket)
         if not is_valby and global_loan_type == "F3 (10 års afdragsfrihed)" and year == (actual_salgsaar + 10):
             r_tot_chok = (0.0341 + 0.0038) / 12
             ny_brutto_md = restgaeld_start * (r_tot_chok * (1 + r_tot_chok)**240) / ((1 + r_tot_chok)**240 - 1)
@@ -493,25 +500,26 @@ def simulate_joint_fire_plan(scenario_name, boligpris, ydelse_key, ejerudgifter_
                 locked_frivaerdi_m += (valby_afdrag_md * 12 / 2) + ((valby_pris_stigning - maal_pris_stigning) / 2)
                 
                 if year == actual_salgsaar:
-                    locked_frivaerdi_j = max(0, locked_frivaerdi_j - (global_salgsomkostninger / 2))
-                    locked_frivaerdi_m = max(0, locked_frivaerdi_m - (global_salgsomkostninger / 2))
+                    locked_frivaerdi_j = max(0, locked_frivaerdi_j - global_salgsomkostninger)
                     skaleret_udb_tot = maal_pris * 0.60; skaleret_loan = maal_pris * 0.40
-                    total_frivaerdi = locked_frivaerdi_j + locked_frivaerdi_m
                     
-                    skal_udb_j = skaleret_udb_tot * (locked_frivaerdi_j / total_frivaerdi) if total_frivaerdi > 0 else skaleret_udb_tot / 2
-                    skal_udb_m = skaleret_udb_tot * (locked_frivaerdi_m / total_frivaerdi) if total_frivaerdi > 0 else skaleret_udb_tot / 2
+                    skal_udb_j = skaleret_udb_tot / 2
+                    skal_udb_m = skaleret_udb_tot / 2
                     
                     if use_bsu:
-                        locked_frivaerdi_m += bsu_amount
-                        skal_udb_j -= (bsu_amount / 2); skal_udb_m += (bsu_amount / 2)
+                        skal_udb_m = max(0, skal_udb_m - bsu_amount)
                         bsu_passive = 0; start_inv_md_m -= 983
                         
-                    mangler_m = max(0, skal_udb_m - locked_frivaerdi_m)
-                    fakt_udb_m = skal_udb_m - mangler_m
-                    fakt_udb_j = (skal_udb_j + mangler_m) - max(0, (skal_udb_j + mangler_m) - locked_frivaerdi_j)
-                    
-                    depot_free_j += max(0, locked_frivaerdi_j - fakt_udb_j)
-                    depot_free_m += max(0, locked_frivaerdi_m - fakt_udb_m)
+                    # Dæk udbetaling med friværdi eller depot
+                    if locked_frivaerdi_j >= skal_udb_j:
+                        depot_free_j += (locked_frivaerdi_j - skal_udb_j)
+                    else:
+                        depot_free_j -= (skal_udb_j - locked_frivaerdi_j)
+                        
+                    if locked_frivaerdi_m >= skal_udb_m:
+                        depot_free_m += (locked_frivaerdi_m - skal_udb_m)
+                    else:
+                        depot_free_m -= (skal_udb_m - locked_frivaerdi_m)
                     
                     r_tot_ny = (0.0341 + 0.0038) / 12
                     if global_loan_type == "Standard lån (F3 Med afdrag)":
@@ -564,6 +572,7 @@ def simulate_joint_fire_plan(scenario_name, boligpris, ydelse_key, ejerudgifter_
             pension_j_current = np.maximum(0, pension_j_current * (1 + (current_ret * (1 - pal_tax))))
             pension_m_current = np.maximum(0, pension_m_current * (1 + (current_ret * (1 - pal_tax))))
 
+        # --- SNAPSHOT AF BARISTA-TIMER (UDEN AT DRÆNE DEPOTET) ---
         p_j = calculate_drawdown_monthly_income(depot_ask_j + depot_free_j, pension_j_current, c_age_j, pensionsalder_j, st.session_state.get("slider_drawdown", 3.5)/100, global_inflation_rate, use_real_drawdown)
         p_m_drawdown = calculate_drawdown_monthly_income(depot_ask_m + depot_free_m, pension_m_current, c_age_m, pensionsalder_m, st.session_state.get("slider_drawdown", 3.5)/100, global_inflation_rate, use_real_drawdown)
         p_m_total = p_m_drawdown + bsu_passive
@@ -648,6 +657,7 @@ def simulate_joint_fire_plan(scenario_name, boligpris, ydelse_key, ejerudgifter_
     fig.update_xaxes(title_text="År (Opsparingsfase)", showgrid=False, zeroline=False, tickmode='linear', dtick=2, tickfont=dict(size=14, color="#2c2925"))
     st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
 
+
 def simulate_solo_fire_plan(scenario_name, boligpris, ydelse_key, ejerudgifter_standard):
     pal_tax, weeks_per_month, age_j = 0.153, 4.33, 41
     ydelse_key_clean = ydelse_key.replace("solo_", "")
@@ -674,15 +684,15 @@ def simulate_solo_fire_plan(scenario_name, boligpris, ydelse_key, ejerudgifter_s
 
     is_valby = "Valby" in scenario_name
     actual_salgsaar = 0 if is_valby else global_salgsaar
-    
     valby_pris = st.session_state.get("valby_pris_input", 6600000)
     maal_pris = boligpris
 
-    if not is_valby:
-        cash_j = st.session_state.get("forbrugskonti_j", 0) + st.session_state.get("frivaerdi_j", 0)
-        if actual_salgsaar == 0: cash_j = max(0, cash_j - global_salgsomkostninger)
-    else:
+    if is_valby:
         cash_j = st.session_state.get("forbrugskonti_j", 0)
+    else:
+        cash_j = st.session_state.get("forbrugskonti_j", 0) + st.session_state.get("frivaerdi_j", 0)
+        if actual_salgsaar == 0: 
+            cash_j = max(0, cash_j - global_salgsomkostninger)
 
     valby_fast_restgaeld = 3059064
     valby_afdrag_md = 0 if nuvaerende_afdragsfri else 6930
@@ -717,11 +727,13 @@ def simulate_solo_fire_plan(scenario_name, boligpris, ydelse_key, ejerudgifter_s
         base_frie_j = st.session_state["basis_frie_j"] + (cash_j - faktisk_udbetaling_j)
         bolig_total_current = effektiv_realkreditydelse + effektiv_ejerudgift
         restgaeld_start = valby_fast_restgaeld if is_valby else loan_amt
+        locked_frivaerdi_j = 0.0
     else:
         faktisk_udbetaling_j = 0
-        base_frie_j = st.session_state["basis_frie_j"]
+        base_frie_j = st.session_state["basis_frie_j"] + cash_j
         bolig_total_current = (15230 - 6930 if nuvaerende_afdragsfri else 15230) + 3374
         restgaeld_start = valby_fast_restgaeld
+        locked_frivaerdi_j = float(st.session_state.get("frivaerdi_j", 0))
 
     base_frie_j -= global_legal_amount
 
@@ -819,7 +831,10 @@ def simulate_solo_fire_plan(scenario_name, boligpris, ydelse_key, ejerudgifter_s
                     locked_frivaerdi_j = max(0, locked_frivaerdi_j - global_salgsomkostninger)
                     skaleret_udb_tot, skaleret_loan = maal_pris * 0.60, maal_pris * 0.40
                     
-                    depot_free_j += max(0, locked_frivaerdi_j - skaleret_udb_tot)
+                    if locked_frivaerdi_j >= skaleret_udb_tot:
+                        depot_free_j += (locked_frivaerdi_j - skaleret_udb_tot)
+                    else:
+                        depot_free_j -= (skaleret_udb_tot - locked_frivaerdi_j)
                     
                     r_tot_ny = (0.0341 + 0.0038) / 12
                     if global_loan_type == "Standard lån (F3 Med afdrag)":
